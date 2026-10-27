@@ -11,16 +11,19 @@ class PublicVehicleTypeListView(generics.ListAPIView):
     queryset = VehicleType.objects.filter(is_active=True).order_by("sort_order", "name")
     serializer_class = VehicleTypeSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
 class PublicServicePackageListView(generics.ListAPIView):
     queryset = ServicePackage.objects.filter(is_active=True).prefetch_related("prices__vehicle_type").order_by("sort_order", "id")
     serializer_class = ServicePackageSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
 class PublicServiceAreaListView(generics.ListAPIView):
     queryset = ServiceArea.objects.filter(is_active=True).order_by("city", "name")
     serializer_class = ServiceAreaSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
 # Admin Service Management
 class AdminServicePackageViewSet(viewsets.ModelViewSet):
