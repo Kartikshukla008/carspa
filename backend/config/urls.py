@@ -1,7 +1,16 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+def root_api_view(request):
+    return JsonResponse({
+        "service": "CARSPA Doorstep Detailing API",
+        "status": "online",
+        "version": "1.0",
+        "docs": "/api/docs/",
+    })
 
 from apps.services.views import (
     PublicVehicleTypeListView,
@@ -45,6 +54,7 @@ admin_router.register(r"service-areas", AdminServiceAreaViewSet, basename="admin
 admin_router.register(r"prices", AdminPackagePriceViewSet, basename="admin-prices")
 
 urlpatterns = [
+    path("", root_api_view, name="api-root"),
     path("admin/django/", admin.site.urls),
 
     # OpenAPI Schema & Interactive Docs
