@@ -16,36 +16,42 @@ class AdminLoginAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        username = request.data.get("username")
-        password = request.data.get("password")
+        try:
+            username = request.data.get("username")
+            password = request.data.get("password")
 
-        if not username or not password:
-            return Response(
-                {"error": "Please provide both username and password."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            if not user.is_staff:
+            if not username or not password:
                 return Response(
-                    {"error": "Access denied. Administrator privileges required."},
-                    status=status.HTTP_403_FORBIDDEN
+                    {"error": "Please provide both username and password."},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
-            login(request, user)
-            return Response({
-                "message": "Login successful.",
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "is_superuser": user.is_superuser,
-                }
-            })
-        return Response(
-            {"error": "Invalid username or password."},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                if not user.is_staff:
+                    return Response(
+                        {"error": "Access denied. Administrator privileges required."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                login(request, user)
+                return Response({
+                    "message": "Login successful.",
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                        "is_superuser": user.is_superuser,
+                    }
+                })
+            return Response(
+                {"error": "Invalid username or password."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Authentication server error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class AdminLogoutAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
