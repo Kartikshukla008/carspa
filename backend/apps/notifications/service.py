@@ -74,7 +74,7 @@ class NotificationService:
     @classmethod
     def _send_customer_confirmation(cls, booking):
         message = (
-            f"Hello {booking.customer_name}, thank you for booking Lustre AutoSpa Doorstep Car Wash!\n"
+            f"Hello {booking.customer_name}, thank you for booking CARSPA Doorstep Car Wash!\n"
             f"Booking Ref: {booking.booking_reference}\n"
             f"Date: {booking.service_date.strftime('%d %b %Y')}\n"
             f"Time: {booking.slot_start_time.strftime('%I:%M %p')}\n"

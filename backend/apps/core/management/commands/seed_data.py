@@ -20,7 +20,7 @@ class Command(BaseCommand):
         # 1. Admin Superuser
         admin_user, created = User.objects.get_or_create(
             username="admin",
-            defaults={"email": "admin@lustreautospa.com", "is_staff": True, "is_superuser": True}
+            defaults={"email": "admin@carspa.com", "is_staff": True, "is_superuser": True}
         )
         if created or not admin_user.check_password("admin123"):
             admin_user.set_password("admin123")
@@ -29,10 +29,10 @@ class Command(BaseCommand):
 
         # 2. Business Configuration
         config = BusinessConfig.get_config()
-        config.business_name = "Lustre AutoSpa - Doorstep Car Wash"
-        config.contact_phone = "+91 98765 43210"
-        config.contact_email = "care@lustreautospa.com"
-        config.whatsapp_number = "+919876543210"
+        config.business_name = "CARSPA"
+        config.contact_phone = "+91 70878 11881"
+        config.contact_email = "care@carspa.in"
+        config.whatsapp_number = "+917087811881"
         config.day_open_time = datetime.time(8, 0)
         config.day_close_time = datetime.time(20, 0)
         config.slot_interval_minutes = 30
@@ -229,9 +229,9 @@ class Command(BaseCommand):
 
         # 6. Staff Members & Schedules
         staff_data = [
-            ("Ramesh Kumar", "+919876500001", "ramesh@lustreautospa.com", 6),
-            ("Arun Gowda", "+919876500002", "arun@lustreautospa.com", 6),
-            ("Deepak Sharma", "+919876500003", "deepak@lustreautospa.com", 5),
+            ("Ramesh Kumar", "+919876500001", "ramesh@carspa.com", 6),
+            ("Arun Gowda", "+919876500002", "arun@carspa.com", 6),
+            ("Deepak Sharma", "+919876500003", "deepak@carspa.com", 5),
         ]
         created_staff = []
         for name, phone, email, max_jobs in staff_data:

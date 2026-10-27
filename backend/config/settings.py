@@ -119,7 +119,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:8000",
     "http://127.0.0.1:8000",
-]
+    "https://*.vercel.app",
+] + [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
 
 # REST Framework
 REST_FRAMEWORK = {
@@ -143,7 +144,7 @@ SPECTACULAR_SETTINGS = {
 WHATSAPP_API_TOKEN = os.getenv("WHATSAPP_API_TOKEN", "")
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
 ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "admin@carwashdoorstep.com")
-ADMIN_NOTIFICATION_PHONE = os.getenv("ADMIN_NOTIFICATION_PHONE", "+919876543210")
+ADMIN_NOTIFICATION_PHONE = os.getenv("ADMIN_NOTIFICATION_PHONE", "+917087811881")
 
 # Payment Providers
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")

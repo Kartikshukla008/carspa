@@ -2,9 +2,20 @@ from rest_framework import serializers
 from apps.services.models import VehicleType, ServicePackage, ServicePackagePrice, ServiceArea
 
 class VehicleTypeSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = VehicleType
-        fields = ["id", "name", "slug", "description", "icon_name", "sort_order", "is_active"]
+        fields = ["id", "name", "slug", "description", "icon_name", "image_url", "sort_order", "is_active"]
+
+    def get_image_url(self, obj):
+        mapping = {
+            "hatchback": "/vehicles/hatchback.jpg",
+            "sedan": "/vehicles/sedan.jpg",
+            "suv-muv": "/vehicles/suv.jpg",
+            "luxury-7seater": "/vehicles/luxury-7seater.jpg",
+        }
+        return mapping.get(obj.slug, "/vehicles/sedan.jpg")
 
 class ServicePackagePriceSerializer(serializers.ModelSerializer):
     vehicle_type_name = serializers.CharField(source="vehicle_type.name", read_only=True)

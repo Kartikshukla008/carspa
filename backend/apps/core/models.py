@@ -12,10 +12,10 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 class BusinessConfig(TimeStampedModel):
-    business_name = models.CharField(max_length=200, default="Lustre AutoSpa - Doorstep Car Wash")
-    contact_phone = models.CharField(max_length=30, default="+91 98765 43210")
-    contact_email = models.EmailField(default="support@lustreautospa.com")
-    whatsapp_number = models.CharField(max_length=30, default="+919876543210")
+    business_name = models.CharField(max_length=200, default="CARSPA - Doorstep Car Wash")
+    contact_phone = models.CharField(max_length=30, default="+91 70878 11881")
+    contact_email = models.EmailField(default="care@carspa.in")
+    whatsapp_number = models.CharField(max_length=30, default="+917087811881")
     timezone = models.CharField(max_length=50, default="Asia/Kolkata")
     
     # Scheduling engine rules
