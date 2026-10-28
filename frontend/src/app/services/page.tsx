@@ -11,25 +11,25 @@ import { FadeUp, StaggerContainer, StaggerItem, easings } from "@/components/ui/
 
 const VEHICLE_METADATA: Record<string, { image: string; badge: string; models: string; surface: string }> = {
   hatchback: {
-    image: "/vehicles/hatchback_swift.jpg?v=4",
+    image: "/vehicles/hatchback.jpg",
     badge: "Compact Hatchback",
     models: "Swift, i20, Polo, Baleno, Altroz",
     surface: "~14 m² Surface Area",
   },
   sedan: {
-    image: "/vehicles/sedan_honda_city.jpg?v=4",
+    image: "/vehicles/sedan.jpg",
     badge: "Executive Sedan",
     models: "City, Verna, Slavia, Virtus, BMW 3-Series",
     surface: "~17 m² Surface Area",
   },
   "suv-muv": {
-    image: "/vehicles/suv_creta.jpg?v=4",
+    image: "/vehicles/suv.jpg",
     badge: "Mid-Size SUV & Crossover",
     models: "Creta, Seltos, Nexon, Harrier, XUV700",
     surface: "~21 m² Surface Area",
   },
   "luxury-7seater": {
-    image: "/vehicles/luxury_fortuner.jpg?v=4",
+    image: "/vehicles/luxury-7seater.jpg",
     badge: "Full-Size 7-Seater & Flagship",
     models: "Fortuner, Innova Hycross, Gloster, BMW X5",
     surface: "~26 m² Surface Area",
@@ -37,14 +37,14 @@ const VEHICLE_METADATA: Record<string, { image: string; badge: string; models: s
 };
 
 const PACKAGE_IMAGES: Record<string, string> = {
-  "basic-wash": "/service_basic_wash.jpg?v=2",
-  "interior-cleaning": "/service_interior_cleaning.jpg?v=2",
-  "premium-wash": "/service_premium_wash.jpg?v=2",
-  "full-detailing": "/service_full_detailing.jpg?v=2",
-  "express-foam-exterior": "/service_basic_wash.jpg?v=2",
-  "standard-interior-exterior": "/service_premium_wash.jpg?v=2",
-  "intense-interior-deep-sanitization": "/service_interior_cleaning.jpg?v=2",
-  "premium-wax-spa-detailing": "/service_full_detailing.jpg?v=2",
+  "basic-wash": "/service_basic_wash.jpg",
+  "interior-cleaning": "/service_interior_cleaning.jpg",
+  "premium-wash": "/service_premium_wash.jpg",
+  "full-detailing": "/service_full_detailing.jpg",
+  "express-foam-exterior": "/service_basic_wash.jpg",
+  "standard-interior-exterior": "/service_premium_wash.jpg",
+  "intense-interior-deep-sanitization": "/service_interior_cleaning.jpg",
+  "premium-wax-spa-detailing": "/service_full_detailing.jpg",
 };
 
 export default function ServicesPage() {
@@ -202,7 +202,7 @@ export default function ServicesPage() {
                   {/* Package thumbnail */}
                   <div className="relative w-full h-40 rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-inner">
                     <Image
-                      src={PACKAGE_IMAGES[pkg.slug] || "/service_basic_wash.jpg?v=2"}
+                      src={PACKAGE_IMAGES[pkg.slug] || "/service_basic_wash.jpg"}
                       alt={pkg.name}
                       fill
                       className="object-cover transition-transform duration-500 hover:scale-105"

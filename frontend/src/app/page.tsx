@@ -152,21 +152,21 @@ const FALLBACK_PACKAGES: ServicePackage[] = [
 ];
 
 const VEHICLE_HOME_IMAGES: Record<string, string> = {
-  hatchback: "/vehicles/hatchback_swift.jpg?v=4",
-  sedan: "/vehicles/sedan_honda_city.jpg?v=4",
-  "suv-muv": "/vehicles/suv_creta.jpg?v=4",
-  "luxury-7seater": "/vehicles/luxury_fortuner.jpg?v=4",
+  hatchback: "/vehicles/hatchback.jpg",
+  sedan: "/vehicles/sedan.jpg",
+  "suv-muv": "/vehicles/suv.jpg",
+  "luxury-7seater": "/vehicles/luxury-7seater.jpg",
 };
 
 const PACKAGE_IMAGES: Record<string, string> = {
-  "basic-wash": "/service_basic_wash.jpg?v=2",
-  "interior-cleaning": "/service_interior_cleaning.jpg?v=2",
-  "premium-wash": "/service_premium_wash.jpg?v=2",
-  "full-detailing": "/service_full_detailing.jpg?v=2",
-  "express-foam-exterior": "/service_basic_wash.jpg?v=2",
-  "standard-interior-exterior": "/service_premium_wash.jpg?v=2",
-  "intense-interior-deep-sanitization": "/service_interior_cleaning.jpg?v=2",
-  "premium-wax-spa-detailing": "/service_full_detailing.jpg?v=2",
+  "basic-wash": "/service_basic_wash.jpg",
+  "interior-cleaning": "/service_interior_cleaning.jpg",
+  "premium-wash": "/service_premium_wash.jpg",
+  "full-detailing": "/service_full_detailing.jpg",
+  "express-foam-exterior": "/service_basic_wash.jpg",
+  "standard-interior-exterior": "/service_premium_wash.jpg",
+  "intense-interior-deep-sanitization": "/service_interior_cleaning.jpg",
+  "premium-wax-spa-detailing": "/service_full_detailing.jpg",
 };
 
 const HOW_IT_WORKS_STEPS = [
@@ -579,7 +579,7 @@ export default function HomePage() {
             const formattedPrice = price
               ? Math.round(Number(price.effective)).toLocaleString("en-IN")
               : "—";
-            const imageSrc = PACKAGE_IMAGES[pkg.slug] || "/service_basic_wash.jpg?v=2";
+            const imageSrc = PACKAGE_IMAGES[pkg.slug] || "/service_basic_wash.jpg";
             const isPopular = pkg.is_popular || pkg.name.toLowerCase().includes("premium");
 
             return (
