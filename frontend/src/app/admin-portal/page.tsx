@@ -450,53 +450,54 @@ export default function AdminPortalPage() {
   // LOGIN SCREEN
   if (!isAuthenticated) {
     return (
-      <div className="max-w-md mx-auto px-4 py-20">
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 space-y-6 shadow-xl">
+      <div className="max-w-md mx-auto px-4 py-28 relative">
+        <div className="absolute -top-12 -left-12 w-72 h-72 bg-cyan-500/10 blur-[90px] rounded-full pointer-events-none" />
+        <div className="bg-[#0B1220]/90 backdrop-blur-md p-8 rounded-3xl border border-white/10 space-y-6 shadow-2xl relative z-10">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center mx-auto shadow-sm">
-              <ShieldAlert className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto shadow-inner shadow-cyan-500/20">
+              <ShieldAlert className="w-7 h-7" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">Administrator Login</h2>
-            <p className="text-xs text-slate-600">
+            <h2 className="text-2xl font-black text-white tracking-tight">Administrator Login</h2>
+            <p className="text-xs text-slate-400">
               Access booking controls, capacity engine &amp; CRM.
             </p>
           </div>
 
           {loginError && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
               <span>{loginError}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 block">Username</label>
+              <label className="text-xs font-semibold text-slate-300 block">Username</label>
               <input
                 type="text"
                 required
                 value={loginForm.username}
                 onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 block">Password</label>
+              <label className="text-xs font-semibold text-slate-300 block">Password</label>
               <input
                 type="password"
                 required
                 placeholder="••••••••"
                 value={loginForm.password}
                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md shadow-sky-600/20 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2"
             >
               {loginLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In to Admin Portal"}
             </button>
@@ -534,27 +535,30 @@ export default function AdminPortalPage() {
       )}
 
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-200 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-4 relative z-10">
         <div>
-          <span className="text-[11px] font-bold text-sky-600 uppercase tracking-widest">
+          <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest">
             Control Center
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
             Operations &amp; Booking Dashboard
           </h1>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <span className="text-xs font-bold text-slate-900 block">
+            <span className="text-xs font-bold text-white block">
               {adminUser?.username || "Administrator"}
             </span>
-            <span className="text-[11px] text-emerald-600 font-semibold">Session Active</span>
+            <span className="text-[11px] text-emerald-400 font-semibold flex items-center justify-end gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Session Active
+            </span>
           </div>
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-red-600 bg-white border border-slate-200 hover:border-red-200 px-3.5 py-2 rounded-xl transition-colors shadow-sm"
+            className="flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-rose-400 bg-white/[0.04] hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/30 px-3.5 py-2 rounded-xl transition-all shadow-sm"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout</span>
@@ -563,7 +567,7 @@ export default function AdminPortalPage() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3 relative z-10">
         {[
           { id: "overview", label: "Overview Metrics", icon: TrendingUp },
           { id: "bookings", label: "Bookings Management", icon: Calendar },
@@ -579,8 +583,8 @@ export default function AdminPortalPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                 isActive
-                  ? "bg-sky-600 text-white shadow-md shadow-sky-600/30"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20 font-bold border border-cyan-400/30"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.06] border border-transparent"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -592,64 +596,65 @@ export default function AdminPortalPage() {
 
       {/* 1. OVERVIEW METRICS TAB */}
       {activeTab === "overview" && (
-        <div className="space-y-8">
+        <div className="space-y-8 relative z-10">
           {/* KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-1 hover:border-cyan-500/30 transition-all">
+              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
                 Total Bookings
               </span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              <p className="text-2xl sm:text-3xl font-black text-white">
                 {metrics ? metrics.total_bookings : "—"}
               </p>
-              <span className="text-[11px] text-sky-600 font-medium">
+              <span className="text-[11px] text-cyan-400 font-medium">
                 {metrics ? metrics.today_bookings_count : 0} scheduled today
               </span>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-1 hover:border-amber-500/30 transition-all">
+              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
                 Pending Approval
               </span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-amber-600">
+              <p className="text-2xl sm:text-3xl font-black text-amber-400">
                 {metrics ? metrics.pending_confirmations : "—"}
               </p>
-              <span className="text-[11px] text-slate-500 font-medium">Requires confirmation</span>
+              <span className="text-[11px] text-slate-400 font-medium">Requires confirmation</span>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-1 hover:border-emerald-500/30 transition-all">
+              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
                 Gross Revenue
               </span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600">
+              <p className="text-2xl sm:text-3xl font-black text-emerald-400">
                 ₹{metrics ? metrics.total_revenue : "0.00"}
               </p>
-              <span className="text-[11px] text-slate-500 font-medium">Completed &amp; settled</span>
+              <span className="text-[11px] text-slate-400 font-medium">Completed &amp; settled</span>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-1 hover:border-cyan-500/30 transition-all">
+              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
                 Lead Conversion
               </span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-sky-600">
+              <p className="text-2xl sm:text-3xl font-black text-cyan-400">
                 {metrics ? metrics.conversion_rate : "0%"}
               </p>
-              <span className="text-[11px] text-slate-500 font-medium">
+              <span className="text-[11px] text-slate-400 font-medium">
                 {metrics ? metrics.total_leads : 0} total leads
               </span>
             </div>
           </div>
 
           {/* Upcoming appointments */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl shadow-black/30 overflow-hidden">
+            <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/[0.02]">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Upcoming Appointments</h3>
-                <p className="text-xs text-slate-500">Next scheduled doorstep jobs</p>
+                <h3 className="text-base font-bold text-white">Upcoming Appointments</h3>
+                <p className="text-xs text-slate-400">Next scheduled doorstep jobs</p>
               </div>
               <button
                 onClick={fetchDashboardMetrics}
-                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800"
+                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition-colors"
+                title="Refresh Metrics"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -657,7 +662,7 @@ export default function AdminPortalPage() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                <thead className="bg-[#080D1A] text-slate-400 font-bold uppercase tracking-wider text-[10px] border-b border-white/10">
                   <tr>
                     <th className="p-4">Reference</th>
                     <th className="p-4">Date &amp; Slot</th>
@@ -668,45 +673,45 @@ export default function AdminPortalPage() {
                     <th className="p-4">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-white/5 text-slate-300">
                   {upcomingBookings.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-6 text-center text-slate-400">
+                      <td colSpan={7} className="p-8 text-center text-slate-500">
                         No upcoming bookings found.
                       </td>
                     </tr>
                   ) : (
                     upcomingBookings.map((b) => (
-                      <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4 font-mono font-bold text-sky-600">
+                      <tr key={b.id} className="hover:bg-white/[0.03] transition-colors">
+                        <td className="p-4 font-mono font-bold text-cyan-400">
                           {b.booking_reference}
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold text-slate-900 block">{b.service_date}</span>
-                          <span className="text-slate-500">{b.slot_start_time}</span>
+                          <span className="font-semibold text-white block">{b.service_date}</span>
+                          <span className="text-slate-400 text-[11px]">{b.slot_start_time}</span>
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold text-slate-900 block">{b.customer_name}</span>
-                          <span className="text-slate-500">{b.customer_phone}</span>
+                          <span className="font-semibold text-white block">{b.customer_name}</span>
+                          <span className="text-slate-400 font-mono text-[11px]">{b.customer_phone}</span>
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold block text-slate-900">
+                          <span className="font-semibold block text-white">
                             {b.service_package_name}
                           </span>
-                          <span className="text-slate-500">{b.vehicle_type_name}</span>
+                          <span className="text-slate-400 text-[11px]">{b.vehicle_type_name}</span>
                         </td>
-                        <td className="p-4 text-slate-700">{b.locality}</td>
+                        <td className="p-4 text-slate-300">{b.locality}</td>
                         <td className="p-4">
                           {b.assigned_staff_name ? (
-                            <span className="text-emerald-600 font-medium">
+                            <span className="text-emerald-400 font-medium">
                               {b.assigned_staff_name}
                             </span>
                           ) : (
-                            <span className="text-slate-400 italic">Unassigned</span>
+                            <span className="text-slate-500 italic">Unassigned</span>
                           )}
                         </td>
                         <td className="p-4">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-700">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
                             {b.status_display}
                           </span>
                         </td>
@@ -724,15 +729,15 @@ export default function AdminPortalPage() {
       {activeTab === "bookings" && (
         <div className="space-y-6">
           {/* Header Controls & Counts */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-white/10">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-slate-900">Customer Bookings</h2>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-sky-700 font-semibold">
+                <h2 className="text-xl font-bold text-white">Customer Bookings</h2>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 font-semibold">
                   {bookingsList.length} {bookingsList.length === 1 ? "booking" : "bookings"}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Real-time doorstep appointments submitted through the website. Confirm, reschedule, assign, and mark completed.
               </p>
             </div>
@@ -741,7 +746,7 @@ export default function AdminPortalPage() {
               <button
                 onClick={fetchBookings}
                 disabled={loadingBookings}
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl transition-all shadow-sm"
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-200 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 px-3 py-2 rounded-xl transition-all shadow-sm"
                 title="Refresh Bookings"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingBookings ? "animate-spin text-sky-600" : ""}`} />
@@ -752,7 +757,7 @@ export default function AdminPortalPage() {
                 href={`${api.getApiBaseUrl()}/api/admin/bookings/export-csv/`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm"
+                className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2 rounded-xl hover:bg-emerald-500/20 transition-colors shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
@@ -761,10 +766,10 @@ export default function AdminPortalPage() {
           </div>
 
           {/* Filters Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3 shadow-sm">
+          <div className="bg-[#0B1220]/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-3 shadow-xl">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-sky-600" />
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
                 <span>Search &amp; Filters</span>
               </div>
 
@@ -789,7 +794,7 @@ export default function AdminPortalPage() {
                   value={bookingSearch}
                   onChange={(e) => setBookingSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && fetchBookings()}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-8 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
                 />
                 {bookingSearch && (
                   <button
@@ -809,7 +814,7 @@ export default function AdminPortalPage() {
                 <select
                   value={bookingFilterStatus}
                   onChange={(e) => setBookingFilterStatus(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
                 >
                   <option value="">All Statuses</option>
                   <option value="PENDING">Pending Approval</option>
@@ -826,7 +831,7 @@ export default function AdminPortalPage() {
                 <select
                   value={bookingFilterPayment}
                   onChange={(e) => setBookingFilterPayment(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
                 >
                   <option value="">All Payments</option>
                   <option value="PAID">Paid</option>
@@ -841,7 +846,7 @@ export default function AdminPortalPage() {
                 <select
                   value={bookingFilterPackage}
                   onChange={(e) => setBookingFilterPackage(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
                 >
                   <option value="">All Packages</option>
                   {servicePackages.map((pkg) => (
@@ -857,7 +862,7 @@ export default function AdminPortalPage() {
                 <select
                   value={bookingFilterVehicle}
                   onChange={(e) => setBookingFilterVehicle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
                 >
                   <option value="">All Vehicles</option>
                   {vehicleTypes.map((v) => (
@@ -870,13 +875,13 @@ export default function AdminPortalPage() {
             </div>
 
             {/* Date filter & Quick Day Filters */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-xs">
-              <span className="text-[11px] text-slate-500 font-medium">Filter Date:</span>
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/10 text-xs">
+              <span className="text-[11px] text-slate-400 font-medium">Filter Date:</span>
               <input
                 type="date"
                 value={bookingFilterDate}
                 onChange={(e) => setBookingFilterDate(e.target.value)}
-                className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                className="bg-[#060A14] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-400 transition-colors"
               />
               <button
                 type="button"
@@ -884,7 +889,7 @@ export default function AdminPortalPage() {
                   const today = new Date().toISOString().split("T")[0];
                   setBookingFilterDate(today);
                 }}
-                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/5 text-[11px] font-medium transition-colors"
               >
                 Today
               </button>
@@ -895,7 +900,7 @@ export default function AdminPortalPage() {
                   tomorrow.setDate(tomorrow.getDate() + 1);
                   setBookingFilterDate(tomorrow.toISOString().split("T")[0]);
                 }}
-                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 border border-white/5 text-[11px] font-medium transition-colors"
               >
                 Tomorrow
               </button>
@@ -912,7 +917,7 @@ export default function AdminPortalPage() {
               <button
                 type="button"
                 onClick={fetchBookings}
-                className="ml-auto bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all shadow-sm"
+                className="ml-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all shadow-md shadow-cyan-500/20"
               >
                 Apply Filters
               </button>
@@ -920,10 +925,10 @@ export default function AdminPortalPage() {
           </div>
 
           {/* Bookings Table / List */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/90 text-slate-600 uppercase tracking-wider text-[10px] border-b border-slate-200 font-bold">
+                <thead className="bg-[#080D1A] text-slate-400 uppercase tracking-wider text-[10px] border-b border-white/10 font-bold">
                   <tr>
                     <th className="p-3.5">Reference</th>
                     <th className="p-3.5">Customer</th>
@@ -935,7 +940,7 @@ export default function AdminPortalPage() {
                     <th className="p-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-white/5 text-slate-300">
                   {loadingBookings ? (
                     <tr>
                       <td colSpan={8} className="p-12 text-center text-slate-400">
@@ -946,10 +951,10 @@ export default function AdminPortalPage() {
                   ) : bookingsList.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="p-12 text-center">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3 text-slate-400">
+                        <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto mb-3 text-slate-400">
                           <Calendar className="w-6 h-6" />
                         </div>
-                        <p className="text-sm font-bold text-slate-900 mb-1">No bookings found</p>
+                        <p className="text-sm font-bold text-white mb-1">No bookings found</p>
                         <p className="text-xs text-slate-500 max-w-sm mx-auto mb-3">
                           {hasActiveFilters
                             ? "No appointments match your active filter criteria. Try resetting filters."
@@ -969,12 +974,12 @@ export default function AdminPortalPage() {
                     bookingsList.map((b) => (
                       <tr
                         key={b.id}
-                        className="hover:bg-slate-50 transition-colors group cursor-pointer"
+                        className="hover:bg-white/[0.03] transition-colors group cursor-pointer"
                         onClick={() => setSelectedBooking(b)}
                       >
                         {/* Reference */}
                         <td className="p-3.5 align-top">
-                          <div className="flex items-center gap-1.5 font-mono font-bold text-sky-600 text-xs">
+                          <div className="flex items-center gap-1.5 font-mono font-bold text-cyan-400 text-xs">
                             <span>{b.booking_reference}</span>
                             <button
                               onClick={(e) => {
@@ -997,7 +1002,7 @@ export default function AdminPortalPage() {
 
                         {/* Customer */}
                         <td className="p-3.5 align-top">
-                          <span className="font-bold text-slate-900 block text-xs">
+                          <span className="font-bold text-white block text-xs">
                             {b.customer_name}
                           </span>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -1032,17 +1037,17 @@ export default function AdminPortalPage() {
 
                         {/* Vehicle & Package */}
                         <td className="p-3.5 align-top">
-                          <span className="font-bold text-slate-900 block text-xs">
+                          <span className="font-bold text-white block text-xs">
                             {b.service_package_name}
                           </span>
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 border border-sky-200 text-sky-700">
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
                             {b.vehicle_type_name}
                           </span>
                         </td>
 
                         {/* Date & Slot */}
                         <td className="p-3.5 align-top whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 font-semibold text-slate-900 text-xs">
+                          <div className="flex items-center gap-1.5 font-semibold text-white text-xs">
                             <Calendar className="w-3.5 h-3.5 text-sky-600 shrink-0" />
                             <span>{b.service_date}</span>
                           </div>
@@ -1056,7 +1061,7 @@ export default function AdminPortalPage() {
 
                         {/* Address */}
                         <td className="p-3.5 align-top max-w-[180px]">
-                          <span className="font-semibold text-slate-900 block text-xs truncate">
+                          <span className="font-semibold text-white block text-xs truncate">
                             {b.locality}
                           </span>
                           <span className="text-[11px] text-slate-500 block truncate mt-0.5" title={b.address_line}>
@@ -1071,16 +1076,16 @@ export default function AdminPortalPage() {
 
                         {/* Total & Payment */}
                         <td className="p-3.5 align-top whitespace-nowrap">
-                          <span className="font-black text-emerald-600 block text-sm">
+                          <span className="font-black text-emerald-400 block text-sm">
                             ₹{b.final_amount}
                           </span>
                           <div className="mt-1 flex items-center gap-1.5">
                             {b.payment_status === "PAID" ? (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                                 Paid
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
                                 {b.payment_status}
                               </span>
                             )}
@@ -1090,37 +1095,37 @@ export default function AdminPortalPage() {
                         {/* Booking Status */}
                         <td className="p-3.5 align-top whitespace-nowrap">
                           {b.status === "PENDING" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
                               <Clock className="w-3 h-3" />
                               <span>Pending</span>
                             </span>
                           )}
                           {b.status === "CONFIRMED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-50 text-sky-700 border border-sky-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
                               <CheckCircle2 className="w-3 h-3" />
                               <span>Confirmed</span>
                             </span>
                           )}
                           {b.status === "ASSIGNED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
                               <User className="w-3 h-3" />
                               <span>Assigned</span>
                             </span>
                           )}
                           {b.status === "IN_PROGRESS" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-50 text-cyan-700 border border-cyan-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30">
                               <RefreshCw className="w-3 h-3 animate-spin" />
                               <span>In Progress</span>
                             </span>
                           )}
                           {b.status === "COMPLETED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                               <Check className="w-3 h-3" />
                               <span>Completed</span>
                             </span>
                           )}
                           {b.status === "CANCELLED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/30">
                               <XCircle className="w-3 h-3" />
                               <span>Cancelled</span>
                             </span>
@@ -1139,7 +1144,7 @@ export default function AdminPortalPage() {
                             {/* View Details */}
                             <button
                               onClick={() => setSelectedBooking(b)}
-                              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold flex items-center gap-1 border border-slate-200 shadow-sm transition-colors"
+                              className="px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 text-[11px] font-semibold flex items-center gap-1 border border-white/10 shadow-sm transition-colors"
                               title="View full booking details"
                             >
                               <Eye className="w-3 h-3 text-sky-600" />
@@ -1151,7 +1156,7 @@ export default function AdminPortalPage() {
                               <button
                                 onClick={() => handleConfirmBooking(b.id)}
                                 disabled={actionLoading}
-                                className="px-2.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm flex items-center gap-1"
+                                className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-[10px] uppercase tracking-wider transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1"
                               >
                                 <Check className="w-3 h-3" />
                                 <span>Confirm</span>
@@ -1188,7 +1193,7 @@ export default function AdminPortalPage() {
                                   })
                                 }
                                 disabled={actionLoading}
-                                className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-[10px] font-semibold transition-all"
+                                className="px-2.5 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-[10px] font-semibold transition-all"
                                 title="Reschedule date or time"
                               >
                                 Reschedule
@@ -1207,7 +1212,7 @@ export default function AdminPortalPage() {
                                   })
                                 }
                                 disabled={actionLoading}
-                                className="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-[10px] font-semibold transition-all"
+                                className="px-2.5 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[10px] font-semibold transition-all"
                                 title="Cancel booking"
                               >
                                 Cancel
@@ -1227,13 +1232,13 @@ export default function AdminPortalPage() {
           {/* 1. DETAILED BOOKING VIEW MODAL                                            */}
           {/* ========================================================================= */}
           {selectedBooking && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-              <div className="bg-white max-w-3xl w-full rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+              <div className="bg-[#0B1220] max-w-3xl w-full rounded-3xl border border-white/10 shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95">
                 {/* Modal Header */}
-                <div className="p-6 border-b border-slate-100 bg-slate-50/80 flex items-start justify-between gap-4">
+                <div className="p-6 border-b border-white/10 bg-white/[0.02] flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-lg font-extrabold text-sky-600">
+                      <span className="font-mono text-lg font-extrabold text-cyan-400">
                         {selectedBooking.booking_reference}
                       </span>
                       <button
@@ -1247,7 +1252,7 @@ export default function AdminPortalPage() {
                         {selectedBooking.status}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-400 mt-1">
                       Submitted on {new Date(selectedBooking.created_at).toLocaleString("en-IN", {
                         day: "2-digit",
                         month: "short",
@@ -1270,21 +1275,21 @@ export default function AdminPortalPage() {
                 <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto text-xs">
                   {/* Top Summary Bar */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
+                    <div className="bg-[#060A14] border border-white/10 p-3.5 rounded-2xl">
                       <span className="text-[10px] text-slate-500 uppercase font-semibold block">Date</span>
-                      <span className="text-sm font-bold text-slate-900 block mt-0.5">{selectedBooking.service_date}</span>
+                      <span className="text-sm font-bold text-white block mt-0.5">{selectedBooking.service_date}</span>
                     </div>
-                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
+                    <div className="bg-[#060A14] border border-white/10 p-3.5 rounded-2xl">
                       <span className="text-[10px] text-slate-500 uppercase font-semibold block">Time Slot</span>
                       <span className="text-sm font-bold text-sky-600 block mt-0.5">
                         {selectedBooking.slot_start_time.slice(0, 5)} - {selectedBooking.slot_end_time.slice(0, 5)}
                       </span>
                     </div>
-                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
+                    <div className="bg-[#060A14] border border-white/10 p-3.5 rounded-2xl">
                       <span className="text-[10px] text-slate-500 uppercase font-semibold block">Total Amount</span>
                       <span className="text-sm font-bold text-emerald-600 block mt-0.5">₹{selectedBooking.final_amount}</span>
                     </div>
-                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
+                    <div className="bg-[#060A14] border border-white/10 p-3.5 rounded-2xl">
                       <span className="text-[10px] text-slate-500 uppercase font-semibold block">Payment Status</span>
                       <span className="text-sm font-bold text-amber-600 block mt-0.5">{selectedBooking.payment_status}</span>
                     </div>
@@ -1293,9 +1298,9 @@ export default function AdminPortalPage() {
                   {/* 2-Column Detail Sections */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Customer Info Card */}
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+                    <div className="bg-[#060A14] border border-white/10 p-4 rounded-2xl space-y-3">
                       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                        <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+                        <div className="flex items-center gap-2 text-white font-bold text-xs">
                           <User className="w-4 h-4 text-sky-600" />
                           <span>Customer Details</span>
                         </div>
@@ -1322,22 +1327,22 @@ export default function AdminPortalPage() {
                       <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Name:</span>
-                          <span className="font-bold text-slate-900">{selectedBooking.customer_name}</span>
+                          <span className="font-bold text-white">{selectedBooking.customer_name}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Phone:</span>
-                          <span className="font-mono text-slate-700">{selectedBooking.customer_phone}</span>
+                          <span className="font-mono text-slate-300">{selectedBooking.customer_phone}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Email:</span>
-                          <span className="text-slate-700">{selectedBooking.customer_email || "Not provided"}</span>
+                          <span className="text-slate-300">{selectedBooking.customer_email || "Not provided"}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Vehicle & Package Card */}
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs border-b border-slate-200 pb-2">
+                    <div className="bg-[#060A14] border border-white/10 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-white font-bold text-xs border-b border-white/10 pb-2">
                         <Car className="w-4 h-4 text-sky-600" />
                         <span>Vehicle &amp; Service Package</span>
                       </div>
@@ -1345,26 +1350,26 @@ export default function AdminPortalPage() {
                       <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Vehicle Type:</span>
-                          <span className="font-bold text-sky-700">{selectedBooking.vehicle_type_name}</span>
+                          <span className="font-bold text-cyan-400">{selectedBooking.vehicle_type_name}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Package:</span>
-                          <span className="font-bold text-slate-900">{selectedBooking.service_package_name}</span>
+                          <span className="font-bold text-white">{selectedBooking.service_package_name}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Estimated Duration:</span>
-                          <span className="text-slate-700">~{selectedBooking.estimated_duration_minutes} minutes</span>
+                          <span className="text-slate-300">~{selectedBooking.estimated_duration_minutes} minutes</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Service Area:</span>
-                          <span className="text-slate-700">{selectedBooking.service_area_name || selectedBooking.locality}</span>
+                          <span className="text-slate-300">{selectedBooking.service_area_name || selectedBooking.locality}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Doorstep Location Card */}
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs border-b border-slate-200 pb-2">
+                    <div className="bg-[#060A14] border border-white/10 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-white font-bold text-xs border-b border-white/10 pb-2">
                         <MapPin className="w-4 h-4 text-sky-600" />
                         <span>Doorstep Service Address</span>
                       </div>
@@ -1372,12 +1377,12 @@ export default function AdminPortalPage() {
                       <div className="space-y-1.5 text-xs">
                         <div>
                           <span className="text-slate-500 block text-[10px] uppercase font-semibold">Address Line</span>
-                          <span className="text-slate-800 block font-medium mt-0.5">{selectedBooking.address_line}</span>
+                          <span className="text-slate-200 block font-medium mt-0.5">{selectedBooking.address_line}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 pt-1">
                           <div>
                             <span className="text-slate-500 block text-[10px]">Locality / Sector</span>
-                            <span className="text-slate-800 font-semibold">{selectedBooking.locality}</span>
+                            <span className="text-slate-200 font-semibold">{selectedBooking.locality}</span>
                           </div>
                           <div>
                             <span className="text-slate-500 block text-[10px]">Pincode</span>
@@ -1400,8 +1405,8 @@ export default function AdminPortalPage() {
                     </div>
 
                     {/* Financials & Payment Management */}
-                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs border-b border-slate-200 pb-2">
+                    <div className="bg-[#060A14] border border-white/10 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-white font-bold text-xs border-b border-white/10 pb-2">
                         <CreditCard className="w-4 h-4 text-emerald-600" />
                         <span>Financial Snapshot &amp; Status</span>
                       </div>
@@ -1409,7 +1414,7 @@ export default function AdminPortalPage() {
                       <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Base Price:</span>
-                          <span className="text-slate-800">₹{selectedBooking.price_snapshot}</span>
+                          <span className="text-slate-200">₹{selectedBooking.price_snapshot}</span>
                         </div>
                         {Number(selectedBooking.tax_amount) > 0 && (
                           <div className="flex justify-between">
@@ -1418,12 +1423,12 @@ export default function AdminPortalPage() {
                           </div>
                         )}
                         <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-1.5">
-                          <span className="text-slate-900">Total Amount:</span>
+                          <span className="text-white">Total Amount:</span>
                           <span className="text-emerald-600">₹{selectedBooking.final_amount}</span>
                         </div>
                         <div className="flex justify-between items-center pt-2">
                           <span className="text-slate-500">Payment Method:</span>
-                          <span className="font-semibold text-slate-800">{selectedBooking.payment_method_display || selectedBooking.payment_method}</span>
+                          <span className="font-semibold text-slate-200">{selectedBooking.payment_method_display || selectedBooking.payment_method}</span>
                         </div>
                         <div className="flex justify-between items-center pt-1">
                           <span className="text-slate-500">Update Payment:</span>
@@ -1431,7 +1436,7 @@ export default function AdminPortalPage() {
                             value={selectedBooking.payment_status}
                             onChange={(e) => handleUpdatePaymentStatus(selectedBooking.id, e.target.value)}
                             disabled={actionLoading}
-                            className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:outline-none focus:border-sky-500"
+                            className="bg-[#060A14] border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-cyan-400"
                           >
                             <option value="PENDING">PENDING</option>
                             <option value="PAID">PAID</option>
@@ -1444,9 +1449,9 @@ export default function AdminPortalPage() {
                   </div>
 
                   {/* Technician & Notes */}
-                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+                  <div className="bg-[#060A14] border border-white/10 p-4 rounded-2xl space-y-3">
                     <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+                      <div className="flex items-center gap-2 text-white font-bold text-xs">
                         <Users className="w-4 h-4 text-sky-600" />
                         <span>Assigned Technician</span>
                       </div>
@@ -1468,7 +1473,7 @@ export default function AdminPortalPage() {
                             });
                           }
                         }}
-                        className="flex-1 w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                        className="flex-1 w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                       >
                         <option value="">Choose technician to assign...</option>
                         {staffList.map((s) => (
@@ -1489,7 +1494,7 @@ export default function AdminPortalPage() {
                 </div>
 
                 {/* Modal Action Bar */}
-                <div className="p-5 border-t border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
+                <div className="p-5 border-t border-white/10 bg-white/[0.02] flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Confirm Button */}
                     {selectedBooking.status === "PENDING" && (
@@ -1562,7 +1567,7 @@ export default function AdminPortalPage() {
 
                   <button
                     onClick={() => setSelectedBooking(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+                    className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-slate-300 text-xs font-semibold border border-white/10 transition-colors"
                   >
                     Close
                   </button>
@@ -1575,11 +1580,11 @@ export default function AdminPortalPage() {
           {/* 2. RESCHEDULE MODAL                                                       */}
           {/* ========================================================================= */}
           {rescheduleModal && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white p-6 rounded-3xl max-w-md w-full space-y-5 border border-slate-200 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div className="bg-[#0B1220] p-6 rounded-3xl max-w-md w-full space-y-5 border border-white/10 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-sky-600" />
                       <span>Reschedule Booking</span>
                     </h3>
@@ -1602,7 +1607,7 @@ export default function AdminPortalPage() {
 
                 {/* New Date Picker */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700 block">Select New Date</label>
+                  <label className="text-xs font-semibold text-slate-300 block">Select New Date</label>
                   <input
                     type="date"
                     min={new Date().toISOString().split("T")[0]}
@@ -1610,13 +1615,13 @@ export default function AdminPortalPage() {
                     onChange={(e) =>
                       setRescheduleModal({ ...rescheduleModal, newDate: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white"
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400"
                   />
                 </div>
 
                 {/* Time Slot Picker */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700 block">Select New Time Slot</label>
+                  <label className="text-xs font-semibold text-slate-300 block">Select New Time Slot</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { time: "08:00", label: "08:00 AM" },
@@ -1638,8 +1643,8 @@ export default function AdminPortalPage() {
                           }
                           className={`p-2 rounded-xl text-xs font-semibold border transition-all text-center ${
                             isSelected
-                              ? "bg-sky-600 text-white border-sky-600 shadow-md shadow-sky-600/30"
-                              : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100"
+                              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-400 shadow-md shadow-cyan-500/20 font-bold"
+                              : "bg-white/[0.03] text-slate-300 border-white/10 hover:border-white/20 hover:bg-white/[0.06]"
                           }`}
                         >
                           {slot.label}
@@ -1658,7 +1663,7 @@ export default function AdminPortalPage() {
                     onChange={(e) =>
                       setRescheduleModal({ ...rescheduleModal, force: e.target.checked })
                     }
-                    className="rounded bg-white border-slate-300 text-sky-600 focus:ring-0"
+                    className="rounded bg-[#060A14] border-white/20 text-cyan-500 focus:ring-0"
                   />
                   <label htmlFor="forceOverride" className="text-[11px] text-slate-600 cursor-pointer">
                     Force override capacity limit if slot is fully booked
@@ -1670,7 +1675,7 @@ export default function AdminPortalPage() {
                   <button
                     onClick={() => setRescheduleModal(null)}
                     disabled={actionLoading}
-                    className="px-3.5 py-2 rounded-xl text-xs text-slate-600 hover:text-slate-900"
+                    className="px-3.5 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-colors"
                   >
                     Cancel
                   </button>
@@ -1691,11 +1696,11 @@ export default function AdminPortalPage() {
           {/* 3. MARK SERVICE COMPLETED MODAL                                           */}
           {/* ========================================================================= */}
           {completeModal && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white p-6 rounded-3xl max-w-md w-full space-y-5 border border-slate-200 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div className="bg-[#0B1220] p-6 rounded-3xl max-w-md w-full space-y-5 border border-white/10 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>Mark Service Completed</span>
                     </h3>
@@ -1711,35 +1716,35 @@ export default function AdminPortalPage() {
                   </button>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1 text-xs">
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1 text-xs">
                   <div className="flex justify-between">
                     <span className="text-slate-600">Package:</span>
-                    <span className="font-bold text-slate-900">{completeModal.booking.service_package_name}</span>
+                    <span className="font-bold text-white">{completeModal.booking.service_package_name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Vehicle:</span>
                     <span className="font-semibold text-sky-700">{completeModal.booking.vehicle_type_name}</span>
                   </div>
                   <div className="flex justify-between text-sm font-bold pt-1 border-t border-emerald-200/60">
-                    <span className="text-slate-900">Amount:</span>
+                    <span className="text-white">Amount:</span>
                     <span className="text-emerald-600">₹{completeModal.booking.final_amount}</span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700 block">Completion Notes</label>
+                  <label className="text-xs font-semibold text-slate-300 block">Completion Notes</label>
                   <textarea
                     rows={2}
                     value={completeModal.notes}
                     onChange={(e) =>
                       setCompleteModal({ ...completeModal, notes: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"
                     placeholder="Notes regarding job quality, customer feedback, etc."
                   />
                 </div>
 
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-[#060A14] border border-white/10">
                   <input
                     type="checkbox"
                     id="markPaidCheckbox"
@@ -1747,7 +1752,7 @@ export default function AdminPortalPage() {
                     onChange={(e) =>
                       setCompleteModal({ ...completeModal, markPaid: e.target.checked })
                     }
-                    className="rounded bg-white border-slate-300 text-emerald-600 focus:ring-0"
+                    className="rounded bg-[#060A14] border-white/20 text-emerald-500 focus:ring-0"
                   />
                   <label htmlFor="markPaidCheckbox" className="text-xs text-slate-700 font-medium cursor-pointer">
                     Mark Payment Status as <span className="font-bold text-emerald-600">PAID</span> (Cash / UPI collected)
@@ -1758,7 +1763,7 @@ export default function AdminPortalPage() {
                   <button
                     onClick={() => setCompleteModal(null)}
                     disabled={actionLoading}
-                    className="px-3.5 py-2 rounded-xl text-xs text-slate-600 hover:text-slate-900"
+                    className="px-3.5 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-colors"
                   >
                     Cancel
                   </button>
@@ -1779,11 +1784,11 @@ export default function AdminPortalPage() {
           {/* 4. CANCEL BOOKING MODAL                                                   */}
           {/* ========================================================================= */}
           {cancelModal && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white p-6 rounded-3xl max-w-md w-full space-y-5 border border-slate-200 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div className="bg-[#0B1220] p-6 rounded-3xl max-w-md w-full space-y-5 border border-white/10 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <XCircle className="w-4 h-4 text-red-600" />
                       <span>Cancel Appointment</span>
                     </h3>
@@ -1804,14 +1809,14 @@ export default function AdminPortalPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700 block">Select Reason</label>
+                  <label className="text-xs font-semibold text-slate-300 block">Select Reason</label>
                   <select
                     onChange={(e) => {
                       if (e.target.value !== "Custom") {
                         setCancelModal({ ...cancelModal, reason: e.target.value });
                       }
                     }}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white mb-2"
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-400 mb-2"
                   >
                     <option value="Customer requested cancellation">Customer requested cancellation</option>
                     <option value="Customer unreachable / Phone switched off">Customer unreachable / Phone switched off</option>
@@ -1828,7 +1833,7 @@ export default function AdminPortalPage() {
                     onChange={(e) =>
                       setCancelModal({ ...cancelModal, reason: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500 focus:bg-white"
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-400"
                   />
                 </div>
 
@@ -1836,7 +1841,7 @@ export default function AdminPortalPage() {
                   <button
                     onClick={() => setCancelModal(null)}
                     disabled={actionLoading}
-                    className="px-3.5 py-2 rounded-xl text-xs text-slate-600 hover:text-slate-900"
+                    className="px-3.5 py-2 rounded-xl text-xs text-slate-400 hover:text-white transition-colors"
                   >
                     Back
                   </button>
@@ -1857,11 +1862,11 @@ export default function AdminPortalPage() {
           {/* 5. ASSIGN TECHNICIAN MODAL                                                */}
           {/* ========================================================================= */}
           {assignModal && (
-            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white p-6 rounded-3xl max-w-sm w-full space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div className="bg-[#0B1220] p-6 rounded-3xl max-w-sm w-full space-y-4 border border-white/10 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <Users className="w-4 h-4 text-sky-600" />
                       <span>Assign Technician</span>
                     </h3>
@@ -1875,7 +1880,7 @@ export default function AdminPortalPage() {
                   </button>
                 </div>
 
-                <p className="text-xs text-slate-600">
+                <p className="text-xs text-slate-400">
                   Select a technician for this doorstep wash. They will receive automated assignment alert.
                 </p>
 
@@ -1887,7 +1892,7 @@ export default function AdminPortalPage() {
                       staffId: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400"
                 >
                   {staffList.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -1900,7 +1905,7 @@ export default function AdminPortalPage() {
                   <button
                     onClick={() => setAssignModal(null)}
                     disabled={actionLoading}
-                    className="px-3 py-1.5 rounded-lg text-xs text-slate-600 hover:text-slate-900"
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white transition-colors"
                   >
                     Close
                   </button>
@@ -1932,7 +1937,7 @@ export default function AdminPortalPage() {
                   value={leadSearch}
                   onChange={(e) => setLeadSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && fetchLeads()}
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white shadow-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
                 />
               </div>
 
@@ -1942,7 +1947,7 @@ export default function AdminPortalPage() {
                   setLeadFilterStatus(e.target.value);
                   setTimeout(fetchLeads, 50);
                 }}
-                className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
+                className="bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white shadow-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
               >
                 <option value="">All Lead Statuses</option>
                 <option value="NEW">New</option>
@@ -1955,7 +1960,7 @@ export default function AdminPortalPage() {
 
               <button
                 onClick={fetchLeads}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors"
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md shadow-cyan-500/20 transition-all"
               >
                 Filter
               </button>
@@ -1965,17 +1970,17 @@ export default function AdminPortalPage() {
               href={`${api.getApiBaseUrl()}/api/admin/leads/export-csv/`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm"
+              className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2 rounded-xl hover:bg-emerald-500/20 transition-colors shadow-sm"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Leads CSV</span>
             </a>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/90 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-200">
+                <thead className="bg-[#080D1A] text-slate-400 uppercase tracking-wider text-[10px] border-b border-white/10">
                   <tr>
                     <th className="p-4">Lead ID</th>
                     <th className="p-4">Customer</th>
@@ -1986,7 +1991,7 @@ export default function AdminPortalPage() {
                     <th className="p-4 text-right">Update Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-800">
+                <tbody className="divide-y divide-white/5 text-slate-300">
                   {loadingLeads ? (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-slate-500">
@@ -2012,11 +2017,11 @@ export default function AdminPortalPage() {
                           )}
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold block text-slate-900">{lead.customer_name}</span>
+                          <span className="font-semibold block text-white">{lead.customer_name}</span>
                           <span className="text-slate-500">{lead.mobile_number}</span>
                         </td>
                         <td className="p-4">
-                          <span className="block font-medium text-slate-900">
+                          <span className="block font-medium text-white">
                             {lead.service_package_name || "General Enquiry"}
                           </span>
                           <span className="text-slate-500 text-[11px]">
@@ -2036,7 +2041,7 @@ export default function AdminPortalPage() {
                           <select
                             value={lead.status}
                             onChange={(e) => handleUpdateLead(lead.id, e.target.value)}
-                            className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-[11px] text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none"
+                            className="bg-[#060A14] border border-white/10 rounded-lg px-2 py-1 text-[11px] text-white shadow-sm focus:border-cyan-400 focus:outline-none"
                           >
                             <option value="NEW">New</option>
                             <option value="CONTACTED">Contacted</option>
@@ -2061,7 +2066,7 @@ export default function AdminPortalPage() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Technicians &amp; Van Roster</h2>
+              <h2 className="text-xl font-bold text-white">Technicians &amp; Van Roster</h2>
               <p className="text-xs text-slate-500">
                 Staff capacity controls max concurrent booking slots in the scheduling engine.
               </p>
@@ -2070,17 +2075,17 @@ export default function AdminPortalPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {staffList.map((s) => (
-              <div key={s.id} className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+              <div key={s.id} className="bg-[#0B1220]/90 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl space-y-4 hover:border-cyan-500/30 transition-all">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900">{s.name}</h3>
+                    <h3 className="text-base font-bold text-white">{s.name}</h3>
                     <p className="text-xs text-slate-500">{s.phone}</p>
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                       s.is_active
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : "bg-red-50 text-red-700 border border-red-200"
+                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                        : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
                     }`}
                   >
                     {s.is_active ? "Active" : "Inactive"}
@@ -2090,11 +2095,11 @@ export default function AdminPortalPage() {
                 <div className="space-y-1.5 text-xs text-slate-700 pt-2 border-t border-slate-100">
                   <div className="flex justify-between">
                     <span className="text-slate-500">Daily Job Limit:</span>
-                    <span className="font-semibold text-slate-900">{s.max_daily_jobs} Cars/Day</span>
+                    <span className="font-semibold text-white">{s.max_daily_jobs} Cars/Day</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500">Assigned Today:</span>
-                    <span className="font-semibold text-sky-600">{s.active_jobs_count} Jobs</span>
+                    <span className="font-semibold text-cyan-400">{s.active_jobs_count} Jobs</span>
                   </div>
                 </div>
 
@@ -2107,7 +2112,7 @@ export default function AdminPortalPage() {
                       s.assigned_areas_details.map((area) => (
                         <span
                           key={area.id}
-                          className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] text-slate-700 font-medium"
+                          className="px-2 py-0.5 rounded bg-white/[0.05] border border-white/10 text-[10px] text-slate-300 font-medium"
                         >
                           {area.name}
                         </span>
@@ -2125,9 +2130,9 @@ export default function AdminPortalPage() {
 
       {/* 5. CAPACITY & SETTINGS TAB */}
       {activeTab === "settings" && configData && (
-        <div className="max-w-2xl bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
+        <div className="max-w-2xl bg-[#0B1220]/90 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-xl space-y-6">
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-slate-900">Scheduling &amp; Business Rules</h2>
+            <h2 className="text-xl font-bold text-white">Scheduling &amp; Business Rules</h2>
             <p className="text-xs text-slate-500">
               Changes update the live scheduling engine immediately.
             </p>
@@ -2143,7 +2148,7 @@ export default function AdminPortalPage() {
           <form onSubmit={handleSaveConfig} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
+                <label className="text-xs font-semibold text-slate-300 block">
                   Opening Time
                 </label>
                 <input
@@ -2152,12 +2157,12 @@ export default function AdminPortalPage() {
                   onChange={(e) =>
                     setConfigData({ ...configData, day_open_time: e.target.value })
                   }
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
+                <label className="text-xs font-semibold text-slate-300 block">
                   Closing Time
                 </label>
                 <input
@@ -2166,12 +2171,12 @@ export default function AdminPortalPage() {
                   onChange={(e) =>
                     setConfigData({ ...configData, day_close_time: e.target.value })
                   }
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
+                <label className="text-xs font-semibold text-slate-300 block">
                   Slot Interval (Minutes)
                 </label>
                 <input
@@ -2183,12 +2188,12 @@ export default function AdminPortalPage() {
                       slot_interval_minutes: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
+                <label className="text-xs font-semibold text-slate-300 block">
                   Buffer &amp; Travel Time (Minutes)
                 </label>
                 <input
@@ -2200,12 +2205,12 @@ export default function AdminPortalPage() {
                       default_buffer_minutes: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
+                <label className="text-xs font-semibold text-slate-300 block">
                   Min Advance Notice (Hours)
                 </label>
                 <input
@@ -2217,12 +2222,12 @@ export default function AdminPortalPage() {
                       min_advance_hours: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
+                <label className="text-xs font-semibold text-slate-300 block">
                   Max Booking Advance (Days)
                 </label>
                 <input
@@ -2234,7 +2239,7 @@ export default function AdminPortalPage() {
                       max_advance_days: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
                 />
               </div>
             </div>
@@ -2252,7 +2257,7 @@ export default function AdminPortalPage() {
                   }
                   className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                 />
-                <span className="text-xs text-slate-700 font-semibold">
+                <span className="text-xs text-slate-300 font-semibold">
                   Auto-confirm new customer booking submissions immediately
                 </span>
               </label>
@@ -2269,7 +2274,7 @@ export default function AdminPortalPage() {
                   }
                   className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                 />
-                <span className="text-xs text-slate-700 font-semibold">
+                <span className="text-xs text-slate-300 font-semibold">
                   Allow same-day booking requests (subject to advance notice window)
                 </span>
               </label>
