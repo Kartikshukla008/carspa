@@ -444,9 +444,8 @@ function BookingFlow() {
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                       sizes="(max-width: 640px) 100vw, 150px"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
                     {isSelected && (
-                      <span className="absolute top-2 left-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md">
+                      <span className="absolute top-2 left-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md z-10">
                         Selected
                       </span>
                     )}
@@ -501,7 +500,7 @@ function BookingFlow() {
                     className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
                     sizes="(max-width: 1024px) 100vw, 50vw"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#060B13] via-[#060B13]/30 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#060B13]/90 via-[#060B13]/40 to-transparent pointer-events-none" />
 
                   <div className="absolute top-3 left-3 flex items-center gap-2">
                     <span className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-lg">
