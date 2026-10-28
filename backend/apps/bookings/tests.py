@@ -203,6 +203,56 @@ class BookingPlatformTests(TestCase):
         booking.refresh_from_db()
         self.assertEqual(booking.status, "CANCELLED")
 
+        # Test complete workflow on a fresh confirmed booking
+        booking2 = Booking.objects.create(
+            vehicle_type=self.vehicle,
+            service_package=self.package,
+            customer=cust,
+            service_date=datetime.date.today() + datetime.timedelta(days=2),
+            slot_start_time=datetime.time(11, 0),
+            slot_end_time=datetime.time(12, 0),
+            status="CONFIRMED",
+            customer_name="Test Customer 2",
+            customer_phone="9876543211",
+            address_line="Sector 17",
+            locality="Chandigarh",
+            price_snapshot=Decimal("899.00"),
+            final_amount=Decimal("899.00"),
+            payment_status="PENDING",
+        )
+
+        # 1. Complete booking action
+        res_complete = self.client.post(f"/api/admin/bookings/{booking2.id}/complete/", {"mark_paid": True, "notes": "Car cleaned spotless."})
+        self.assertEqual(res_complete.status_code, 200)
+        booking2.refresh_from_db()
+        self.assertEqual(booking2.status, "COMPLETED")
+        self.assertEqual(booking2.payment_status, "PAID")
+
+        # 2. Update payment status action
+        res_payment = self.client.post(f"/api/admin/bookings/{booking2.id}/update-payment/", {"payment_status": "REFUNDED"})
+        self.assertEqual(res_payment.status_code, 200)
+        booking2.refresh_from_db()
+        self.assertEqual(booking2.payment_status, "REFUNDED")
+
+        # 3. Reschedule booking action
+        new_date_str = (datetime.date.today() + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+        res_reschedule = self.client.post(
+            f"/api/admin/bookings/{booking2.id}/reschedule/",
+            {"service_date": new_date_str, "slot_time": "14:00", "force": True}
+        )
+        self.assertEqual(res_reschedule.status_code, 200)
+        booking2.refresh_from_db()
+        self.assertEqual(booking2.service_date.strftime("%Y-%m-%d"), new_date_str)
+
+        # 4. Filter query params testing
+        res_filter_status = self.client.get("/api/admin/bookings/?status=COMPLETED")
+        self.assertEqual(res_filter_status.status_code, 200)
+        self.assertTrue(len(res_filter_status.data["results"]) >= 1)
+
+        res_filter_search = self.client.get("/api/admin/bookings/?search=Sector 17")
+        self.assertEqual(res_filter_search.status_code, 200)
+        self.assertTrue(len(res_filter_search.data["results"]) >= 1)
+
         # Dashboard metrics endpoint check
         dash_res = self.client.get("/api/admin/dashboard/")
         self.assertEqual(dash_res.status_code, 200)

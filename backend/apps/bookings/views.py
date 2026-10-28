@@ -65,14 +65,23 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         status_param = self.request.query_params.get("status")
+        payment_status_param = self.request.query_params.get("payment_status")
         date_param = self.request.query_params.get("date")
+        package_id = self.request.query_params.get("package")
+        vehicle_type_id = self.request.query_params.get("vehicle_type")
         staff_id = self.request.query_params.get("staff_id")
         search = self.request.query_params.get("search")
 
         if status_param:
             qs = qs.filter(status=status_param)
+        if payment_status_param:
+            qs = qs.filter(payment_status=payment_status_param)
         if date_param:
             qs = qs.filter(service_date=date_param)
+        if package_id:
+            qs = qs.filter(service_package_id=package_id)
+        if vehicle_type_id:
+            qs = qs.filter(vehicle_type_id=vehicle_type_id)
         if staff_id:
             qs = qs.filter(assigned_staff_id=staff_id)
         if search:
@@ -80,7 +89,11 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
                 models.Q(booking_reference__icontains=search) |
                 models.Q(customer_name__icontains=search) |
                 models.Q(customer_phone__icontains=search) |
-                models.Q(locality__icontains=search)
+                models.Q(customer_email__icontains=search) |
+                models.Q(locality__icontains=search) |
+                models.Q(address_line__icontains=search) |
+                models.Q(service_package__name__icontains=search) |
+                models.Q(vehicle_type__name__icontains=search)
             )
         return qs
 
@@ -154,7 +167,7 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
         try:
             new_date = datetime.datetime.strptime(new_date_str, "%Y-%m-%d").date()
         except ValueError:
-            return Response({"error": "Invalid date format."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid date format. Expected YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
 
         engine = AvailabilityEngine()
         is_valid, err_msg, slot_start, slot_end = engine.validate_and_reserve_slot(
@@ -165,8 +178,15 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
             service_area=booking.service_area
         )
 
+        force = request.data.get("force", False)
         if not is_valid:
-            return Response({"error": err_msg}, status=status.HTTP_400_BAD_REQUEST)
+            if not force:
+                return Response({"error": err_msg}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                slot_start = datetime.datetime.strptime(new_slot_str, "%H:%M").time()
+            except ValueError:
+                return Response({"error": "Invalid slot_time format. Use HH:MM."}, status=status.HTTP_400_BAD_REQUEST)
+            slot_end = (datetime.datetime.combine(new_date, slot_start) + datetime.timedelta(minutes=booking.estimated_duration_minutes)).time()
 
         old_date = booking.service_date
         old_time = booking.slot_start_time
@@ -181,10 +201,67 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
             from_status=booking.status,
             to_status=booking.status,
             changed_by=request.user,
-            notes=f"Rescheduled from {old_date} {old_time} to {new_date} {slot_start}."
+            notes=f"Rescheduled from {old_date} {old_time.strftime('%I:%M %p')} to {new_date} {slot_start.strftime('%I:%M %p')}."
         )
 
+        try:
+            NotificationService.send_booking_rescheduled(booking, old_date, old_time.strftime('%I:%M %p'))
+        except Exception:
+            pass
+
         return Response(BookingDetailSerializer(booking).data)
+
+    @action(detail=True, methods=["post"], url_path="complete")
+    def complete_booking(self, request, pk=None):
+        booking = self.get_object()
+        if booking.status == "CANCELLED":
+            return Response(
+                {"error": "Cannot complete a cancelled booking."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        old_status = booking.status
+        booking.status = "COMPLETED"
+        mark_paid = request.data.get("mark_paid", True)
+        if mark_paid and booking.payment_status != "PAID":
+            booking.payment_status = "PAID"
+        booking.save(update_fields=["status", "payment_status", "updated_at"])
+
+        BookingStatusHistory.objects.create(
+            booking=booking,
+            from_status=old_status,
+            to_status="COMPLETED",
+            changed_by=request.user,
+            notes=request.data.get("notes", "Marked as completed by administrator.")
+        )
+
+        try:
+            NotificationService.send_booking_completed(booking)
+        except Exception:
+            pass
+
+        return Response(BookingDetailSerializer(booking).data)
+
+    @action(detail=True, methods=["post"], url_path="update-payment")
+    def update_payment(self, request, pk=None):
+        booking = self.get_object()
+        new_status = request.data.get("payment_status")
+        if new_status in ["PENDING", "PAID", "FAILED", "REFUNDED"]:
+            old_p_status = booking.payment_status
+            booking.payment_status = new_status
+            booking.save(update_fields=["payment_status", "updated_at"])
+            BookingStatusHistory.objects.create(
+                booking=booking,
+                from_status=booking.status,
+                to_status=booking.status,
+                changed_by=request.user,
+                notes=f"Payment status updated from {old_p_status} to {new_status}."
+            )
+            return Response(BookingDetailSerializer(booking).data)
+        return Response(
+            {"error": "Invalid payment status. Allowed: PENDING, PAID, FAILED, REFUNDED"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(detail=True, methods=["post"], url_path="cancel")
     def cancel_booking(self, request, pk=None):

@@ -110,10 +110,21 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ staff_id: staffId, notes }),
     }),
-  rescheduleBooking: (id: number, date: string, slotTime: string) =>
+  getApiBaseUrl: () => API_BASE_URL,
+  rescheduleBooking: (id: number, date: string, slotTime: string, force: boolean = false) =>
     request<import("../types").BookingResponse>(`/api/admin/bookings/${id}/reschedule/`, {
       method: "POST",
-      body: JSON.stringify({ service_date: date, slot_time: slotTime }),
+      body: JSON.stringify({ service_date: date, slot_time: slotTime, force }),
+    }),
+  completeBooking: (id: number, notes?: string, markPaid: boolean = true) =>
+    request<import("../types").BookingResponse>(`/api/admin/bookings/${id}/complete/`, {
+      method: "POST",
+      body: JSON.stringify({ notes, mark_paid: markPaid }),
+    }),
+  updatePaymentStatus: (id: number, paymentStatus: string) =>
+    request<import("../types").BookingResponse>(`/api/admin/bookings/${id}/update-payment/`, {
+      method: "POST",
+      body: JSON.stringify({ payment_status: paymentStatus }),
     }),
   cancelBooking: (id: number, reason: string) =>
     request<import("../types").BookingResponse>(`/api/admin/bookings/${id}/cancel/`, {

@@ -42,6 +42,45 @@ class NotificationService:
             )
 
     @classmethod
+    def send_booking_completed(cls, booking):
+        message = (
+            f"Dear {booking.customer_name}, your CARSPA doorstep detailing for {booking.booking_reference} "
+            f"has been successfully COMPLETED! Thank you for choosing CARSPA. "
+            f"Package: {booking.service_package.name}. Total: ₹{booking.final_amount}."
+        )
+        cls._dispatch(
+            booking=booking,
+            recipient=booking.customer_phone,
+            channel="WHATSAPP",
+            event_type="BOOKING_COMPLETED",
+            message=message
+        )
+        if booking.customer_email:
+            cls._dispatch(
+                booking=booking,
+                recipient=booking.customer_email,
+                channel="EMAIL",
+                event_type="BOOKING_COMPLETED",
+                message=message,
+                subject=f"Service Completed: {booking.booking_reference}"
+            )
+
+    @classmethod
+    def send_booking_rescheduled(cls, booking, old_date, old_time):
+        message = (
+            f"Dear {booking.customer_name}, your CARSPA appointment {booking.booking_reference} "
+            f"has been RESCHEDULED to {booking.service_date.strftime('%A, %d %b %Y')} at {booking.slot_start_time.strftime('%I:%M %p')}. "
+            f"(Previous: {old_date} {old_time})."
+        )
+        cls._dispatch(
+            booking=booking,
+            recipient=booking.customer_phone,
+            channel="WHATSAPP",
+            event_type="BOOKING_RESCHEDULED",
+            message=message
+        )
+
+    @classmethod
     def send_booking_cancelled(cls, booking, reason=""):
         message = (
             f"Your doorstep car wash booking {booking.booking_reference} on {booking.service_date} "
