@@ -365,141 +365,90 @@ export default function HomePage() {
 
         {/* Content Layer */}
         <div className="container-premium relative z-20 pt-28 pb-16 lg:py-32 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left: Headlines & 4 Features */}
-            <div className="lg:col-span-7 space-y-7">
-              {/* Eyebrow */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="flex items-center gap-2"
-              >
-                <span className="text-xs font-black tracking-[0.22em] uppercase text-sky-700 bg-sky-50 border border-sky-200 px-3.5 py-1.5 rounded-full shadow-sm">
-                  PREMIUM CAR CARE
-                </span>
-                <span className="text-xs text-slate-500 hidden sm:inline font-medium">• Chandigarh • Mohali • Panchkula</span>
-              </motion.div>
-
-              {/* Main Headline */}
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-[1.05]"
-              >
-                AT YOUR{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600">
-                  DOORSTEP
-                </span>
-              </motion.h1>
-
-              {/* Subtitle */}
-              <motion.p
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="text-base sm:text-lg text-slate-600 max-w-lg leading-relaxed font-medium"
-              >
-                Professional car washing and detailing at your home or office. Purified soft water, zero scratches, transparent pricing.
-              </motion.p>
-
-              {/* 4 Feature Cards */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2"
-              >
-                {[
-                  { icon: Home, title: "Convenient Home Service" },
-                  { icon: Sparkles, title: "Professional Cleaning" },
-                  { icon: Tag, title: "Transparent Pricing" },
-                  { icon: Calendar, title: "Flexible Scheduling" },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex flex-col items-center sm:items-start text-center sm:text-left gap-2 p-3 rounded-2xl bg-white/90 border border-slate-200 shadow-sm backdrop-blur-sm hover:shadow-md transition-all">
-                    <div className="w-9 h-9 rounded-full bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center shrink-0">
-                      <item.icon className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-slate-800 leading-snug">
-                      {item.title}
-                    </span>
-                  </div>
-                ))}
-              </motion.div>
-
-              {/* CTA Buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-3"
-              >
-                <Link
-                  href="/book"
-                  className="btn-primary text-sm px-8 py-4 rounded-xl shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 font-bold"
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>Book a Car Wash →</span>
-                </Link>
-                <a
-                  href="https://wa.me/917087811881?text=Hi%20CARSPA%2C%20I%20would%20like%20to%20enquire%20about%20a%20doorstep%20car%20wash."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-secondary text-sm px-6 py-4 rounded-xl text-emerald-700 hover:text-emerald-800 border-emerald-200 hover:border-emerald-300 bg-emerald-50 hover:bg-emerald-100/80 flex items-center justify-center gap-2 font-bold shadow-sm"
-                >
-                  <MessageSquare className="w-4 h-4 text-emerald-600" />
-                  <span>Chat on WhatsApp</span>
-                </a>
-              </motion.div>
-            </div>
-
-            {/* Right: Telemetry Card */}
+          <div className="max-w-2xl lg:max-w-3xl space-y-7">
+            {/* Eyebrow */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.4 }}
-              className="lg:col-span-5 hidden lg:flex flex-col items-end"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="flex items-center gap-2"
             >
-              <div className="glass-card p-6 rounded-3xl border border-slate-200/90 max-w-sm space-y-4 shadow-xl bg-white/95 backdrop-blur-xl">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
-                      CARSPA Mobile Van
-                    </span>
+              <span className="text-xs font-black tracking-[0.22em] uppercase text-sky-700 bg-sky-50 border border-sky-200 px-3.5 py-1.5 rounded-full shadow-sm">
+                PREMIUM CAR CARE
+              </span>
+              <span className="text-xs text-slate-500 hidden sm:inline font-medium">• Chandigarh • Mohali • Panchkula</span>
+            </motion.div>
+
+            {/* Main Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-[1.05]"
+            >
+              AT YOUR{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600">
+                DOORSTEP
+              </span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-base sm:text-lg text-slate-600 max-w-lg leading-relaxed font-medium"
+            >
+              Professional car washing and detailing at your home or office. Purified soft water, zero scratches, transparent pricing.
+            </motion.p>
+
+            {/* 4 Feature Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2"
+            >
+              {[
+                { icon: Home, title: "Convenient Home Service" },
+                { icon: Sparkles, title: "Professional Cleaning" },
+                { icon: Tag, title: "Transparent Pricing" },
+                { icon: Calendar, title: "Flexible Scheduling" },
+              ].map((item, idx) => (
+                <div key={idx} className="flex flex-col items-center sm:items-start text-center sm:text-left gap-2 p-3 rounded-2xl bg-white/90 border border-slate-200 shadow-sm backdrop-blur-sm hover:shadow-md transition-all">
+                  <div className="w-9 h-9 rounded-full bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center shrink-0">
+                    <item.icon className="w-4 h-4" />
                   </div>
-                  <span className="text-[10px] text-sky-700 font-mono font-bold bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-                    Tricity Fleet Active
+                  <span className="text-xs font-bold text-slate-800 leading-snug">
+                    {item.title}
                   </span>
                 </div>
+              ))}
+            </motion.div>
 
-                <div className="space-y-3 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Coverage</span>
-                    <span className="font-bold text-slate-800">Chandigarh • Mohali • Panchkula</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Water Technology</span>
-                    <span className="font-bold text-sky-700">RO Soft Water (TDS &lt; 50)</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Equipment</span>
-                    <span className="font-bold text-slate-800">135 Bar German Foam Cannon</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Payment</span>
-                    <span className="font-bold text-emerald-600">Pay after inspection</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Direct Helpline:</span>
-                  <a href="tel:+917087811881" className="font-bold text-slate-900 hover:text-sky-600">
-                    +91 70878 11881
-                  </a>
-                </div>
-              </div>
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-3"
+            >
+              <Link
+                href="/book"
+                className="btn-primary text-sm px-8 py-4 rounded-xl shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 font-bold"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Book a Car Wash →</span>
+              </Link>
+              <a
+                href="https://wa.me/917087811881?text=Hi%20CARSPA%2C%20I%20would%20like%20to%20enquire%20about%20a%20doorstep%20car%20wash."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary text-sm px-6 py-4 rounded-xl text-emerald-700 hover:text-emerald-800 border-emerald-200 hover:border-emerald-300 bg-emerald-50 hover:bg-emerald-100/80 flex items-center justify-center gap-2 font-bold shadow-sm"
+              >
+                <MessageSquare className="w-4 h-4 text-emerald-600" />
+                <span>Chat on WhatsApp</span>
+              </a>
             </motion.div>
           </div>
         </div>
