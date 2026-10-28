@@ -212,23 +212,29 @@ export default function ServicesPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-black text-white">{pkg.name}</h3>
-                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                    <div className="h-14 flex items-center">
+                      <h3 className="text-lg sm:text-xl font-black text-white leading-snug line-clamp-2">
+                        {pkg.name}
+                      </h3>
+                    </div>
+                    <p className="h-10 text-xs text-slate-400 line-clamp-2 leading-relaxed mt-1">
                       {pkg.description}
                     </p>
                   </div>
 
                   {/* Price */}
-                  <div className="flex items-baseline gap-2 pt-2 pb-4 border-b border-white/10">
-                    <span className="text-3xl font-black text-cyan-400 tracking-tight">
-                      ₹{priceObj ? priceObj.effective_price : "—"}
-                    </span>
-                    {priceObj && priceObj.discounted_price && priceObj.discounted_price !== priceObj.base_price && (
-                      <span className="text-sm text-slate-500 line-through">
-                        ₹{priceObj.base_price}
+                  <div className="flex items-baseline justify-between gap-2 pt-2 pb-4 border-b border-white/10">
+                    <div className="flex items-baseline gap-1.5 shrink-0">
+                      <span className="text-2xl sm:text-3xl font-black text-cyan-400 tracking-tight">
+                        ₹{priceObj ? Math.round(Number(priceObj.effective_price)).toLocaleString("en-IN") : "—"}
                       </span>
-                    )}
-                    <span className="text-[11px] text-slate-300 font-semibold ml-auto flex items-center gap-1 bg-white/[0.04] border border-white/10 px-2.5 py-1 rounded-lg">
+                      {priceObj && priceObj.discounted_price && priceObj.discounted_price !== priceObj.base_price && (
+                        <span className="text-xs text-slate-500 line-through">
+                          ₹{Math.round(Number(priceObj.base_price)).toLocaleString("en-IN")}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-300 font-semibold shrink-0 flex items-center gap-1 bg-white/[0.04] border border-white/10 px-2 py-1 rounded-lg">
                       <Clock className="w-3.5 h-3.5 text-cyan-400" />
                       {pkg.estimated_duration_minutes} mins
                     </span>
@@ -250,17 +256,13 @@ export default function ServicesPage() {
                   </div>
                 </div>
 
-                <div className="pt-6">
+                <div className="pt-6 mt-auto">
                   <Link
                     href={`/book?package=${pkg.id}&vehicle=${selectedVehicle || ""}`}
-                    className={`w-full py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 ${
-                      isPopular
-                        ? "btn-primary shadow-xl shadow-cyan-500/25 scale-[1.02]"
-                        : "btn-secondary hover:border-cyan-400/60 hover:text-cyan-300"
-                    }`}
+                    className="w-full py-3.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/35 hover:scale-[1.01]"
                   >
                     <span>Book for {selectedVehicleObj ? selectedVehicleObj.name : "This Car"}</span>
-                    <ArrowRight className="w-4 h-4 text-cyan-400" />
+                    <ArrowRight className="w-4 h-4 text-white" />
                   </Link>
                 </div>
               </div>

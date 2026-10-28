@@ -36,6 +36,7 @@
 
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 6.5rem;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;

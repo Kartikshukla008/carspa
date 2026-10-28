@@ -331,7 +331,7 @@ export default function HomePage() {
   const selectedVehicleObj = vehicles.find((v) => v.id === selectedVehicle);
 
   return (
-    <div className="space-y-24 lg:space-y-32 pb-24 bg-[#060B13] text-slate-100">
+    <div className="space-y-16 lg:space-y-20 pb-20 bg-[#060B13] text-slate-100">
       {/* ═══════════════════════════════════════════════════
           1. CINEMATIC HERO SECTION (Luxury Automotive)
       ═══════════════════════════════════════════════════ */}
@@ -508,7 +508,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════
           3. OUR SERVICES (Editorial Luxury Cards)
       ═══════════════════════════════════════════════════ */}
-      <section id="services" className="container-premium">
+      <section id="services" className="container-premium scroll-mt-28 lg:scroll-mt-36">
         <FadeUp>
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
@@ -576,28 +576,31 @@ export default function HomePage() {
         <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {packages.slice(0, 4).map((pkg) => {
             const price = getPackagePrice(pkg);
+            const formattedPrice = price
+              ? Math.round(Number(price.effective)).toLocaleString("en-IN")
+              : "—";
             const imageSrc = PACKAGE_IMAGES[pkg.slug] || "/service_basic_wash.jpg?v=2";
             const isPopular = pkg.is_popular || pkg.name.toLowerCase().includes("premium");
 
             return (
               <StaggerItem key={pkg.id}>
                 <div
-                  className={`glass-card glass-card-hover rounded-3xl p-5 flex flex-col justify-between relative h-full transition-all duration-300 ${
+                  className={`glass-card rounded-3xl p-5 flex flex-col justify-between relative h-full transition-all duration-300 ${
                     isPopular
-                      ? "border-2 border-cyan-400/50 shadow-2xl shadow-cyan-500/15 ring-2 ring-cyan-400/20 bg-[#0E172B]/90"
-                      : "border border-white/10 bg-[#0B1220]/80 hover:border-cyan-400/30"
+                      ? "border-2 border-cyan-400/60 shadow-2xl shadow-cyan-500/15 ring-2 ring-cyan-400/20 bg-[#0E172B]"
+                      : "border border-white/10 bg-[#0B1220]/80 hover:border-cyan-400/40 hover:bg-[#0E172B]"
                   }`}
                 >
                   {/* MOST POPULAR badge */}
                   {isPopular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-lg shadow-cyan-500/30 z-10 border border-cyan-300/30">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-lg shadow-cyan-500/30 z-10 border border-cyan-300/30 whitespace-nowrap">
                       ★ MOST POPULAR
                     </span>
                   )}
 
-                  <div className="space-y-4">
+                  <div className="space-y-4 flex flex-col">
                     {/* Package Image */}
-                    <div className="relative w-full h-40 rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-inner">
+                    <div className="relative w-full h-40 rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-inner shrink-0">
                       <Image
                         src={imageSrc}
                         alt={pkg.name}
@@ -608,40 +611,42 @@ export default function HomePage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                     </div>
 
-                    {/* Title & Short Description */}
+                    {/* Title & Short Description with normalized vertical heights */}
                     <div>
-                      <h3 className="text-lg font-black text-white">{pkg.name}</h3>
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                      <div className="h-14 flex items-center">
+                        <h3 className="text-base sm:text-lg font-black text-white leading-snug line-clamp-2">
+                          {pkg.name}
+                        </h3>
+                      </div>
+                      <p className="h-10 text-xs text-slate-400 line-clamp-2 leading-relaxed mt-1">
                         {pkg.short_description}
                       </p>
                     </div>
 
-                    {/* Price - "From ₹..." */}
-                    <div className="pt-3 border-t border-white/10 flex items-baseline gap-1.5">
-                      <span className="text-xs text-slate-400 font-medium">From</span>
-                      <span className="text-3xl font-black text-cyan-400 tracking-tight">
-                        ₹{price ? price.effective : "—"}
-                      </span>
+                    {/* Price Row: Normalized single-line layout */}
+                    <div className="pt-3 border-t border-white/10 flex items-baseline justify-between gap-1">
+                      <div className="flex items-baseline gap-1.5 shrink-0">
+                        <span className="text-xs text-slate-400 font-medium">From</span>
+                        <span className="text-2xl sm:text-3xl font-black text-cyan-400 tracking-tight">
+                          ₹{formattedPrice}
+                        </span>
+                      </div>
                       {selectedVehicleObj && (
-                        <span className="text-[10px] text-slate-400 ml-auto font-medium">
+                        <span className="text-[11px] text-slate-400 font-medium whitespace-nowrap ml-auto">
                           for {selectedVehicleObj.name}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Book Button */}
-                  <div className="pt-6">
+                  {/* Unified High-Contrast Vibrant Button */}
+                  <div className="pt-5 mt-auto">
                     <Link
                       href={`/book?package=${pkg.id}&vehicle=${selectedVehicle || ""}`}
-                      className={`w-full py-3.5 rounded-xl text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 ${
-                        isPopular
-                          ? "btn-primary shadow-xl shadow-cyan-500/25 scale-[1.02]"
-                          : "btn-secondary hover:border-cyan-400/60 hover:text-cyan-300"
-                      }`}
+                      className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/35 hover:scale-[1.01]"
                     >
                       <span>Book This Service</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
+                      <ArrowRight className="w-3.5 h-3.5 text-white" />
                     </Link>
                   </div>
                 </div>
@@ -654,7 +659,7 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════
           4. HOW IT WORKS (Cinematic 3-Step Section)
       ═══════════════════════════════════════════════════ */}
-      <section id="how-it-works" className="container-premium">
+      <section id="how-it-works" className="container-premium scroll-mt-28 lg:scroll-mt-36">
         <div className="relative overflow-hidden rounded-3xl bg-[#090F1C]/90 border border-white/10 p-8 sm:p-14 shadow-2xl">
           {/* Subtle water glow */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 blur-[130px] rounded-full pointer-events-none" />
@@ -755,8 +760,8 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════
           6. PRICING & COMPARISON (id="pricing")
       ═══════════════════════════════════════════════════ */}
-      <section id="pricing" className="container-premium">
-        <FadeUp className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+      <section id="pricing" className="container-premium scroll-mt-28 lg:scroll-mt-36">
+        <FadeUp className="text-center max-w-2xl mx-auto mb-10 space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">
             Transparent Pricing
           </span>
@@ -771,25 +776,28 @@ export default function HomePage() {
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {packages.map((pkg) => {
             const price = getPackagePrice(pkg);
+            const formattedPrice = price
+              ? Math.round(Number(price.effective)).toLocaleString("en-IN")
+              : "—";
             const isPopular = pkg.is_popular || pkg.name.toLowerCase().includes("premium");
 
             return (
               <StaggerItem key={pkg.id}>
                 <div
-                  className={`glass-card p-6 rounded-3xl flex flex-col justify-between h-full border ${
+                  className={`glass-card p-6 rounded-3xl flex flex-col justify-between h-full border transition-all duration-300 ${
                     isPopular
-                      ? "border-cyan-400/60 bg-[#0E172B]/90 shadow-2xl shadow-cyan-500/10"
-                      : "border-white/10 bg-[#0B1220]/80"
+                      ? "border-2 border-cyan-400/60 bg-[#0E172B] shadow-2xl shadow-cyan-500/15 ring-2 ring-cyan-400/20"
+                      : "border border-white/10 bg-[#0B1220]/80 hover:border-cyan-400/30"
                   }`}
                 >
                   <div className="space-y-4">
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="text-lg font-bold text-white">{pkg.name}</h3>
-                        <p className="text-xs text-slate-400 mt-1">{pkg.short_description}</p>
+                        <p className="text-xs text-slate-400 mt-1 line-clamp-2">{pkg.short_description}</p>
                       </div>
                       {isPopular && (
-                        <span className="text-[10px] font-black uppercase text-cyan-300 bg-cyan-950 border border-cyan-500/40 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-black uppercase text-cyan-300 bg-cyan-950 border border-cyan-500/40 px-2 py-0.5 rounded-full shrink-0">
                           Popular
                         </span>
                       )}
@@ -797,9 +805,9 @@ export default function HomePage() {
 
                     <div className="pt-2 pb-4 border-b border-white/10">
                       <span className="text-3xl font-black text-cyan-400">
-                        ₹{price ? price.effective : "—"}
+                        ₹{formattedPrice}
                       </span>
-                      <span className="text-xs text-slate-400 ml-1.5 font-medium">
+                      <span className="text-xs text-slate-400 ml-1.5 font-medium whitespace-nowrap">
                         / {selectedVehicleObj ? selectedVehicleObj.name : "wash"}
                       </span>
                       <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-2 font-mono">
@@ -818,14 +826,13 @@ export default function HomePage() {
                     </ul>
                   </div>
 
-                  <div className="pt-6">
+                  <div className="pt-6 mt-auto">
                     <Link
                       href={`/book?package=${pkg.id}&vehicle=${selectedVehicle || ""}`}
-                      className={`w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 ${
-                        isPopular ? "btn-primary shadow-lg shadow-cyan-500/25" : "btn-secondary"
-                      }`}
+                      className="w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/35"
                     >
                       <span>Book This Service</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-white" />
                     </Link>
                   </div>
                 </div>
