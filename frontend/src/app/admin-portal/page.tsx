@@ -508,7 +508,7 @@ export default function AdminPortalPage() {
 
   // AUTHENTICATED DASHBOARD
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 space-y-8">
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div
@@ -657,7 +657,7 @@ export default function AdminPortalPage() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-900/80 text-gray-400 uppercase tracking-wider text-[10px]">
+                <thead className="bg-slate-100/90 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                   <tr>
                     <th className="p-4">Reference</th>
                     <th className="p-4">Date &amp; Slot</th>
@@ -668,45 +668,45 @@ export default function AdminPortalPage() {
                     <th className="p-4">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800/60 text-gray-200">
+                <tbody className="divide-y divide-slate-100 text-slate-700">
                   {upcomingBookings.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-6 text-center text-gray-500">
+                      <td colSpan={7} className="p-6 text-center text-slate-400">
                         No upcoming bookings found.
                       </td>
                     </tr>
                   ) : (
                     upcomingBookings.map((b) => (
-                      <tr key={b.id} className="hover:bg-gray-900/40">
-                        <td className="p-4 font-mono font-bold text-sky-400">
+                      <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-4 font-mono font-bold text-sky-600">
                           {b.booking_reference}
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold block">{b.service_date}</span>
-                          <span className="text-gray-400">{b.slot_start_time}</span>
+                          <span className="font-semibold text-slate-900 block">{b.service_date}</span>
+                          <span className="text-slate-500">{b.slot_start_time}</span>
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold block">{b.customer_name}</span>
-                          <span className="text-gray-400">{b.customer_phone}</span>
+                          <span className="font-semibold text-slate-900 block">{b.customer_name}</span>
+                          <span className="text-slate-500">{b.customer_phone}</span>
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold block text-white">
+                          <span className="font-semibold block text-slate-900">
                             {b.service_package_name}
                           </span>
-                          <span className="text-gray-400">{b.vehicle_type_name}</span>
+                          <span className="text-slate-500">{b.vehicle_type_name}</span>
                         </td>
-                        <td className="p-4">{b.locality}</td>
+                        <td className="p-4 text-slate-700">{b.locality}</td>
                         <td className="p-4">
                           {b.assigned_staff_name ? (
-                            <span className="text-emerald-400 font-medium">
+                            <span className="text-emerald-600 font-medium">
                               {b.assigned_staff_name}
                             </span>
                           ) : (
-                            <span className="text-gray-500 italic">Unassigned</span>
+                            <span className="text-slate-400 italic">Unassigned</span>
                           )}
                         </td>
                         <td className="p-4">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-800 border border-gray-700">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-700">
                             {b.status_display}
                           </span>
                         </td>
@@ -724,15 +724,15 @@ export default function AdminPortalPage() {
       {activeTab === "bookings" && (
         <div className="space-y-6">
           {/* Header Controls & Counts */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-gray-800">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white">Customer Bookings</h2>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-sky-950/80 border border-sky-800/80 text-sky-300 font-semibold">
+                <h2 className="text-xl font-bold text-slate-900">Customer Bookings</h2>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-sky-700 font-semibold">
                   {bookingsList.length} {bookingsList.length === 1 ? "booking" : "bookings"}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Real-time doorstep appointments submitted through the website. Confirm, reschedule, assign, and mark completed.
               </p>
             </div>
@@ -741,10 +741,10 @@ export default function AdminPortalPage() {
               <button
                 onClick={fetchBookings}
                 disabled={loadingBookings}
-                className="flex items-center gap-1.5 text-xs font-semibold text-gray-300 bg-gray-900 hover:bg-gray-800 border border-gray-800 px-3 py-2 rounded-xl transition-all"
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl transition-all shadow-sm"
                 title="Refresh Bookings"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${loadingBookings ? "animate-spin text-sky-400" : ""}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingBookings ? "animate-spin text-sky-600" : ""}`} />
                 <span>Refresh</span>
               </button>
 
@@ -752,7 +752,7 @@ export default function AdminPortalPage() {
                 href={`${api.getApiBaseUrl()}/api/admin/bookings/export-csv/`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-3.5 py-2 rounded-xl hover:bg-emerald-900/60 transition-colors shadow-sm"
+                className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
@@ -761,17 +761,17 @@ export default function AdminPortalPage() {
           </div>
 
           {/* Filters Bar */}
-          <div className="glass-card p-4 rounded-2xl border-gray-800 space-y-3 shadow-lg">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-3 shadow-sm">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-400">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-sky-400" />
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-sky-600" />
                 <span>Search &amp; Filters</span>
               </div>
 
               {hasActiveFilters && (
                 <button
                   onClick={handleResetFilters}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-red-400 hover:text-red-300 transition-colors"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-red-600 hover:text-red-700 transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Reset All Filters</span>
@@ -782,14 +782,14 @@ export default function AdminPortalPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
               {/* Text Search */}
               <div className="sm:col-span-2 relative">
-                <Search className="w-4 h-4 text-gray-500 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
                   type="text"
                   placeholder="Search ref, customer, phone, email, locality..."
                   value={bookingSearch}
                   onChange={(e) => setBookingSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && fetchBookings()}
-                  className="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 transition-colors"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-9 pr-8 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
                 />
                 {bookingSearch && (
                   <button
@@ -797,7 +797,7 @@ export default function AdminPortalPage() {
                       setBookingSearch("");
                       setTimeout(fetchBookings, 50);
                     }}
-                    className="absolute right-2.5 top-2.5 text-gray-500 hover:text-white"
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -809,7 +809,7 @@ export default function AdminPortalPage() {
                 <select
                   value={bookingFilterStatus}
                   onChange={(e) => setBookingFilterStatus(e.target.value)}
-                  className="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
                 >
                   <option value="">All Statuses</option>
                   <option value="PENDING">Pending Approval</option>
@@ -826,7 +826,7 @@ export default function AdminPortalPage() {
                 <select
                   value={bookingFilterPayment}
                   onChange={(e) => setBookingFilterPayment(e.target.value)}
-                  className="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
                 >
                   <option value="">All Payments</option>
                   <option value="PAID">Paid</option>
@@ -841,7 +841,7 @@ export default function AdminPortalPage() {
                 <select
                   value={bookingFilterPackage}
                   onChange={(e) => setBookingFilterPackage(e.target.value)}
-                  className="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
                 >
                   <option value="">All Packages</option>
                   {servicePackages.map((pkg) => (
@@ -857,7 +857,7 @@ export default function AdminPortalPage() {
                 <select
                   value={bookingFilterVehicle}
                   onChange={(e) => setBookingFilterVehicle(e.target.value)}
-                  className="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
                 >
                   <option value="">All Vehicles</option>
                   {vehicleTypes.map((v) => (
@@ -870,13 +870,13 @@ export default function AdminPortalPage() {
             </div>
 
             {/* Date filter & Quick Day Filters */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-800/60 text-xs">
-              <span className="text-[11px] text-gray-400 font-medium">Filter Date:</span>
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-xs">
+              <span className="text-[11px] text-slate-500 font-medium">Filter Date:</span>
               <input
                 type="date"
                 value={bookingFilterDate}
                 onChange={(e) => setBookingFilterDate(e.target.value)}
-                className="bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-sky-500"
+                className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
               />
               <button
                 type="button"
@@ -884,7 +884,7 @@ export default function AdminPortalPage() {
                   const today = new Date().toISOString().split("T")[0];
                   setBookingFilterDate(today);
                 }}
-                className="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[11px] font-medium"
+                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors"
               >
                 Today
               </button>
@@ -895,7 +895,7 @@ export default function AdminPortalPage() {
                   tomorrow.setDate(tomorrow.getDate() + 1);
                   setBookingFilterDate(tomorrow.toISOString().split("T")[0]);
                 }}
-                className="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[11px] font-medium"
+                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors"
               >
                 Tomorrow
               </button>
@@ -903,7 +903,7 @@ export default function AdminPortalPage() {
                 <button
                   type="button"
                   onClick={() => setBookingFilterDate("")}
-                  className="px-2 py-1 rounded-lg text-gray-500 hover:text-red-400 text-[11px]"
+                  className="px-2 py-1 rounded-lg text-slate-400 hover:text-red-600 text-[11px]"
                 >
                   Clear Date
                 </button>
@@ -920,10 +920,10 @@ export default function AdminPortalPage() {
           </div>
 
           {/* Bookings Table / List */}
-          <div className="glass-card rounded-2xl border-gray-800 overflow-hidden shadow-xl">
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-900/95 text-gray-400 uppercase tracking-wider text-[10px] border-b border-gray-800">
+                <thead className="bg-slate-100/90 text-slate-600 uppercase tracking-wider text-[10px] border-b border-slate-200 font-bold">
                   <tr>
                     <th className="p-3.5">Reference</th>
                     <th className="p-3.5">Customer</th>
@@ -935,22 +935,22 @@ export default function AdminPortalPage() {
                     <th className="p-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800/60 text-gray-200">
+                <tbody className="divide-y divide-slate-100 text-slate-700">
                   {loadingBookings ? (
                     <tr>
-                      <td colSpan={8} className="p-12 text-center text-gray-400">
-                        <Loader2 className="w-7 h-7 animate-spin mx-auto mb-3 text-sky-400" />
+                      <td colSpan={8} className="p-12 text-center text-slate-400">
+                        <Loader2 className="w-7 h-7 animate-spin mx-auto mb-3 text-sky-600" />
                         <span className="text-sm font-medium">Loading bookings from database...</span>
                       </td>
                     </tr>
                   ) : bookingsList.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="p-12 text-center">
-                        <div className="w-12 h-12 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mx-auto mb-3 text-gray-500">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3 text-slate-400">
                           <Calendar className="w-6 h-6" />
                         </div>
-                        <p className="text-sm font-bold text-white mb-1">No bookings found</p>
-                        <p className="text-xs text-gray-500 max-w-sm mx-auto mb-3">
+                        <p className="text-sm font-bold text-slate-900 mb-1">No bookings found</p>
+                        <p className="text-xs text-slate-500 max-w-sm mx-auto mb-3">
                           {hasActiveFilters
                             ? "No appointments match your active filter criteria. Try resetting filters."
                             : "No bookings submitted through website yet. New customer bookings will appear automatically here."}
@@ -958,7 +958,7 @@ export default function AdminPortalPage() {
                         {hasActiveFilters && (
                           <button
                             onClick={handleResetFilters}
-                            className="text-xs font-semibold text-sky-400 hover:text-sky-300 underline"
+                            className="text-xs font-semibold text-sky-600 hover:text-sky-700 underline"
                           >
                             Reset all filters
                           </button>
@@ -969,25 +969,25 @@ export default function AdminPortalPage() {
                     bookingsList.map((b) => (
                       <tr
                         key={b.id}
-                        className="hover:bg-gray-900/40 transition-colors group cursor-pointer"
+                        className="hover:bg-slate-50 transition-colors group cursor-pointer"
                         onClick={() => setSelectedBooking(b)}
                       >
                         {/* Reference */}
                         <td className="p-3.5 align-top">
-                          <div className="flex items-center gap-1.5 font-mono font-bold text-sky-400 text-xs">
+                          <div className="flex items-center gap-1.5 font-mono font-bold text-sky-600 text-xs">
                             <span>{b.booking_reference}</span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 copyToClipboard(b.booking_reference);
                               }}
-                              className="text-gray-500 hover:text-sky-400 transition-colors p-0.5 rounded"
+                              className="text-slate-400 hover:text-sky-600 transition-colors p-0.5 rounded"
                               title="Copy Reference"
                             >
                               <Copy className="w-3 h-3" />
                             </button>
                           </div>
-                          <span className="text-[10px] text-gray-500 block mt-0.5">
+                          <span className="text-[10px] text-slate-400 block mt-0.5">
                             {new Date(b.created_at).toLocaleDateString("en-IN", {
                               day: "2-digit",
                               month: "short",
@@ -997,11 +997,11 @@ export default function AdminPortalPage() {
 
                         {/* Customer */}
                         <td className="p-3.5 align-top">
-                          <span className="font-semibold text-white block text-xs">
+                          <span className="font-bold text-slate-900 block text-xs">
                             {b.customer_name}
                           </span>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-gray-400 font-mono text-[11px]">
+                            <span className="text-slate-500 font-mono text-[11px]">
                               {b.customer_phone}
                             </span>
                             <a
@@ -1009,7 +1009,7 @@ export default function AdminPortalPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-emerald-400 hover:text-emerald-300 text-[10px] p-0.5 rounded"
+                              className="text-emerald-600 hover:text-emerald-700 text-[10px] p-0.5 rounded"
                               title="WhatsApp Customer"
                             >
                               <MessageSquare className="w-3 h-3" />
@@ -1017,14 +1017,14 @@ export default function AdminPortalPage() {
                             <a
                               href={`tel:${b.customer_phone}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="text-sky-400 hover:text-sky-300 text-[10px] p-0.5 rounded"
+                              className="text-sky-600 hover:text-sky-700 text-[10px] p-0.5 rounded"
                               title="Call Customer"
                             >
                               <Phone className="w-3 h-3" />
                             </a>
                           </div>
                           {b.customer_email && (
-                            <span className="text-[10px] text-gray-500 block truncate max-w-[140px] mt-0.5">
+                            <span className="text-[10px] text-slate-400 block truncate max-w-[140px] mt-0.5">
                               {b.customer_email}
                             </span>
                           )}
@@ -1032,22 +1032,22 @@ export default function AdminPortalPage() {
 
                         {/* Vehicle & Package */}
                         <td className="p-3.5 align-top">
-                          <span className="font-semibold text-white block text-xs">
+                          <span className="font-bold text-slate-900 block text-xs">
                             {b.service_package_name}
                           </span>
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-medium bg-sky-950/60 border border-sky-800/60 text-sky-300">
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-50 border border-sky-200 text-sky-700">
                             {b.vehicle_type_name}
                           </span>
                         </td>
 
                         {/* Date & Slot */}
                         <td className="p-3.5 align-top whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 font-semibold text-gray-200 text-xs">
-                            <Calendar className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                          <div className="flex items-center gap-1.5 font-semibold text-slate-900 text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-sky-600 shrink-0" />
                             <span>{b.service_date}</span>
                           </div>
-                          <div className="flex items-center gap-1.5 text-gray-400 text-[11px] mt-1">
-                            <Clock className="w-3 h-3 text-gray-500 shrink-0" />
+                          <div className="flex items-center gap-1.5 text-slate-500 text-[11px] mt-1">
+                            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
                             <span>
                               {b.slot_start_time.slice(0, 5)} - {b.slot_end_time.slice(0, 5)}
                             </span>
@@ -1056,14 +1056,14 @@ export default function AdminPortalPage() {
 
                         {/* Address */}
                         <td className="p-3.5 align-top max-w-[180px]">
-                          <span className="font-semibold text-gray-300 block text-xs truncate">
+                          <span className="font-semibold text-slate-900 block text-xs truncate">
                             {b.locality}
                           </span>
-                          <span className="text-[11px] text-gray-500 block truncate mt-0.5" title={b.address_line}>
+                          <span className="text-[11px] text-slate-500 block truncate mt-0.5" title={b.address_line}>
                             {b.address_line}
                           </span>
                           {b.landmark && (
-                            <span className="text-[10px] text-gray-500 block truncate mt-0.5 italic">
+                            <span className="text-[10px] text-slate-400 block truncate mt-0.5 italic">
                               Near {b.landmark}
                             </span>
                           )}
@@ -1071,16 +1071,16 @@ export default function AdminPortalPage() {
 
                         {/* Total & Payment */}
                         <td className="p-3.5 align-top whitespace-nowrap">
-                          <span className="font-bold text-emerald-400 block text-sm">
+                          <span className="font-black text-emerald-600 block text-sm">
                             ₹{b.final_amount}
                           </span>
                           <div className="mt-1 flex items-center gap-1.5">
                             {b.payment_status === "PAID" ? (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 Paid
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
                                 {b.payment_status}
                               </span>
                             )}
@@ -1090,44 +1090,44 @@ export default function AdminPortalPage() {
                         {/* Booking Status */}
                         <td className="p-3.5 align-top whitespace-nowrap">
                           {b.status === "PENDING" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30 animate-pulse">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
                               <Clock className="w-3 h-3" />
                               <span>Pending</span>
                             </span>
                           )}
                           {b.status === "CONFIRMED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/30">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-50 text-sky-700 border border-sky-200">
                               <CheckCircle2 className="w-3 h-3" />
                               <span>Confirmed</span>
                             </span>
                           )}
                           {b.status === "ASSIGNED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
                               <User className="w-3 h-3" />
                               <span>Assigned</span>
                             </span>
                           )}
                           {b.status === "IN_PROGRESS" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-50 text-cyan-700 border border-cyan-200">
                               <RefreshCw className="w-3 h-3 animate-spin" />
                               <span>In Progress</span>
                             </span>
                           )}
                           {b.status === "COMPLETED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
                               <Check className="w-3 h-3" />
                               <span>Completed</span>
                             </span>
                           )}
                           {b.status === "CANCELLED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/30">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-200">
                               <XCircle className="w-3 h-3" />
                               <span>Cancelled</span>
                             </span>
                           )}
 
                           {b.assigned_staff_name && (
-                            <span className="text-[10px] text-gray-400 block mt-1">
+                            <span className="text-[10px] text-slate-500 block mt-1 font-medium">
                               Tech: {b.assigned_staff_name}
                             </span>
                           )}
@@ -1139,10 +1139,10 @@ export default function AdminPortalPage() {
                             {/* View Details */}
                             <button
                               onClick={() => setSelectedBooking(b)}
-                              className="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-[11px] font-semibold flex items-center gap-1 border border-gray-700/60 transition-colors"
+                              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold flex items-center gap-1 border border-slate-200 shadow-sm transition-colors"
                               title="View full booking details"
                             >
-                              <Eye className="w-3 h-3" />
+                              <Eye className="w-3 h-3 text-sky-600" />
                               <span>View</span>
                             </button>
 
@@ -1151,7 +1151,7 @@ export default function AdminPortalPage() {
                               <button
                                 onClick={() => handleConfirmBooking(b.id)}
                                 disabled={actionLoading}
-                                className="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm flex items-center gap-1"
+                                className="px-2.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm flex items-center gap-1"
                               >
                                 <Check className="w-3 h-3" />
                                 <span>Confirm</span>
@@ -1169,7 +1169,7 @@ export default function AdminPortalPage() {
                                   })
                                 }
                                 disabled={actionLoading}
-                                className="px-2 py-1 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-800/80 text-emerald-300 text-[10px] font-bold uppercase tracking-wider transition-all"
+                                className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm"
                                 title="Mark service completed"
                               >
                                 Complete
@@ -1188,7 +1188,7 @@ export default function AdminPortalPage() {
                                   })
                                 }
                                 disabled={actionLoading}
-                                className="px-2 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800/80 text-indigo-300 text-[10px] font-medium transition-all"
+                                className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-[10px] font-semibold transition-all"
                                 title="Reschedule date or time"
                               >
                                 Reschedule
@@ -1207,7 +1207,7 @@ export default function AdminPortalPage() {
                                   })
                                 }
                                 disabled={actionLoading}
-                                className="px-2 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 text-[10px] font-medium transition-all"
+                                className="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-[10px] font-semibold transition-all"
                                 title="Cancel booking"
                               >
                                 Cancel
@@ -1227,27 +1227,27 @@ export default function AdminPortalPage() {
           {/* 1. DETAILED BOOKING VIEW MODAL                                            */}
           {/* ========================================================================= */}
           {selectedBooking && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-              <div className="glass-card max-w-3xl w-full rounded-3xl border border-gray-700/80 shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+              <div className="bg-white max-w-3xl w-full rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-8 animate-in fade-in zoom-in-95">
                 {/* Modal Header */}
-                <div className="p-6 border-b border-gray-800 bg-gray-900/60 flex items-start justify-between gap-4">
+                <div className="p-6 border-b border-slate-100 bg-slate-50/80 flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-lg font-extrabold text-sky-400">
+                      <span className="font-mono text-lg font-extrabold text-sky-600">
                         {selectedBooking.booking_reference}
                       </span>
                       <button
                         onClick={() => copyToClipboard(selectedBooking.booking_reference)}
-                        className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors"
+                        className="text-slate-400 hover:text-sky-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
                         title="Copy Reference"
                       >
                         <Copy className="w-4 h-4" />
                       </button>
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-gray-800 border border-gray-700 text-gray-300">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-sky-50 border border-sky-200 text-sky-700">
                         {selectedBooking.status}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       Submitted on {new Date(selectedBooking.created_at).toLocaleString("en-IN", {
                         day: "2-digit",
                         month: "short",
@@ -1260,7 +1260,7 @@ export default function AdminPortalPage() {
 
                   <button
                     onClick={() => setSelectedBooking(null)}
-                    className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800 transition-colors"
+                    className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -1270,33 +1270,33 @@ export default function AdminPortalPage() {
                 <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto text-xs">
                   {/* Top Summary Bar */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="bg-gray-900/80 border border-gray-800 p-3.5 rounded-2xl">
-                      <span className="text-[10px] text-gray-400 uppercase font-semibold block">Date</span>
-                      <span className="text-sm font-bold text-white block mt-0.5">{selectedBooking.service_date}</span>
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold block">Date</span>
+                      <span className="text-sm font-bold text-slate-900 block mt-0.5">{selectedBooking.service_date}</span>
                     </div>
-                    <div className="bg-gray-900/80 border border-gray-800 p-3.5 rounded-2xl">
-                      <span className="text-[10px] text-gray-400 uppercase font-semibold block">Time Slot</span>
-                      <span className="text-sm font-bold text-sky-400 block mt-0.5">
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold block">Time Slot</span>
+                      <span className="text-sm font-bold text-sky-600 block mt-0.5">
                         {selectedBooking.slot_start_time.slice(0, 5)} - {selectedBooking.slot_end_time.slice(0, 5)}
                       </span>
                     </div>
-                    <div className="bg-gray-900/80 border border-gray-800 p-3.5 rounded-2xl">
-                      <span className="text-[10px] text-gray-400 uppercase font-semibold block">Total Amount</span>
-                      <span className="text-sm font-bold text-emerald-400 block mt-0.5">₹{selectedBooking.final_amount}</span>
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold block">Total Amount</span>
+                      <span className="text-sm font-bold text-emerald-600 block mt-0.5">₹{selectedBooking.final_amount}</span>
                     </div>
-                    <div className="bg-gray-900/80 border border-gray-800 p-3.5 rounded-2xl">
-                      <span className="text-[10px] text-gray-400 uppercase font-semibold block">Payment Status</span>
-                      <span className="text-sm font-bold text-amber-400 block mt-0.5">{selectedBooking.payment_status}</span>
+                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold block">Payment Status</span>
+                      <span className="text-sm font-bold text-amber-600 block mt-0.5">{selectedBooking.payment_status}</span>
                     </div>
                   </div>
 
                   {/* 2-Column Detail Sections */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Customer Info Card */}
-                    <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-2xl space-y-3">
-                      <div className="flex items-center justify-between border-b border-gray-800 pb-2">
-                        <div className="flex items-center gap-2 text-white font-bold text-xs">
-                          <User className="w-4 h-4 text-sky-400" />
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+                          <User className="w-4 h-4 text-sky-600" />
                           <span>Customer Details</span>
                         </div>
                         <div className="flex items-center gap-1">
@@ -1304,14 +1304,14 @@ export default function AdminPortalPage() {
                             href={`https://wa.me/91${selectedBooking.customer_phone.replace(/\D/g, "")}?text=Hello%20${encodeURIComponent(selectedBooking.customer_name)},%20regarding%20your%20CARSPA%20appointment%20${selectedBooking.booking_reference}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1 rounded-lg hover:bg-emerald-900/60 transition-colors"
+                            className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition-colors"
                           >
                             <MessageSquare className="w-3 h-3" />
                             <span>WhatsApp</span>
                           </a>
                           <a
                             href={`tel:${selectedBooking.customer_phone}`}
-                            className="flex items-center gap-1 text-[11px] font-semibold text-sky-400 bg-sky-950/60 border border-sky-800/80 px-2.5 py-1 rounded-lg hover:bg-sky-900/60 transition-colors"
+                            className="flex items-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg hover:bg-sky-100 transition-colors"
                           >
                             <Phone className="w-3 h-3" />
                             <span>Call</span>
@@ -1321,117 +1321,117 @@ export default function AdminPortalPage() {
 
                       <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Name:</span>
-                          <span className="font-semibold text-white">{selectedBooking.customer_name}</span>
+                          <span className="text-slate-500">Name:</span>
+                          <span className="font-bold text-slate-900">{selectedBooking.customer_name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Phone:</span>
-                          <span className="font-mono text-gray-200">{selectedBooking.customer_phone}</span>
+                          <span className="text-slate-500">Phone:</span>
+                          <span className="font-mono text-slate-700">{selectedBooking.customer_phone}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Email:</span>
-                          <span className="text-gray-200">{selectedBooking.customer_email || "Not provided"}</span>
+                          <span className="text-slate-500">Email:</span>
+                          <span className="text-slate-700">{selectedBooking.customer_email || "Not provided"}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Vehicle & Package Card */}
-                    <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-2 text-white font-bold text-xs border-b border-gray-800 pb-2">
-                        <Car className="w-4 h-4 text-sky-400" />
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs border-b border-slate-200 pb-2">
+                        <Car className="w-4 h-4 text-sky-600" />
                         <span>Vehicle &amp; Service Package</span>
                       </div>
 
                       <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Vehicle Type:</span>
-                          <span className="font-semibold text-sky-400">{selectedBooking.vehicle_type_name}</span>
+                          <span className="text-slate-500">Vehicle Type:</span>
+                          <span className="font-bold text-sky-700">{selectedBooking.vehicle_type_name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Package:</span>
-                          <span className="font-semibold text-white">{selectedBooking.service_package_name}</span>
+                          <span className="text-slate-500">Package:</span>
+                          <span className="font-bold text-slate-900">{selectedBooking.service_package_name}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Estimated Duration:</span>
-                          <span className="text-gray-200">~{selectedBooking.estimated_duration_minutes} minutes</span>
+                          <span className="text-slate-500">Estimated Duration:</span>
+                          <span className="text-slate-700">~{selectedBooking.estimated_duration_minutes} minutes</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Service Area:</span>
-                          <span className="text-gray-200">{selectedBooking.service_area_name || selectedBooking.locality}</span>
+                          <span className="text-slate-500">Service Area:</span>
+                          <span className="text-slate-700">{selectedBooking.service_area_name || selectedBooking.locality}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Doorstep Location Card */}
-                    <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-2 text-white font-bold text-xs border-b border-gray-800 pb-2">
-                        <MapPin className="w-4 h-4 text-sky-400" />
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs border-b border-slate-200 pb-2">
+                        <MapPin className="w-4 h-4 text-sky-600" />
                         <span>Doorstep Service Address</span>
                       </div>
 
                       <div className="space-y-1.5 text-xs">
                         <div>
-                          <span className="text-gray-400 block text-[10px] uppercase font-semibold">Address Line</span>
-                          <span className="text-gray-200 block font-medium mt-0.5">{selectedBooking.address_line}</span>
+                          <span className="text-slate-500 block text-[10px] uppercase font-semibold">Address Line</span>
+                          <span className="text-slate-800 block font-medium mt-0.5">{selectedBooking.address_line}</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 pt-1">
                           <div>
-                            <span className="text-gray-400 block text-[10px]">Locality / Sector</span>
-                            <span className="text-gray-200 font-semibold">{selectedBooking.locality}</span>
+                            <span className="text-slate-500 block text-[10px]">Locality / Sector</span>
+                            <span className="text-slate-800 font-semibold">{selectedBooking.locality}</span>
                           </div>
                           <div>
-                            <span className="text-gray-400 block text-[10px]">Pincode</span>
-                            <span className="text-gray-200">{selectedBooking.pincode || "—"}</span>
+                            <span className="text-slate-500 block text-[10px]">Pincode</span>
+                            <span className="text-slate-700">{selectedBooking.pincode || "—"}</span>
                           </div>
                         </div>
                         {selectedBooking.landmark && (
                           <div>
-                            <span className="text-gray-400 block text-[10px]">Landmark</span>
-                            <span className="text-gray-300 italic">{selectedBooking.landmark}</span>
+                            <span className="text-slate-500 block text-[10px]">Landmark</span>
+                            <span className="text-slate-700 italic">{selectedBooking.landmark}</span>
                           </div>
                         )}
                         {selectedBooking.special_instructions && (
-                          <div className="pt-1 border-t border-gray-800/80">
-                            <span className="text-gray-400 block text-[10px] uppercase font-semibold">Special Instructions</span>
-                            <span className="text-amber-300/90 block mt-0.5">{selectedBooking.special_instructions}</span>
+                          <div className="pt-1 border-t border-slate-200">
+                            <span className="text-slate-500 block text-[10px] uppercase font-semibold">Special Instructions</span>
+                            <span className="text-amber-700 block mt-0.5">{selectedBooking.special_instructions}</span>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Financials & Payment Management */}
-                    <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-2xl space-y-3">
-                      <div className="flex items-center gap-2 text-white font-bold text-xs border-b border-gray-800 pb-2">
-                        <CreditCard className="w-4 h-4 text-emerald-400" />
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs border-b border-slate-200 pb-2">
+                        <CreditCard className="w-4 h-4 text-emerald-600" />
                         <span>Financial Snapshot &amp; Status</span>
                       </div>
 
                       <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Base Price:</span>
-                          <span className="text-gray-200">₹{selectedBooking.price_snapshot}</span>
+                          <span className="text-slate-500">Base Price:</span>
+                          <span className="text-slate-800">₹{selectedBooking.price_snapshot}</span>
                         </div>
                         {Number(selectedBooking.tax_amount) > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-gray-400">GST / Tax:</span>
-                            <span className="text-gray-200">₹{selectedBooking.tax_amount}</span>
+                            <span className="text-slate-500">GST / Tax:</span>
+                            <span className="text-slate-800">₹{selectedBooking.tax_amount}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-sm font-bold border-t border-gray-800 pt-1.5">
-                          <span className="text-white">Total Amount:</span>
-                          <span className="text-emerald-400">₹{selectedBooking.final_amount}</span>
+                        <div className="flex justify-between text-sm font-bold border-t border-slate-200 pt-1.5">
+                          <span className="text-slate-900">Total Amount:</span>
+                          <span className="text-emerald-600">₹{selectedBooking.final_amount}</span>
                         </div>
                         <div className="flex justify-between items-center pt-2">
-                          <span className="text-gray-400">Payment Method:</span>
-                          <span className="font-semibold text-gray-200">{selectedBooking.payment_method_display || selectedBooking.payment_method}</span>
+                          <span className="text-slate-500">Payment Method:</span>
+                          <span className="font-semibold text-slate-800">{selectedBooking.payment_method_display || selectedBooking.payment_method}</span>
                         </div>
                         <div className="flex justify-between items-center pt-1">
-                          <span className="text-gray-400">Update Payment:</span>
+                          <span className="text-slate-500">Update Payment:</span>
                           <select
                             value={selectedBooking.payment_status}
                             onChange={(e) => handleUpdatePaymentStatus(selectedBooking.id, e.target.value)}
                             disabled={actionLoading}
-                            className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-sky-500"
+                            className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 focus:outline-none focus:border-sky-500"
                           >
                             <option value="PENDING">PENDING</option>
                             <option value="PAID">PAID</option>
@@ -1444,13 +1444,13 @@ export default function AdminPortalPage() {
                   </div>
 
                   {/* Technician & Notes */}
-                  <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-2xl space-y-3">
-                    <div className="flex items-center justify-between border-b border-gray-800 pb-2">
-                      <div className="flex items-center gap-2 text-white font-bold text-xs">
-                        <Users className="w-4 h-4 text-sky-400" />
+                  <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+                        <Users className="w-4 h-4 text-sky-600" />
                         <span>Assigned Technician</span>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-400">
+                      <span className="text-xs font-semibold text-emerald-600">
                         {selectedBooking.assigned_staff_name || "Currently Unassigned"}
                       </span>
                     </div>
@@ -1468,7 +1468,7 @@ export default function AdminPortalPage() {
                             });
                           }
                         }}
-                        className="flex-1 w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                        className="flex-1 w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
                       >
                         <option value="">Choose technician to assign...</option>
                         {staffList.map((s) => (
@@ -1480,7 +1480,7 @@ export default function AdminPortalPage() {
                     </div>
 
                     {selectedBooking.cancellation_reason && (
-                      <div className="p-3 rounded-xl bg-red-950/40 border border-red-800/60 text-xs text-red-300 mt-2">
+                      <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 mt-2">
                         <span className="font-bold block mb-0.5">Cancellation Reason:</span>
                         <span>{selectedBooking.cancellation_reason}</span>
                       </div>
@@ -1489,7 +1489,7 @@ export default function AdminPortalPage() {
                 </div>
 
                 {/* Modal Action Bar */}
-                <div className="p-5 border-t border-gray-800 bg-gray-900/90 flex flex-wrap items-center justify-between gap-3">
+                <div className="p-5 border-t border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Confirm Button */}
                     {selectedBooking.status === "PENDING" && (
@@ -1562,7 +1562,7 @@ export default function AdminPortalPage() {
 
                   <button
                     onClick={() => setSelectedBooking(null)}
-                    className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white text-xs font-semibold transition-colors"
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
                   >
                     Close
                   </button>
@@ -1575,34 +1575,34 @@ export default function AdminPortalPage() {
           {/* 2. RESCHEDULE MODAL                                                       */}
           {/* ========================================================================= */}
           {rescheduleModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <div className="glass-card p-6 rounded-3xl max-w-md w-full space-y-5 border-gray-700 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white p-6 rounded-3xl max-w-md w-full space-y-5 border border-slate-200 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-sky-400" />
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-sky-600" />
                       <span>Reschedule Booking</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {rescheduleModal.booking.booking_reference} &bull; {rescheduleModal.booking.customer_name}
                     </p>
                   </div>
                   <button
                     onClick={() => setRescheduleModal(null)}
-                    className="text-gray-400 hover:text-white p-1"
+                    className="text-slate-400 hover:text-slate-700 p-1"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="p-3 rounded-xl bg-sky-950/40 border border-sky-800/60 text-xs text-gray-300">
-                  <span className="text-sky-300 font-semibold block mb-0.5">Current Schedule:</span>
+                <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-xs text-slate-700">
+                  <span className="text-sky-700 font-bold block mb-0.5">Current Schedule:</span>
                   <span>{rescheduleModal.booking.service_date} at {rescheduleModal.booking.slot_start_time.slice(0, 5)}</span>
                 </div>
 
                 {/* New Date Picker */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-300 block">Select New Date</label>
+                  <label className="text-xs font-semibold text-slate-700 block">Select New Date</label>
                   <input
                     type="date"
                     min={new Date().toISOString().split("T")[0]}
@@ -1610,13 +1610,13 @@ export default function AdminPortalPage() {
                     onChange={(e) =>
                       setRescheduleModal({ ...rescheduleModal, newDate: e.target.value })
                     }
-                    className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white"
                   />
                 </div>
 
                 {/* Time Slot Picker */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-300 block">Select New Time Slot</label>
+                  <label className="text-xs font-semibold text-slate-700 block">Select New Time Slot</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { time: "08:00", label: "08:00 AM" },
@@ -1638,8 +1638,8 @@ export default function AdminPortalPage() {
                           }
                           className={`p-2 rounded-xl text-xs font-semibold border transition-all text-center ${
                             isSelected
-                              ? "bg-sky-600 text-white border-sky-500 shadow-md shadow-sky-600/30"
-                              : "bg-gray-900/90 text-gray-300 border-gray-800 hover:border-gray-700"
+                              ? "bg-sky-600 text-white border-sky-600 shadow-md shadow-sky-600/30"
+                              : "bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100"
                           }`}
                         >
                           {slot.label}
@@ -1658,19 +1658,19 @@ export default function AdminPortalPage() {
                     onChange={(e) =>
                       setRescheduleModal({ ...rescheduleModal, force: e.target.checked })
                     }
-                    className="rounded bg-gray-900 border-gray-700 text-sky-600 focus:ring-0"
+                    className="rounded bg-white border-slate-300 text-sky-600 focus:ring-0"
                   />
-                  <label htmlFor="forceOverride" className="text-[11px] text-gray-400 cursor-pointer">
+                  <label htmlFor="forceOverride" className="text-[11px] text-slate-600 cursor-pointer">
                     Force override capacity limit if slot is fully booked
                   </label>
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-800">
+                <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                   <button
                     onClick={() => setRescheduleModal(null)}
                     disabled={actionLoading}
-                    className="px-3.5 py-2 rounded-xl text-xs text-gray-400 hover:text-white"
+                    className="px-3.5 py-2 rounded-xl text-xs text-slate-600 hover:text-slate-900"
                   >
                     Cancel
                   </button>
@@ -1691,55 +1691,55 @@ export default function AdminPortalPage() {
           {/* 3. MARK SERVICE COMPLETED MODAL                                           */}
           {/* ========================================================================= */}
           {completeModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <div className="glass-card p-6 rounded-3xl max-w-md w-full space-y-5 border-emerald-900/60 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white p-6 rounded-3xl max-w-md w-full space-y-5 border border-slate-200 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>Mark Service Completed</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {completeModal.booking.booking_reference} &bull; {completeModal.booking.customer_name}
                     </p>
                   </div>
                   <button
                     onClick={() => setCompleteModal(null)}
-                    className="text-gray-400 hover:text-white p-1"
+                    className="text-slate-400 hover:text-slate-700 p-1"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 space-y-1 text-xs">
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Package:</span>
-                    <span className="font-semibold text-white">{completeModal.booking.service_package_name}</span>
+                    <span className="text-slate-600">Package:</span>
+                    <span className="font-bold text-slate-900">{completeModal.booking.service_package_name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Vehicle:</span>
-                    <span className="text-sky-400">{completeModal.booking.vehicle_type_name}</span>
+                    <span className="text-slate-600">Vehicle:</span>
+                    <span className="font-semibold text-sky-700">{completeModal.booking.vehicle_type_name}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold pt-1 border-t border-emerald-900/80">
-                    <span className="text-white">Amount:</span>
-                    <span className="text-emerald-400">₹{completeModal.booking.final_amount}</span>
+                  <div className="flex justify-between text-sm font-bold pt-1 border-t border-emerald-200/60">
+                    <span className="text-slate-900">Amount:</span>
+                    <span className="text-emerald-600">₹{completeModal.booking.final_amount}</span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-300 block">Completion Notes</label>
+                  <label className="text-xs font-semibold text-slate-700 block">Completion Notes</label>
                   <textarea
                     rows={2}
                     value={completeModal.notes}
                     onChange={(e) =>
                       setCompleteModal({ ...completeModal, notes: e.target.value })
                     }
-                    className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white"
                     placeholder="Notes regarding job quality, customer feedback, etc."
                   />
                 </div>
 
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-900 border border-gray-800">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
                   <input
                     type="checkbox"
                     id="markPaidCheckbox"
@@ -1747,18 +1747,18 @@ export default function AdminPortalPage() {
                     onChange={(e) =>
                       setCompleteModal({ ...completeModal, markPaid: e.target.checked })
                     }
-                    className="rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-0"
+                    className="rounded bg-white border-slate-300 text-emerald-600 focus:ring-0"
                   />
-                  <label htmlFor="markPaidCheckbox" className="text-xs text-gray-300 font-medium cursor-pointer">
-                    Mark Payment Status as <span className="font-bold text-emerald-400">PAID</span> (Cash / UPI collected)
+                  <label htmlFor="markPaidCheckbox" className="text-xs text-slate-700 font-medium cursor-pointer">
+                    Mark Payment Status as <span className="font-bold text-emerald-600">PAID</span> (Cash / UPI collected)
                   </label>
                 </div>
 
-                <div className="flex justify-end gap-2.5 pt-2 border-t border-gray-800">
+                <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => setCompleteModal(null)}
                     disabled={actionLoading}
-                    className="px-3.5 py-2 rounded-xl text-xs text-gray-400 hover:text-white"
+                    className="px-3.5 py-2 rounded-xl text-xs text-slate-600 hover:text-slate-900"
                   >
                     Cancel
                   </button>
@@ -1779,39 +1779,39 @@ export default function AdminPortalPage() {
           {/* 4. CANCEL BOOKING MODAL                                                   */}
           {/* ========================================================================= */}
           {cancelModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <div className="glass-card p-6 rounded-3xl max-w-md w-full space-y-5 border-red-900/60 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white p-6 rounded-3xl max-w-md w-full space-y-5 border border-slate-200 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <XCircle className="w-4 h-4 text-red-400" />
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-red-600" />
                       <span>Cancel Appointment</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {cancelModal.reference} &bull; {cancelModal.customerName}
                     </p>
                   </div>
                   <button
                     onClick={() => setCancelModal(null)}
-                    className="text-gray-400 hover:text-white p-1"
+                    className="text-slate-400 hover:text-slate-700 p-1"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="p-3 rounded-xl bg-red-950/40 border border-red-800/60 text-xs text-red-300">
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
                   <span>Warning: Cancelling will mark this appointment as cancelled and release the technician / slot capacity.</span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-300 block">Select Reason</label>
+                  <label className="text-xs font-semibold text-slate-700 block">Select Reason</label>
                   <select
                     onChange={(e) => {
                       if (e.target.value !== "Custom") {
                         setCancelModal({ ...cancelModal, reason: e.target.value });
                       }
                     }}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 mb-2"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white mb-2"
                   >
                     <option value="Customer requested cancellation">Customer requested cancellation</option>
                     <option value="Customer unreachable / Phone switched off">Customer unreachable / Phone switched off</option>
@@ -1828,15 +1828,15 @@ export default function AdminPortalPage() {
                     onChange={(e) =>
                       setCancelModal({ ...cancelModal, reason: e.target.value })
                     }
-                    className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-red-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500 focus:bg-white"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2.5 pt-2 border-t border-gray-800">
+                <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => setCancelModal(null)}
                     disabled={actionLoading}
-                    className="px-3.5 py-2 rounded-xl text-xs text-gray-400 hover:text-white"
+                    className="px-3.5 py-2 rounded-xl text-xs text-slate-600 hover:text-slate-900"
                   >
                     Back
                   </button>
@@ -1857,25 +1857,25 @@ export default function AdminPortalPage() {
           {/* 5. ASSIGN TECHNICIAN MODAL                                                */}
           {/* ========================================================================= */}
           {assignModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <div className="glass-card p-6 rounded-3xl max-w-sm w-full space-y-4 border-gray-700 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white p-6 rounded-3xl max-w-sm w-full space-y-4 border border-slate-200 shadow-2xl animate-in fade-in zoom-in-95">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Users className="w-4 h-4 text-sky-400" />
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-sky-600" />
                       <span>Assign Technician</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{assignModal.reference}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{assignModal.reference}</p>
                   </div>
                   <button
                     onClick={() => setAssignModal(null)}
-                    className="text-gray-400 hover:text-white p-1"
+                    className="text-slate-400 hover:text-slate-700 p-1"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-slate-600">
                   Select a technician for this doorstep wash. They will receive automated assignment alert.
                 </p>
 
@@ -1887,7 +1887,7 @@ export default function AdminPortalPage() {
                       staffId: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white"
                 >
                   {staffList.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -1896,18 +1896,18 @@ export default function AdminPortalPage() {
                   ))}
                 </select>
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                   <button
                     onClick={() => setAssignModal(null)}
                     disabled={actionLoading}
-                    className="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white"
+                    className="px-3 py-1.5 rounded-lg text-xs text-slate-600 hover:text-slate-900"
                   >
                     Close
                   </button>
                   <button
                     onClick={handleAssignStaff}
                     disabled={actionLoading}
-                    className="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-1.5"
+                    className="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
                   >
                     {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     <span>Confirm Assignment</span>
@@ -1925,14 +1925,14 @@ export default function AdminPortalPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-64">
-                <Search className="w-4 h-4 text-gray-500 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
                   type="text"
                   placeholder="Search lead name, phone, locality..."
                   value={leadSearch}
                   onChange={(e) => setLeadSearch(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && fetchLeads()}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
                 />
               </div>
 
@@ -1942,7 +1942,7 @@ export default function AdminPortalPage() {
                   setLeadFilterStatus(e.target.value);
                   setTimeout(fetchLeads, 50);
                 }}
-                className="bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
               >
                 <option value="">All Lead Statuses</option>
                 <option value="NEW">New</option>
@@ -1955,27 +1955,27 @@ export default function AdminPortalPage() {
 
               <button
                 onClick={fetchLeads}
-                className="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-2 rounded-xl"
+                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors"
               >
                 Filter
               </button>
             </div>
 
             <a
-              href="http://localhost:8000/api/admin/leads/export-csv/"
+              href={`${api.getApiBaseUrl()}/api/admin/leads/export-csv/`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-800/80 px-3.5 py-2 rounded-xl hover:bg-emerald-900/60 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3.5 py-2 rounded-xl hover:bg-emerald-100 transition-colors shadow-sm"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Leads CSV</span>
             </a>
           </div>
 
-          <div className="glass-card rounded-2xl border-gray-800 overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-gray-900/90 text-gray-400 uppercase tracking-wider text-[10px]">
+                <thead className="bg-slate-50/90 text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-200">
                   <tr>
                     <th className="p-4">Lead ID</th>
                     <th className="p-4">Customer</th>
@@ -1986,49 +1986,49 @@ export default function AdminPortalPage() {
                     <th className="p-4 text-right">Update Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800/60 text-gray-200">
+                <tbody className="divide-y divide-slate-100 text-slate-800">
                   {loadingLeads ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-gray-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-sky-400" />
+                      <td colSpan={7} className="p-8 text-center text-slate-500">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-sky-500" />
                         Loading CRM leads...
                       </td>
                     </tr>
                   ) : leadsList.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-gray-500">
+                      <td colSpan={7} className="p-8 text-center text-slate-400">
                         No leads recorded yet.
                       </td>
                     </tr>
                   ) : (
                     leadsList.map((lead) => (
-                      <tr key={lead.id} className="hover:bg-gray-900/30">
-                        <td className="p-4 font-mono font-bold text-sky-400">
+                      <tr key={lead.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="p-4 font-mono font-bold text-sky-600">
                           {lead.lead_id}
                           {lead.booking_reference && (
-                            <span className="block text-[10px] text-gray-500 font-mono">
+                            <span className="block text-[10px] text-slate-400 font-mono">
                               Ref: {lead.booking_reference}
                             </span>
                           )}
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold block">{lead.customer_name}</span>
-                          <span className="text-gray-400">{lead.mobile_number}</span>
+                          <span className="font-semibold block text-slate-900">{lead.customer_name}</span>
+                          <span className="text-slate-500">{lead.mobile_number}</span>
                         </td>
                         <td className="p-4">
-                          <span className="block text-white">
+                          <span className="block font-medium text-slate-900">
                             {lead.service_package_name || "General Enquiry"}
                           </span>
-                          <span className="text-gray-400 text-[11px]">
+                          <span className="text-slate-500 text-[11px]">
                             {lead.vehicle_type_name || "—"}
                           </span>
                         </td>
-                        <td className="p-4">{lead.locality || "—"}</td>
+                        <td className="p-4 text-slate-600">{lead.locality || "—"}</td>
                         <td className="p-4">
-                          <span className="text-[11px] text-gray-400">{lead.source}</span>
+                          <span className="text-[11px] text-slate-500 font-mono">{lead.source}</span>
                         </td>
                         <td className="p-4">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-800 border border-gray-700">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
                             {lead.status}
                           </span>
                         </td>
@@ -2036,7 +2036,7 @@ export default function AdminPortalPage() {
                           <select
                             value={lead.status}
                             onChange={(e) => handleUpdateLead(lead.id, e.target.value)}
-                            className="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1 text-[11px] text-white"
+                            className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-[11px] text-slate-800 shadow-sm focus:border-sky-500 focus:outline-none"
                           >
                             <option value="NEW">New</option>
                             <option value="CONTACTED">Contacted</option>
@@ -2061,8 +2061,8 @@ export default function AdminPortalPage() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-bold text-white">Technicians &amp; Van Roster</h2>
-              <p className="text-xs text-gray-400">
+              <h2 className="text-xl font-bold text-slate-900">Technicians &amp; Van Roster</h2>
+              <p className="text-xs text-slate-500">
                 Staff capacity controls max concurrent booking slots in the scheduling engine.
               </p>
             </div>
@@ -2070,36 +2070,36 @@ export default function AdminPortalPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {staffList.map((s) => (
-              <div key={s.id} className="glass-card p-6 rounded-2xl border-gray-800 space-y-4">
+              <div key={s.id} className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-base font-bold text-white">{s.name}</h3>
-                    <p className="text-xs text-gray-400">{s.phone}</p>
+                    <h3 className="text-base font-bold text-slate-900">{s.name}</h3>
+                    <p className="text-xs text-slate-500">{s.phone}</p>
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                       s.is_active
-                        ? "bg-emerald-950 text-emerald-400 border border-emerald-800"
-                        : "bg-red-950 text-red-400"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : "bg-red-50 text-red-700 border border-red-200"
                     }`}
                   >
                     {s.is_active ? "Active" : "Inactive"}
                   </span>
                 </div>
 
-                <div className="space-y-1.5 text-xs text-gray-300 pt-2 border-t border-gray-800">
+                <div className="space-y-1.5 text-xs text-slate-700 pt-2 border-t border-slate-100">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Daily Job Limit:</span>
-                    <span className="font-semibold">{s.max_daily_jobs} Cars/Day</span>
+                    <span className="text-slate-500">Daily Job Limit:</span>
+                    <span className="font-semibold text-slate-900">{s.max_daily_jobs} Cars/Day</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Assigned Today:</span>
-                    <span className="font-semibold text-sky-400">{s.active_jobs_count} Jobs</span>
+                    <span className="text-slate-500">Assigned Today:</span>
+                    <span className="font-semibold text-sky-600">{s.active_jobs_count} Jobs</span>
                   </div>
                 </div>
 
                 <div className="pt-2">
-                  <span className="text-[11px] text-gray-400 block font-semibold mb-1">
+                  <span className="text-[11px] text-slate-500 block font-semibold mb-1">
                     Coverage Hubs:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
@@ -2107,13 +2107,13 @@ export default function AdminPortalPage() {
                       s.assigned_areas_details.map((area) => (
                         <span
                           key={area.id}
-                          className="px-2 py-0.5 rounded bg-gray-900 border border-gray-800 text-[10px] text-gray-300"
+                          className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] text-slate-700 font-medium"
                         >
                           {area.name}
                         </span>
                       ))
                     ) : (
-                      <span className="text-[11px] text-gray-500 italic">All Areas (Global)</span>
+                      <span className="text-[11px] text-slate-400 italic">All Areas (Global)</span>
                     )}
                   </div>
                 </div>
@@ -2125,17 +2125,17 @@ export default function AdminPortalPage() {
 
       {/* 5. CAPACITY & SETTINGS TAB */}
       {activeTab === "settings" && configData && (
-        <div className="max-w-2xl glass-card p-8 rounded-3xl border-gray-800 space-y-6">
+        <div className="max-w-2xl bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-white">Scheduling &amp; Business Rules</h2>
-            <p className="text-xs text-gray-400">
+            <h2 className="text-xl font-bold text-slate-900">Scheduling &amp; Business Rules</h2>
+            <p className="text-xs text-slate-500">
               Changes update the live scheduling engine immediately.
             </p>
           </div>
 
           {configSuccess && (
-            <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <span>Configuration successfully saved to database.</span>
             </div>
           )}
@@ -2143,7 +2143,7 @@ export default function AdminPortalPage() {
           <form onSubmit={handleSaveConfig} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Opening Time
                 </label>
                 <input
@@ -2152,12 +2152,12 @@ export default function AdminPortalPage() {
                   onChange={(e) =>
                     setConfigData({ ...configData, day_open_time: e.target.value })
                   }
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Closing Time
                 </label>
                 <input
@@ -2166,12 +2166,12 @@ export default function AdminPortalPage() {
                   onChange={(e) =>
                     setConfigData({ ...configData, day_close_time: e.target.value })
                   }
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Slot Interval (Minutes)
                 </label>
                 <input
@@ -2183,12 +2183,12 @@ export default function AdminPortalPage() {
                       slot_interval_minutes: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Buffer &amp; Travel Time (Minutes)
                 </label>
                 <input
@@ -2200,12 +2200,12 @@ export default function AdminPortalPage() {
                       default_buffer_minutes: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Min Advance Notice (Hours)
                 </label>
                 <input
@@ -2217,12 +2217,12 @@ export default function AdminPortalPage() {
                       min_advance_hours: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Max Booking Advance (Days)
                 </label>
                 <input
@@ -2234,7 +2234,7 @@ export default function AdminPortalPage() {
                       max_advance_days: parseInt(e.target.value, 10),
                     })
                   }
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
                 />
               </div>
             </div>
@@ -2250,9 +2250,9 @@ export default function AdminPortalPage() {
                       auto_confirm_bookings: e.target.checked,
                     })
                   }
-                  className="rounded bg-gray-900 border-gray-700 text-sky-500"
+                  className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                 />
-                <span className="text-xs text-gray-300 font-semibold">
+                <span className="text-xs text-slate-700 font-semibold">
                   Auto-confirm new customer booking submissions immediately
                 </span>
               </label>
@@ -2267,9 +2267,9 @@ export default function AdminPortalPage() {
                       same_day_booking_allowed: e.target.checked,
                     })
                   }
-                  className="rounded bg-gray-900 border-gray-700 text-sky-500"
+                  className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                 />
-                <span className="text-xs text-gray-300 font-semibold">
+                <span className="text-xs text-slate-700 font-semibold">
                   Allow same-day booking requests (subject to advance notice window)
                 </span>
               </label>
