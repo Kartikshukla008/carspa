@@ -4,25 +4,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design System Variables (Clean Bright Studio) ─── */
+/* ─── Design System Variables (Cinematic Luxury Dark Automotive) ─── */
 :root {
-  --background: #F8FAFC;
-  --foreground: #0F172A;
-  --card: #FFFFFF;
-  --card-border: #E2E8F0;
-  --card-hover-border: #93C5FD;
-  --primary: #0284C7;
-  --primary-hover: #0369A1;
-  --primary-glow: rgba(2, 132, 199, 0.18);
-  --accent: #2563EB;
+  --background: #060B13;
+  --foreground: #F8FAFC;
+  --card: #0B1220;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-hover-border: rgba(56, 189, 248, 0.45);
+  --primary: #0EA5E9;
+  --primary-hover: #38BDF8;
+  --primary-glow: rgba(14, 165, 233, 0.35);
+  --accent: #00F0FF;
   --success: #10B981;
   --warning: #F59E0B;
-  --surface-elevated: #FFFFFF;
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
+  --surface-elevated: #0F172A;
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
   --text-muted: #64748B;
-  --border-subtle: #E2E8F0;
-  --border-default: #CBD5E1;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.15);
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
   --radius-2xl: 1.5rem;
@@ -31,7 +31,7 @@
 /* ─── Base Layer ─── */
 @layer base {
   * {
-    border-color: #E2E8F0;
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
   html {
@@ -39,6 +39,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    background-color: #060B13;
+    color-scheme: dark;
   }
 
   body {
@@ -50,102 +52,79 @@
   }
 
   ::selection {
-    background: rgba(2, 132, 199, 0.2);
-    color: #0369A1;
+    background: rgba(14, 165, 233, 0.35);
+    color: #FFFFFF;
   }
 
   /* Typography scale */
   h1, h2, h3, h4, h5, h6 {
     font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-weight: 800;
+    letter-spacing: -0.025em;
     line-height: 1.15;
-    color: #0F172A;
+    color: #FFFFFF;
   }
 
   /* Focus styles */
   :focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 }
 
 /* ─── Component Layer ─── */
 @layer components {
-  /* Clean Bright Studio Card */
+  /* Cinematic Dark Luxury Card */
   .glass-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 10px 25px -5px rgba(15, 23, 42, 0.03);
+    background: rgba(11, 18, 32, 0.78);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.03);
     transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-card-hover:hover {
     transform: translateY(-3px);
-    border-color: #93C5FD;
-    box-shadow: 0 20px 35px -10px rgba(2, 132, 199, 0.12),
-                0 4px 12px rgba(15, 23, 42, 0.04);
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.8),
+                0 0 35px -8px rgba(14, 165, 233, 0.22);
   }
 
-  /* Premium button base */
+  /* Premium electric cyan button */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2;
-    @apply font-semibold text-sm text-white;
+    @apply font-bold text-sm text-white;
     @apply px-6 py-3 rounded-xl;
-    background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
-    box-shadow: 0 4px 14px -2px rgba(2, 132, 199, 0.35);
+    background: linear-gradient(135deg, #0284C7 0%, #0284C7 30%, #2563EB 100%);
+    box-shadow: 0 4px 20px -2px rgba(14, 165, 233, 0.45), 0 0 0 1px rgba(56, 189, 248, 0.3);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .btn-primary:hover {
-    background: linear-gradient(135deg, #0369A1 0%, #1D4ED8 100%);
+    background: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 50%, #2563EB 100%);
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px -2px rgba(2, 132, 199, 0.45);
-  }
-
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2;
-    @apply font-semibold text-sm text-slate-700;
-    @apply px-6 py-3 rounded-xl;
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .btn-secondary:hover {
-    background: #F8FAFC;
-    border-color: #CBD5E1;
-    color: #0F172A;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 25px -5px rgba(22, 119, 255, 0.45),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    filter: brightness(1.08);
-  }
-
-  .btn-primary:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px -2px rgba(22, 119, 255, 0.3);
+    box-shadow: 0 8px 28px -2px rgba(14, 165, 233, 0.65), 0 0 0 1px rgba(0, 240, 255, 0.5);
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2;
     @apply font-semibold text-sm text-slate-200;
     @apply px-6 py-3 rounded-xl;
-    @apply border border-slate-700/60 bg-slate-900/60;
-    @apply backdrop-blur-md;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .btn-secondary:hover {
-    @apply text-white border-slate-500/60 bg-slate-800/80;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(56, 189, 248, 0.5);
+    color: #FFFFFF;
     transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.25);
   }
 
   /* Section heading pattern */

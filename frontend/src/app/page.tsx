@@ -159,14 +159,14 @@ const VEHICLE_HOME_IMAGES: Record<string, string> = {
 };
 
 const PACKAGE_IMAGES: Record<string, string> = {
-  "basic-wash": "/service_basic_wash.jpg",
-  "interior-cleaning": "/service_interior_cleaning.jpg",
-  "premium-wash": "/service_premium_wash.jpg",
-  "full-detailing": "/service_full_detailing.jpg",
-  "express-foam-exterior": "/service_basic_wash.jpg",
-  "standard-interior-exterior": "/service_premium_wash.jpg",
-  "intense-interior-deep-sanitization": "/service_interior_cleaning.jpg",
-  "premium-wax-spa-detailing": "/service_full_detailing.jpg",
+  "basic-wash": "/service_basic_wash.jpg?v=2",
+  "interior-cleaning": "/service_interior_cleaning.jpg?v=2",
+  "premium-wash": "/service_premium_wash.jpg?v=2",
+  "full-detailing": "/service_full_detailing.jpg?v=2",
+  "express-foam-exterior": "/service_basic_wash.jpg?v=2",
+  "standard-interior-exterior": "/service_premium_wash.jpg?v=2",
+  "intense-interior-deep-sanitization": "/service_interior_cleaning.jpg?v=2",
+  "premium-wax-spa-detailing": "/service_full_detailing.jpg?v=2",
 };
 
 const HOW_IT_WORKS_STEPS = [
@@ -174,25 +174,19 @@ const HOW_IT_WORKS_STEPS = [
     step: 1,
     icon: Car,
     title: "Choose Your Service",
-    desc: "Pick between Basic Wash, Interior, Premium, or Full Detailing.",
+    desc: "Pick from exterior snow foam to complete interior restoration tailored for your car.",
   },
   {
     step: 2,
     icon: Calendar,
-    title: "Select Date & Time",
-    desc: "Choose a convenient time slot that fits your schedule.",
+    title: "Select Your Slot",
+    desc: "Choose a guaranteed time window and share your address in Chandigarh, Mohali, or Panchkula.",
   },
   {
     step: 3,
-    icon: MapPin,
-    title: "Share Your Address",
-    desc: "Tell us your home or office address in Chandigarh, Mohali, or Panchkula.",
-  },
-  {
-    step: 4,
     icon: Sparkles,
-    title: "Relax We Clean",
-    desc: "Our equipped detailing crew arrives and washes your car to perfection.",
+    title: "Relax While We Care for Your Car",
+    desc: "Our self-powered detailing crew arrives at your driveway. Inspect and pay only when satisfied.",
   },
 ];
 
@@ -255,14 +249,14 @@ const SERVICE_AREAS = [
 /* ─── FAQ Accordion Item ─── */
 function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boolean; onToggle: () => void }) {
   return (
-    <div className="glass-card rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+    <div className="glass-card rounded-2xl overflow-hidden border border-white/10 shadow-lg transition-all">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-5 text-left group transition-colors hover:bg-slate-50/60"
+        className="w-full flex items-center justify-between p-5 text-left group transition-colors hover:bg-white/[0.03]"
         aria-expanded={isOpen}
       >
-        <span className="text-sm font-bold text-slate-900 flex items-center gap-2.5 pr-4">
-          <HelpCircle className="w-4 h-4 text-sky-600 shrink-0" />
+        <span className="text-sm font-bold text-white flex items-center gap-2.5 pr-4">
+          <HelpCircle className="w-4 h-4 text-cyan-400 shrink-0" />
           {q}
         </span>
         <motion.div
@@ -270,7 +264,7 @@ function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boo
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="shrink-0"
         >
-          <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors" />
+          <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition-colors" />
         </motion.div>
       </button>
       <AnimatePresence>
@@ -282,7 +276,7 @@ function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boo
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="px-5 pb-5 pt-0">
-              <p className="text-sm text-slate-600 leading-relaxed pl-6.5">
+              <p className="text-sm text-slate-300 leading-relaxed pl-6.5">
                 {a}
               </p>
             </div>
@@ -337,11 +331,11 @@ export default function HomePage() {
   const selectedVehicleObj = vehicles.find((v) => v.id === selectedVehicle);
 
   return (
-    <div className="space-y-20 lg:space-y-28 pb-20 bg-[#F8FAFC]">
+    <div className="space-y-24 lg:space-y-32 pb-24 bg-[#060B13] text-slate-100">
       {/* ═══════════════════════════════════════════════════
-          1. HERO SECTION (Clean Bright Studio)
+          1. CINEMATIC HERO SECTION (Luxury Automotive)
       ═══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden min-h-[90vh] flex items-center -mt-18 sm:-mt-24 border-b border-slate-200">
+      <section className="relative overflow-hidden min-h-[92vh] flex items-center -mt-18 sm:-mt-24 border-b border-white/10">
         {/* Background Action Layer */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -349,141 +343,198 @@ export default function HomePage() {
             alt="CARSPA Doorstep Car Detailing"
             fill
             priority
-            quality={92}
-            className="object-cover object-[80%_center] md:object-[72%_center] lg:object-[68%_center] filter brightness-[1.02] contrast-[1.04]"
+            quality={95}
+            className="object-cover object-[78%_center] md:object-[72%_center] lg:object-[68%_center] filter brightness-[0.92] contrast-[1.08] animate-cinematic-bg"
             sizes="100vw"
           />
 
-          {/* Clean Bright Studio Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/95 via-[48%] to-[#F8FAFC]/30 lg:from-[#F8FAFC] lg:via-[#F8FAFC]/92 lg:via-[52%] lg:to-transparent z-10" />
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#F8FAFC] via-[#F8FAFC]/70 to-transparent z-10" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFC] via-[#F8FAFC]/80 to-transparent z-10" />
+          {/* Deep Cinematic Gradients */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#060B13] via-[#060B13]/92 via-[52%] to-[#060B13]/40 lg:from-[#060B13] lg:via-[#060B13]/88 lg:via-[55%] lg:to-transparent z-10" />
+          <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-[#060B13] via-[#060B13]/80 to-transparent z-10" />
+          <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#060B13] via-[#060B13]/90 to-transparent z-10" />
 
-          {/* Ambient Blue Radial Glow */}
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[350px] bg-sky-400/10 blur-[130px] pointer-events-none rounded-full z-10" />
+          {/* Electric Cyan Radial Atmosphere */}
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[400px] bg-cyan-500/12 blur-[150px] pointer-events-none rounded-full z-10" />
         </div>
 
         {/* Content Layer */}
-        <div className="container-premium relative z-20 pt-28 pb-16 lg:py-32 w-full">
-          <div className="max-w-2xl lg:max-w-3xl space-y-7">
+        <div className="container-premium relative z-20 pt-32 pb-20 lg:py-36 w-full">
+          <div className="max-w-2xl lg:max-w-3xl space-y-8">
             {/* Eyebrow */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2.5"
             >
-              <span className="text-xs font-black tracking-[0.22em] uppercase text-sky-700 bg-sky-50 border border-sky-200 px-3.5 py-1.5 rounded-full shadow-sm">
-                PREMIUM CAR CARE
+              <span className="text-[11px] font-black tracking-[0.25em] uppercase text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-3.5 py-1.5 rounded-full shadow-lg shadow-cyan-500/10 backdrop-blur-md">
+                CINEMATIC DOORSTEP DETAILING
               </span>
-              <span className="text-xs text-slate-500 hidden sm:inline font-medium">• Chandigarh • Mohali • Panchkula</span>
+              <span className="text-xs text-slate-400 hidden sm:inline font-medium tracking-wide">
+                • Chandigarh • Mohali • Panchkula
+              </span>
             </motion.div>
 
             {/* Main Headline */}
-            <motion.h1
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-[1.05]"
+              className="space-y-1"
             >
-              AT YOUR{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600">
-                DOORSTEP
-              </span>
-            </motion.h1>
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.05]">
+                Premium Car Care.
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500">
+                  At Your Doorstep.
+                </span>
+              </h1>
+            </motion.div>
 
             {/* Subtitle */}
             <motion.p
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-base sm:text-lg text-slate-600 max-w-lg leading-relaxed font-medium"
+              className="text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed font-normal"
             >
-              Professional car washing and detailing at your home or office. Purified soft water, zero scratches, transparent pricing.
+              Professional car cleaning and detailing, delivered to your home or workplace. Certified detailing crew, onboard soft water, zero scratches.
             </motion.p>
-
-            {/* 4 Feature Cards */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2"
-            >
-              {[
-                { icon: Home, title: "Convenient Home Service" },
-                { icon: Sparkles, title: "Professional Cleaning" },
-                { icon: Tag, title: "Transparent Pricing" },
-                { icon: Calendar, title: "Flexible Scheduling" },
-              ].map((item, idx) => (
-                <div key={idx} className="flex flex-col items-center sm:items-start text-center sm:text-left gap-2 p-3 rounded-2xl bg-white/90 border border-slate-200 shadow-sm backdrop-blur-sm hover:shadow-md transition-all">
-                  <div className="w-9 h-9 rounded-full bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center shrink-0">
-                    <item.icon className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-800 leading-snug">
-                    {item.title}
-                  </span>
-                </div>
-              ))}
-            </motion.div>
 
             {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-3"
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2"
             >
               <Link
                 href="/book"
-                className="btn-primary text-sm px-8 py-4 rounded-xl shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 font-bold"
+                className="btn-primary text-sm px-8 py-4 rounded-xl shadow-xl shadow-cyan-500/25 flex items-center justify-center gap-2 font-bold tracking-wide"
               >
                 <Calendar className="w-4 h-4" />
-                <span>Book a Car Wash →</span>
+                <span>Book Your Wash →</span>
               </Link>
+              <a
+                href="#services"
+                className="btn-secondary text-sm px-7 py-4 rounded-xl flex items-center justify-center gap-2 font-semibold"
+              >
+                <span>Explore Services</span>
+                <ChevronDown className="w-4 h-4 text-cyan-400" />
+              </a>
               <a
                 href="https://wa.me/917087811881?text=Hi%20CARSPA%2C%20I%20would%20like%20to%20enquire%20about%20a%20doorstep%20car%20wash."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-secondary text-sm px-6 py-4 rounded-xl text-emerald-700 hover:text-emerald-800 border-emerald-200 hover:border-emerald-300 bg-emerald-50 hover:bg-emerald-100/80 flex items-center justify-center gap-2 font-bold shadow-sm"
+                className="flex items-center justify-center gap-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 px-4 py-4 rounded-xl transition-all shadow-sm"
               >
-                <MessageSquare className="w-4 h-4 text-emerald-600" />
-                <span>Chat on WhatsApp</span>
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
+                <span className="hidden md:inline">WhatsApp</span>
               </a>
             </motion.div>
+
+            {/* Trust Indicator Strip */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="pt-4 flex items-center gap-3 text-xs text-slate-400 border-t border-white/10"
+            >
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-md shadow-cyan-400/50" />
+              <span className="font-medium tracking-wide">
+                Convenient booking · Professional care · At-home service
+              </span>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 hidden md:flex flex-col items-center gap-1.5 text-[10px] uppercase tracking-widest text-slate-400 font-mono">
+          <span>Scroll Down</span>
+          <motion.div
+            animate={{ y: [0, 5, 0] }}
+            transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+          >
+            <ChevronDown className="w-4 h-4 text-cyan-400" />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════
+          2. TRUST AND VALUE STRIP
+      ═══════════════════════════════════════════════════ */}
+      <section className="border-y border-white/10 bg-[#090F1C]/90 backdrop-blur-xl relative z-20">
+        <div className="container-premium py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+            {[
+              {
+                icon: Home,
+                title: "Doorstep Convenience",
+                desc: "We bring purified soft water & power straight to your driveway.",
+              },
+              {
+                icon: Sparkles,
+                title: "Professional Cleaning",
+                desc: "Certified detailers with German foam cannon & two-bucket wash.",
+              },
+              {
+                icon: Calendar,
+                title: "Flexible Scheduling",
+                desc: "Real-time live slot booking with instant confirmation.",
+              },
+              {
+                icon: Tag,
+                title: "Transparent Pricing",
+                desc: "Pay strictly after inspection. Zero surprise fees.",
+              },
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 shadow-sm">
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white tracking-tight">
+                    {item.title}
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-1 leading-snug">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          2. OUR SERVICES (Clean Studio Cards)
+          3. OUR SERVICES (Editorial Luxury Cards)
       ═══════════════════════════════════════════════════ */}
       <section id="services" className="container-premium">
         <FadeUp>
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-sky-600">
+              <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">
                 Transparent Doorstep Packages
               </span>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase mt-0.5">
+              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase mt-0.5">
                 OUR SERVICES
               </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Choose the perfect package for your car.
+              <p className="text-sm text-slate-400 mt-1">
+                Precision doorstep car washing and detailing tailored for your vehicle.
               </p>
             </div>
 
-            {/* 3 Trust Badges */}
+            {/* Trust Badges */}
             <div className="flex flex-wrap items-center gap-3 text-xs">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm">
-                <Clock className="w-3.5 h-3.5 text-sky-600" />
-                <span className="font-semibold">Trained Professionals</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-slate-300">
+                <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="font-semibold">Trained Detailers</span>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm">
-                <Leaf className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="font-semibold">Eco-Friendly Products</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-slate-300">
+                <Leaf className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="font-semibold">Eco-Friendly Lather</span>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm">
-                <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10 text-slate-300">
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="font-semibold">Zero-Scratch Guarantee</span>
               </div>
             </div>
@@ -493,9 +544,9 @@ export default function HomePage() {
         {/* Vehicle Segment Selector */}
         {vehicles.length > 0 && (
           <FadeUp className="mb-8">
-            <div className="flex flex-wrap items-center gap-2 p-2 rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3">
-                Select Segment:
+            <div className="flex flex-wrap items-center gap-2 p-2 rounded-2xl bg-[#0B1220]/80 border border-white/10 shadow-lg backdrop-blur-xl">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3">
+                Vehicle Segment:
               </span>
               {vehicles.map((v) => {
                 const img = VEHICLE_HOME_IMAGES[v.slug] || "/vehicles/sedan.jpg";
@@ -504,13 +555,13 @@ export default function HomePage() {
                   <button
                     key={v.id}
                     onClick={() => setSelectedVehicle(v.id)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ${
                       isSelected
-                        ? "bg-sky-600 text-white shadow-md shadow-sky-600/30 scale-[1.02]"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                        ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-lg shadow-sky-600/30 scale-[1.02] border border-cyan-400/40"
+                        : "text-slate-300 hover:text-white hover:bg-white/5 border border-transparent"
                     }`}
                   >
-                    <div className="relative w-6 h-4 rounded overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                    <div className="relative w-6 h-4 rounded overflow-hidden bg-slate-900 shrink-0 border border-white/10">
                       <Image src={img} alt={v.name} fill className="object-cover" sizes="24px" />
                     </div>
                     <span>{v.name}</span>
@@ -522,10 +573,10 @@ export default function HomePage() {
         )}
 
         {/* 4 Service Cards Grid */}
-        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {packages.slice(0, 4).map((pkg) => {
             const price = getPackagePrice(pkg);
-            const imageSrc = PACKAGE_IMAGES[pkg.slug] || "/service_basic_wash.jpg";
+            const imageSrc = PACKAGE_IMAGES[pkg.slug] || "/service_basic_wash.jpg?v=2";
             const isPopular = pkg.is_popular || pkg.name.toLowerCase().includes("premium");
 
             return (
@@ -533,45 +584,46 @@ export default function HomePage() {
                 <div
                   className={`glass-card glass-card-hover rounded-3xl p-5 flex flex-col justify-between relative h-full transition-all duration-300 ${
                     isPopular
-                      ? "border-2 border-sky-500 shadow-xl shadow-sky-500/10 ring-4 ring-sky-500/10 bg-white"
-                      : "border border-slate-200 shadow-sm hover:shadow-lg bg-white"
+                      ? "border-2 border-cyan-400/50 shadow-2xl shadow-cyan-500/15 ring-2 ring-cyan-400/20 bg-[#0E172B]/90"
+                      : "border border-white/10 bg-[#0B1220]/80 hover:border-cyan-400/30"
                   }`}
                 >
                   {/* MOST POPULAR badge */}
                   {isPopular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-sky-600 to-blue-600 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md z-10">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-lg shadow-cyan-500/30 z-10 border border-cyan-300/30">
                       ★ MOST POPULAR
                     </span>
                   )}
 
                   <div className="space-y-4">
                     {/* Package Image */}
-                    <div className="relative w-full h-36 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+                    <div className="relative w-full h-40 rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-inner">
                       <Image
                         src={imageSrc}
                         alt={pkg.name}
                         fill
                         className="object-cover transition-transform duration-500 hover:scale-105"
-                        sizes="(max-width: 640px) 100vw, 250px"
+                        sizes="(max-width: 640px) 100vw, 300px"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                     </div>
 
                     {/* Title & Short Description */}
                     <div>
-                      <h3 className="text-lg font-black text-slate-900">{pkg.name}</h3>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                      <h3 className="text-lg font-black text-white">{pkg.name}</h3>
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                         {pkg.short_description}
                       </p>
                     </div>
 
                     {/* Price - "From ₹..." */}
-                    <div className="pt-2 border-t border-slate-100 flex items-baseline gap-1.5">
-                      <span className="text-xs text-slate-500 font-medium">From</span>
-                      <span className="text-3xl font-black text-sky-600 tracking-tight">
+                    <div className="pt-3 border-t border-white/10 flex items-baseline gap-1.5">
+                      <span className="text-xs text-slate-400 font-medium">From</span>
+                      <span className="text-3xl font-black text-cyan-400 tracking-tight">
                         ₹{price ? price.effective : "—"}
                       </span>
                       {selectedVehicleObj && (
-                        <span className="text-[10px] text-slate-500 ml-auto font-medium">
+                        <span className="text-[10px] text-slate-400 ml-auto font-medium">
                           for {selectedVehicleObj.name}
                         </span>
                       )}
@@ -579,17 +631,17 @@ export default function HomePage() {
                   </div>
 
                   {/* Book Button */}
-                  <div className="pt-5">
+                  <div className="pt-6">
                     <Link
                       href={`/book?package=${pkg.id}&vehicle=${selectedVehicle || ""}`}
-                      className={`w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 ${
+                      className={`w-full py-3.5 rounded-xl text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 ${
                         isPopular
-                          ? "btn-primary shadow-md shadow-sky-600/30"
-                          : "btn-secondary hover:border-sky-500 hover:text-sky-600"
+                          ? "btn-primary shadow-xl shadow-cyan-500/25 scale-[1.02]"
+                          : "btn-secondary hover:border-cyan-400/60 hover:text-cyan-300"
                       }`}
                     >
-                      <span>Book Now</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>Book This Service</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
                     </Link>
                   </div>
                 </div>
@@ -600,72 +652,100 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          3. HOW IT WORKS (High-Contrast Rich Navy Card)
+          4. HOW IT WORKS (Cinematic 3-Step Section)
       ═══════════════════════════════════════════════════ */}
       <section id="how-it-works" className="container-premium">
-        <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-8 sm:p-12 shadow-2xl text-white">
+        <div className="relative overflow-hidden rounded-3xl bg-[#090F1C]/90 border border-white/10 p-8 sm:p-14 shadow-2xl">
           {/* Subtle water glow */}
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-sky-500/10 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 blur-[130px] rounded-full pointer-events-none" />
 
-          <FadeUp className="mb-10">
-            <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
-              Simple 4-Step Process
+          <FadeUp className="mb-12 text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+              Simple 3-Step Process
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase mt-0.5">
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase">
               HOW IT WORKS
             </h2>
-            <p className="text-sm text-slate-400 mt-1">
-              Book your car wash in just a few simple steps.
+            <p className="text-sm text-slate-400">
+              Book doorstep car care in under two minutes.
             </p>
           </FadeUp>
 
-          {/* 4 Steps row with CTAs */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Steps (Cols 1-8) */}
-            <div className="lg:col-span-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {HOW_IT_WORKS_STEPS.map((s) => (
-                  <div
-                    key={s.step}
-                    className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md shadow-sky-500/30">
-                        {s.step}
-                      </div>
-                      <s.icon className="w-4 h-4 text-sky-400" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white leading-snug">
-                        {s.title}
-                      </h4>
-                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                        {s.desc}
-                      </p>
-                    </div>
+          {/* 3 Steps */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 relative">
+            {HOW_IT_WORKS_STEPS.map((s) => (
+              <div
+                key={s.step}
+                className="glass-card p-6 rounded-2xl border border-white/10 relative flex flex-col justify-between space-y-4 hover:border-cyan-500/40 transition-all duration-300 bg-[#0D1527]/80"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-lg shadow-cyan-500/25">
+                    {s.step}
                   </div>
-                ))}
+                  <s.icon className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-white tracking-tight">
+                    {s.title}
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                    {s.desc}
+                  </p>
+                </div>
               </div>
-            </div>
+            ))}
+          </div>
 
-            {/* CTAs on the right (Cols 9-12) */}
-            <div className="lg:col-span-4 flex flex-col gap-3 justify-center">
+          {/* Bottom Action Strip */}
+          <div className="mt-10 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <h4 className="text-sm font-bold text-white">Need an immediate wash?</h4>
+              <p className="text-xs text-slate-400 mt-0.5">Vans available for dispatch today across Tricity.</p>
+            </div>
+            <Link
+              href="/book"
+              className="btn-primary text-xs px-6 py-3 rounded-xl font-bold uppercase tracking-wider"
+            >
+              <span>Book Your Wash →</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════
+          5. PREMIUM CONVERSION CTA BANNER
+      ═══════════════════════════════════════════════════ */}
+      <section className="container-premium">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B1426] via-[#0D1B36] to-[#0A1324] border border-cyan-500/30 p-8 sm:p-14 shadow-2xl">
+          {/* Background Ambient Glow */}
+          <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-96 h-96 bg-cyan-500/15 blur-[120px] rounded-full pointer-events-none" />
+
+          <div className="relative z-10 max-w-2xl space-y-6">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-3 py-1 rounded-full">
+              DOORSTEP AUTOMOTIVE DETAILING
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+              Your Car Deserves Better Care.
+            </h2>
+            <p className="text-base text-slate-300 leading-relaxed">
+              Experience the showroom shine at home. Purified RO soft water, zero swirl marks, and payment strictly after your personal inspection.
+            </p>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2">
               <Link
                 href="/book"
-                className="w-full bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-sm py-4 px-6 rounded-2xl shadow-xl shadow-sky-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="btn-primary text-sm px-8 py-4 rounded-xl shadow-xl shadow-cyan-500/30 font-bold"
               >
-                <span>Book a Car Wash →</span>
+                <Calendar className="w-4 h-4" />
+                <span>Schedule Your Wash</span>
               </Link>
               <a
                 href="https://wa.me/917087811881"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-sm py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-sm"
+                className="btn-secondary text-sm px-6 py-4 rounded-xl flex items-center justify-center gap-2"
               >
-                <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950">
-                  <MessageSquare className="w-3 h-3 fill-slate-950" />
-                </div>
-                <span>Chat on WhatsApp</span>
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
+                <span>Chat with an Expert</span>
               </a>
             </div>
           </div>
@@ -673,28 +753,111 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          4. SERVICE COVERAGE (Chandigarh • Mohali • Panchkula)
+          6. PRICING & COMPARISON (id="pricing")
+      ═══════════════════════════════════════════════════ */}
+      <section id="pricing" className="container-premium">
+        <FadeUp className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+            Transparent Pricing
+          </span>
+          <h2 className="text-3xl sm:text-4xl font-black text-white">
+            Choose Your Detailing Level
+          </h2>
+          <p className="text-sm text-slate-400">
+            Real prices calculated for {selectedVehicleObj ? selectedVehicleObj.name : "your vehicle"}. No surprise charges.
+          </p>
+        </FadeUp>
+
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {packages.map((pkg) => {
+            const price = getPackagePrice(pkg);
+            const isPopular = pkg.is_popular || pkg.name.toLowerCase().includes("premium");
+
+            return (
+              <StaggerItem key={pkg.id}>
+                <div
+                  className={`glass-card p-6 rounded-3xl flex flex-col justify-between h-full border ${
+                    isPopular
+                      ? "border-cyan-400/60 bg-[#0E172B]/90 shadow-2xl shadow-cyan-500/10"
+                      : "border-white/10 bg-[#0B1220]/80"
+                  }`}
+                >
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-bold text-white">{pkg.name}</h3>
+                        <p className="text-xs text-slate-400 mt-1">{pkg.short_description}</p>
+                      </div>
+                      {isPopular && (
+                        <span className="text-[10px] font-black uppercase text-cyan-300 bg-cyan-950 border border-cyan-500/40 px-2 py-0.5 rounded-full">
+                          Popular
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="pt-2 pb-4 border-b border-white/10">
+                      <span className="text-3xl font-black text-cyan-400">
+                        ₹{price ? price.effective : "—"}
+                      </span>
+                      <span className="text-xs text-slate-400 ml-1.5 font-medium">
+                        / {selectedVehicleObj ? selectedVehicleObj.name : "wash"}
+                      </span>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-2 font-mono">
+                        <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>{pkg.estimated_duration_minutes} mins duration</span>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-2 text-xs text-slate-300">
+                      {pkg.features.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="pt-6">
+                    <Link
+                      href={`/book?package=${pkg.id}&vehicle=${selectedVehicle || ""}`}
+                      className={`w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 ${
+                        isPopular ? "btn-primary shadow-lg shadow-cyan-500/25" : "btn-secondary"
+                      }`}
+                    >
+                      <span>Book This Service</span>
+                    </Link>
+                  </div>
+                </div>
+              </StaggerItem>
+            );
+          })}
+        </StaggerContainer>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════
+          7. TRICITY COVERAGE HUBS
       ═══════════════════════════════════════════════════ */}
       <section className="container-premium">
         <FadeUp className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-sky-600">
-            Tricity Doorstep Hubs
+          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+            Tricity Hubs
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+          <h2 className="text-2xl sm:text-3xl font-black text-white">
             Chandigarh • Mohali • Panchkula
           </h2>
-          <p className="text-sm text-slate-500">
-            Our detailing vans are stationed across Tricity to reach your home in under 45 minutes.
+          <p className="text-sm text-slate-400">
+            Vans stationed strategically across Tricity to reach your home or office on schedule.
           </p>
         </FadeUp>
 
         <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {SERVICE_AREAS.map((loc, i) => (
             <StaggerItem key={i}>
-              <div className="glass-card glass-card-hover p-4 rounded-2xl text-center space-y-1.5 cursor-default bg-white border border-slate-200">
-                <MapPin className="w-4 h-4 text-sky-600 mx-auto" />
-                <h4 className="text-xs font-bold text-slate-900">{loc.name}</h4>
-                <p className="text-[10px] text-slate-500 font-mono">PIN: {loc.pin}</p>
+              <div className="glass-card p-4 rounded-2xl text-center space-y-1.5 cursor-default bg-[#0B1220]/80 border border-white/10 hover:border-cyan-500/40 transition-all">
+                <MapPin className="w-4 h-4 text-cyan-400 mx-auto" />
+                <h4 className="text-xs font-bold text-white">{loc.name}</h4>
+                <p className="text-[10px] text-slate-400 font-mono">PIN: {loc.pin}</p>
               </div>
             </StaggerItem>
           ))}
@@ -702,15 +865,15 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          5. TESTIMONIALS
+          8. TESTIMONIALS
       ═══════════════════════════════════════════════════ */}
       <section className="container-premium">
         <FadeUp className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <div className="inline-flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 px-3.5 py-1 rounded-full font-bold shadow-sm">
-            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+          <div className="inline-flex items-center gap-1.5 text-xs text-amber-300 bg-amber-950/40 border border-amber-500/30 px-3.5 py-1 rounded-full font-bold">
+            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
             <span>Verified Customer Reviews</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+          <h2 className="text-2xl sm:text-3xl font-black text-white">
             What Our Customers Say
           </h2>
         </FadeUp>
@@ -718,21 +881,21 @@ export default function HomePage() {
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {TESTIMONIALS.map((item, idx) => (
             <StaggerItem key={idx}>
-              <div className="glass-card glass-card-hover p-6 rounded-3xl space-y-4 flex flex-col justify-between h-full bg-white border border-slate-200 shadow-sm">
+              <div className="glass-card p-6 rounded-3xl space-y-4 flex flex-col justify-between h-full bg-[#0B1220]/80 border border-white/10 shadow-lg">
                 <div className="space-y-3">
-                  <div className="flex gap-0.5 text-amber-500">
+                  <div className="flex gap-0.5 text-amber-400">
                     {[...Array(item.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-500" />
+                      <Star key={i} className="w-4 h-4 fill-amber-400" />
                     ))}
                   </div>
-                  <p className="text-sm text-slate-600 leading-relaxed italic">
+                  <p className="text-sm text-slate-300 leading-relaxed italic">
                     &ldquo;{item.text}&rdquo;
                   </p>
                 </div>
-                <div className="pt-4 border-t border-slate-100">
-                  <h4 className="text-xs font-bold text-slate-900">{item.name}</h4>
-                  <p className="text-[11px] text-sky-600 font-semibold mt-0.5">{item.car}</p>
-                  <p className="text-[10px] text-slate-500">{item.area}</p>
+                <div className="pt-4 border-t border-white/10">
+                  <h4 className="text-xs font-bold text-white">{item.name}</h4>
+                  <p className="text-[11px] text-cyan-400 font-semibold mt-0.5">{item.car}</p>
+                  <p className="text-[10px] text-slate-400">{item.area}</p>
                 </div>
               </div>
             </StaggerItem>
@@ -741,14 +904,14 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          6. FAQ ACCORDION
+          9. FAQ ACCORDION
       ═══════════════════════════════════════════════════ */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeUp className="text-center mb-10 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-sky-600">
+          <span className="text-xs font-bold uppercase tracking-widest text-cyan-400">
             Common Questions
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+          <h2 className="text-2xl sm:text-3xl font-black text-white">
             Frequently Asked Questions
           </h2>
         </FadeUp>
