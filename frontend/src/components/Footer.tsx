@@ -61,7 +61,7 @@ export default function Footer() {
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
           {/* Brand */}
           <StaggerItem className="space-y-4">
-            <CarSpaLogo size="lg" />
+            <CarSpaLogo size="lg" theme="dark" />
             <p className="text-sm leading-relaxed text-slate-400 pt-2">
               Professional car washing and detailing at your home or office. Purified soft water, pH-neutral snow foam, and zero scratches guaranteed.
             </p>

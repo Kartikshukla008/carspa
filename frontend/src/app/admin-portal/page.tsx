@@ -451,52 +451,52 @@ export default function AdminPortalPage() {
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto px-4 py-20">
-        <div className="glass-card p-8 rounded-3xl border-gray-800 space-y-6 shadow-2xl">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 space-y-6 shadow-xl">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-xl bg-sky-950 border border-sky-800 text-sky-400 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center mx-auto shadow-sm">
               <ShieldAlert className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Administrator Login</h2>
-            <p className="text-xs text-gray-400">
+            <h2 className="text-2xl font-bold text-slate-900">Administrator Login</h2>
+            <p className="text-xs text-slate-600">
               Access booking controls, capacity engine &amp; CRM.
             </p>
           </div>
 
           {loginError && (
-            <div className="p-3.5 rounded-xl bg-red-950/60 border border-red-800 text-xs text-red-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
               <span>{loginError}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-300 block">Username</label>
+              <label className="text-xs font-semibold text-slate-700 block">Username</label>
               <input
                 type="text"
                 required
                 value={loginForm.username}
                 onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-300 block">Password</label>
+              <label className="text-xs font-semibold text-slate-700 block">Password</label>
               <input
                 type="password"
                 required
                 placeholder="••••••••"
                 value={loginForm.password}
                 onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
               />
             </div>
 
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+              className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-md shadow-sky-600/20 flex items-center justify-center gap-2"
             >
               {loginLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In to Admin Portal"}
             </button>
@@ -534,27 +534,27 @@ export default function AdminPortalPage() {
       )}
 
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-gray-800 gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-200 gap-4">
         <div>
-          <span className="text-[11px] font-bold text-sky-400 uppercase tracking-widest">
+          <span className="text-[11px] font-bold text-sky-600 uppercase tracking-widest">
             Control Center
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Operations &amp; Booking Dashboard
           </h1>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
-            <span className="text-xs font-bold text-white block">
+            <span className="text-xs font-bold text-slate-900 block">
               {adminUser?.username || "Administrator"}
             </span>
-            <span className="text-[11px] text-emerald-400 font-medium">Session Active</span>
+            <span className="text-[11px] text-emerald-600 font-semibold">Session Active</span>
           </div>
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-red-400 bg-gray-900 border border-gray-800 px-3.5 py-2 rounded-xl transition-colors"
+            className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-red-600 bg-white border border-slate-200 hover:border-red-200 px-3.5 py-2 rounded-xl transition-colors shadow-sm"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout</span>
@@ -563,7 +563,7 @@ export default function AdminPortalPage() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap gap-2 border-b border-gray-800 pb-2">
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-2">
         {[
           { id: "overview", label: "Overview Metrics", icon: TrendingUp },
           { id: "bookings", label: "Bookings Management", icon: Calendar },
@@ -580,7 +580,7 @@ export default function AdminPortalPage() {
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                 isActive
                   ? "bg-sky-600 text-white shadow-md shadow-sky-600/30"
-                  : "text-gray-400 hover:text-white hover:bg-gray-900"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -595,57 +595,57 @@ export default function AdminPortalPage() {
         <div className="space-y-8">
           {/* KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="glass-card p-5 rounded-2xl border-gray-800 space-y-1">
-              <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
                 Total Bookings
               </span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-white">
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                 {metrics ? metrics.total_bookings : "—"}
               </p>
-              <span className="text-[11px] text-sky-400">
+              <span className="text-[11px] text-sky-600 font-medium">
                 {metrics ? metrics.today_bookings_count : 0} scheduled today
               </span>
             </div>
 
-            <div className="glass-card p-5 rounded-2xl border-gray-800 space-y-1">
-              <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
                 Pending Approval
               </span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-amber-400">
+              <p className="text-2xl sm:text-3xl font-extrabold text-amber-600">
                 {metrics ? metrics.pending_confirmations : "—"}
               </p>
-              <span className="text-[11px] text-gray-400">Requires confirmation</span>
+              <span className="text-[11px] text-slate-500 font-medium">Requires confirmation</span>
             </div>
 
-            <div className="glass-card p-5 rounded-2xl border-gray-800 space-y-1">
-              <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
                 Gross Revenue
               </span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
+              <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600">
                 ₹{metrics ? metrics.total_revenue : "0.00"}
               </p>
-              <span className="text-[11px] text-gray-400">Completed &amp; settled</span>
+              <span className="text-[11px] text-slate-500 font-medium">Completed &amp; settled</span>
             </div>
 
-            <div className="glass-card p-5 rounded-2xl border-gray-800 space-y-1">
-              <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
                 Lead Conversion
               </span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-cyan-400">
+              <p className="text-2xl sm:text-3xl font-extrabold text-sky-600">
                 {metrics ? metrics.conversion_rate : "0%"}
               </p>
-              <span className="text-[11px] text-gray-400">
+              <span className="text-[11px] text-slate-500 font-medium">
                 {metrics ? metrics.total_leads : 0} total leads
               </span>
             </div>
           </div>
 
           {/* Upcoming appointments */}
-          <div className="glass-card rounded-2xl border-gray-800 overflow-hidden">
-            <div className="p-5 border-b border-gray-800 flex justify-between items-center">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <div>
-                <h3 className="text-base font-bold text-white">Upcoming Appointments</h3>
-                <p className="text-xs text-gray-400">Next scheduled doorstep jobs</p>
+                <h3 className="text-base font-bold text-slate-900">Upcoming Appointments</h3>
+                <p className="text-xs text-slate-500">Next scheduled doorstep jobs</p>
               </div>
               <button
                 onClick={fetchDashboardMetrics}

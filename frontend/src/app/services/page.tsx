@@ -85,131 +85,120 @@ export default function ServicesPage() {
   const selectedVehicleObj = vehicles.find((v) => v.id === selectedVehicle);
 
   return (
-    <div className="container-premium py-8 lg:py-14 space-y-16">
+    <div className="container-premium py-8 lg:py-14 space-y-16 bg-[#F8FAFC]">
       {/* Hero Header */}
       <FadeUp>
-        <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] shadow-premium">
-          <div className="absolute inset-0 z-0">
-            <Image
-              src="/hero-car-wash-alt.jpg"
-              alt="Doorstep Car Detailing Service in Progress"
-              fill
-              priority
-              className="object-cover object-center animate-cinematic-bg filter brightness-[0.65] contrast-[1.1]"
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-navy-900/95 via-navy-900/85 to-navy-900 z-10" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-brand-500/8 blur-[130px] pointer-events-none rounded-full z-10 animate-mist" />
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200 shadow-sm bg-white p-8 sm:p-14 text-center max-w-4xl mx-auto space-y-5">
+          <div className="inline-flex items-center gap-2 bg-sky-50 border border-sky-200 text-sky-700 font-bold text-xs px-3.5 py-1.5 rounded-full shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+            <span>Studio Grade Doorstep Detailing</span>
           </div>
 
-          <div className="relative z-20 text-center max-w-3xl mx-auto px-6 py-14 sm:py-20 space-y-5">
-            <span className="badge badge-primary">
-              <Sparkles className="w-3.5 h-3.5" />
-              Studio Grade Doorstep Detailing
-            </span>
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+            Precision Car Detailing Packages
+          </h1>
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            All services include our proprietary purified soft water (TDS &lt; 50), German pressure equipment, and professional pH-neutral detailing chemistry. Pay only after your vehicle inspection.
+          </p>
 
-            <h1 className="text-hero tracking-tight">
-              Precision Car Detailing Packages
-            </h1>
-            <p className="section-subheading mx-auto">
-              All services include our proprietary purified soft water, German pressure equipment, and professional detailing chemistry. No hidden fees or extra travel charges.
-            </p>
+          {/* Vehicle Selector */}
+          {vehicles.length > 0 && (
+            <div className="pt-6 space-y-4">
+              <span className="text-xs font-bold text-sky-700 uppercase tracking-[0.15em] block">
+                Step 1: Choose Your Vehicle Segment
+              </span>
 
-            {/* Vehicle Selector */}
-            {vehicles.length > 0 && (
-              <div className="pt-6 space-y-4">
-                <span className="text-xs font-bold text-brand-400 uppercase tracking-[0.15em] block">
-                  Step 1: Choose Your Vehicle Segment
-                </span>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto">
-                  {vehicles.map((v) => {
-                    const meta = VEHICLE_METADATA[v.slug] || VEHICLE_METADATA["sedan"];
-                    const isSelected = selectedVehicle === v.id;
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setSelectedVehicle(v.id)}
-                        className={`group p-2.5 rounded-2xl text-left transition-all duration-300 border flex flex-col justify-between ${
-                          isSelected
-                            ? "bg-brand-500/10 border-brand-500 ring-2 ring-brand-500/30 shadow-glow"
-                            : "bg-navy-800/60 border-white/[0.06] hover:border-white/[0.12] hover:bg-navy-700/40"
-                        }`}
-                      >
-                        <div className="relative w-full h-20 sm:h-24 rounded-xl overflow-hidden mb-2 bg-navy-800 border border-white/[0.04]">
-                          <Image
-                            src={meta.image}
-                            alt={v.name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            sizes="(max-width: 640px) 50vw, 200px"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-navy-900/70 via-transparent to-transparent" />
-                          {isSelected && (
-                            <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-md">
-                              <Check className="w-3 h-3 stroke-[3]" />
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-brand-300 transition-colors">
-                            {v.name}
-                          </h4>
-                          <span className="text-[10px] text-slate-500 block truncate mt-0.5">
-                            {meta.surface}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <AnimatePresence mode="wait">
-                  {selectedVehicleObj && (
-                    <motion.div
-                      key={selectedVehicleObj.id}
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
-                      transition={{ duration: 0.25, ease: easings.premium }}
-                      className="inline-flex items-center gap-2 bg-brand-500/[0.06] border border-brand-500/15 px-4 py-2 rounded-xl text-xs text-brand-300 mt-2"
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-4xl mx-auto">
+                {vehicles.map((v) => {
+                  const meta = VEHICLE_METADATA[v.slug] || VEHICLE_METADATA["sedan"];
+                  const isSelected = selectedVehicle === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setSelectedVehicle(v.id)}
+                      className={`group p-3 rounded-2xl text-left transition-all duration-300 border flex flex-col justify-between ${
+                        isSelected
+                          ? "bg-sky-50/80 border-sky-500 ring-2 ring-sky-500/30 shadow-md"
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm"
+                      }`}
                     >
-                      <span className="font-semibold text-white">{selectedVehicleObj.name}:</span>
-                      <span>{VEHICLE_METADATA[selectedVehicleObj.slug]?.models || selectedVehicleObj.description}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      <div className="relative w-full h-20 sm:h-24 rounded-xl overflow-hidden mb-2 bg-slate-100 border border-slate-200">
+                        <Image
+                          src={meta.image}
+                          alt={v.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          sizes="(max-width: 640px) 50vw, 200px"
+                        />
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center shadow-md">
+                            <Check className="w-3 h-3 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors">
+                          {v.name}
+                        </h4>
+                        <span className="text-[10px] text-slate-500 block truncate mt-0.5 font-medium">
+                          {meta.surface}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
+
+              <AnimatePresence mode="wait">
+                {selectedVehicleObj && (
+                  <motion.div
+                    key={selectedVehicleObj.id}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.25, ease: easings.premium }}
+                    className="inline-flex items-center gap-2 bg-sky-50 border border-sky-200 px-4 py-2 rounded-xl text-xs text-sky-800 mt-2 shadow-sm"
+                  >
+                    <span className="font-bold text-slate-900">{selectedVehicleObj.name}:</span>
+                    <span>{VEHICLE_METADATA[selectedVehicleObj.slug]?.models || selectedVehicleObj.description}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </FadeUp>
 
       {/* Package Cards */}
-      <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {(Array.isArray(packages) ? packages : []).map((pkg) => {
           const priceObj = getPrice(pkg);
+          const isPopular = pkg.is_popular || pkg.name.toLowerCase().includes("premium");
           return (
             <StaggerItem key={pkg.id}>
               <div
-                className={`glass-card glass-card-hover rounded-2xl p-8 flex flex-col justify-between relative h-full ${
-                  pkg.is_popular ? "border-brand-500/30 ring-1 ring-brand-500/10" : ""
+                className={`glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between relative h-full bg-white transition-all duration-300 ${
+                  isPopular
+                    ? "border-2 border-sky-500 ring-4 ring-sky-500/10 shadow-xl shadow-sky-500/10"
+                    : "border border-slate-200 shadow-sm hover:shadow-lg"
                 }`}
               >
                 {pkg.badge_text && (
-                  <span className={`absolute -top-3 right-8 text-[11px] font-bold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md ${
-                    pkg.is_popular
-                      ? "bg-gradient-to-r from-brand-500 to-accent-400 text-white"
-                      : "bg-navy-700 text-slate-300 border border-white/[0.08]"
-                  }`}>
+                  <span
+                    className={`absolute -top-3 right-6 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md ${
+                      isPopular
+                        ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white"
+                        : "bg-slate-800 text-white"
+                    }`}
+                  >
                     {pkg.badge_text}
                   </span>
                 )}
 
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {/* Package thumbnail */}
-                  <div className="relative w-full h-36 rounded-xl overflow-hidden bg-slate-900 border border-white/[0.08]">
+                  <div className="relative w-full h-36 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
                     <Image
                       src={PACKAGE_IMAGES[pkg.slug] || "/service_basic_wash.jpg"}
                       alt={pkg.name}
@@ -217,55 +206,54 @@ export default function ServicesPage() {
                       className="object-cover transition-transform duration-500 hover:scale-105"
                       sizes="(max-width: 640px) 100vw, 300px"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#07111F]/80 via-transparent to-transparent" />
                   </div>
 
                   <div>
-                    <h3 className="text-xl font-bold text-white">{pkg.name}</h3>
-                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                    <h3 className="text-xl font-black text-slate-900">{pkg.name}</h3>
+                    <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                       {pkg.description}
                     </p>
                   </div>
 
                   {/* Price */}
-                  <div className="flex items-baseline gap-3 pt-2 pb-4 border-b border-white/[0.06]">
-                    <span className="text-4xl font-extrabold text-white tracking-tight">
+                  <div className="flex items-baseline gap-2 pt-2 pb-4 border-b border-slate-100">
+                    <span className="text-3xl font-black text-sky-600 tracking-tight">
                       ₹{priceObj ? priceObj.effective_price : "—"}
                     </span>
-                    {priceObj && priceObj.discounted_price && (
-                      <span className="text-base text-slate-600 line-through">
+                    {priceObj && priceObj.discounted_price && priceObj.discounted_price !== priceObj.base_price && (
+                      <span className="text-sm text-slate-400 line-through">
                         ₹{priceObj.base_price}
                       </span>
                     )}
-                    <span className="text-xs text-brand-400 font-semibold ml-auto flex items-center gap-1 badge badge-primary">
-                      <Clock className="w-3.5 h-3.5" />
+                    <span className="text-[11px] text-slate-500 font-semibold ml-auto flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg">
+                      <Clock className="w-3.5 h-3.5 text-sky-600" />
                       {pkg.estimated_duration_minutes} mins
                     </span>
                   </div>
 
                   {/* Features */}
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                       What&apos;s included
                     </span>
-                    <ul className="space-y-2.5">
+                    <ul className="space-y-2">
                       {pkg.features.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-300">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                          <span>{item}</span>
+                        <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-600">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <span className="font-medium">{item}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                 </div>
 
-                <div className="pt-8">
+                <div className="pt-6">
                   <Link
                     href={`/book?package=${pkg.id}&vehicle=${selectedVehicle || ""}`}
-                    className={`w-full py-3.5 rounded-xl font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 ${
-                      pkg.is_popular
-                        ? "btn-primary"
-                        : "bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08] hover:border-white/[0.15]"
+                    className={`w-full py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 ${
+                      isPopular
+                        ? "btn-primary shadow-md shadow-sky-600/30"
+                        : "btn-secondary hover:border-sky-500 hover:text-sky-600"
                     }`}
                   >
                     Book for {selectedVehicleObj ? selectedVehicleObj.name : "This Car"}
@@ -280,13 +268,13 @@ export default function ServicesPage() {
 
       {/* Assurance banner */}
       <FadeUp>
-        <div className="glass-card rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="glass-card rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 bg-white border border-slate-200 shadow-md">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-base font-bold text-white">100% Satisfaction or Free Re-Wash</h4>
+              <h4 className="text-base font-bold text-slate-900">100% Satisfaction or Free Re-Wash</h4>
               <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                 If any glass streak, wheel alloy dirt, or interior dust spot is missed, our technician will rectify it on the spot before taking payment.
               </p>
@@ -294,9 +282,9 @@ export default function ServicesPage() {
           </div>
           <Link
             href="/book"
-            className="btn-primary shrink-0 text-xs uppercase tracking-wider px-6 py-3"
+            className="btn-primary shrink-0 text-xs uppercase tracking-wider px-6 py-3.5"
           >
-            Check Slot Availability
+            Check Slot Availability →
           </Link>
         </div>
       </FadeUp>

@@ -345,7 +345,7 @@ function BookingFlow() {
   }
 
   return (
-    <div className="relative min-h-screen py-10 lg:py-16 overflow-hidden">
+    <div className="relative min-h-screen py-10 lg:py-16 overflow-hidden bg-slate-50">
       {/* Background Car Wash Atmosphere */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Image
@@ -353,20 +353,20 @@ function BookingFlow() {
           alt="Doorstep Car Detailing Atmosphere"
           fill
           priority
-          className="object-cover object-top opacity-15 filter brightness-50 contrast-125"
+          className="object-cover object-top opacity-10 filter saturate-150"
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B0F17] via-[#0B0F17]/95 to-[#0B0F17]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-50/90 via-slate-50/95 to-slate-50" />
         <div className="absolute top-1/4 right-1/4 w-[500px] h-[350px] bg-sky-500/10 blur-[130px] rounded-full animate-mist" />
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Title */}
       <div className="text-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
           Book Doorstep Car Detailing
         </h1>
-        <p className="text-xs sm:text-sm text-gray-400 mt-1">
+        <p className="text-xs sm:text-sm text-slate-600 mt-1">
           Zero advance payment. Pay upon completion after inspecting your spotless car.
         </p>
       </div>
@@ -375,7 +375,7 @@ function BookingFlow() {
       {currentStep < 6 && (
         <div className="mb-10">
           <div className="flex items-center justify-between relative max-w-2xl mx-auto">
-            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-800 -translate-y-1/2 -z-0" />
+            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-200 -translate-y-1/2 -z-0" />
             {[
               { num: 1, label: "Vehicle" },
               { num: 2, label: "Package" },
@@ -383,19 +383,21 @@ function BookingFlow() {
               { num: 4, label: "Address" },
               { num: 5, label: "Review" },
             ].map((step) => (
-              <div key={step.num} className="relative z-10 flex flex-col items-center gap-1.5 bg-[#0B0F17] px-2">
+              <div key={step.num} className="relative z-10 flex flex-col items-center gap-1.5 bg-slate-50 px-2">
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                     currentStep === step.num
-                      ? "bg-sky-600 text-white ring-4 ring-sky-500/20 shadow-md shadow-sky-600/40"
+                      ? "bg-sky-600 text-white ring-4 ring-sky-500/20 shadow-md shadow-sky-600/30"
                       : currentStep > step.num
                       ? "bg-emerald-600 text-white"
-                      : "bg-gray-800 text-gray-400 border border-gray-700"
+                      : "bg-white text-slate-400 border border-slate-300 shadow-sm"
                   }`}
                 >
                   {currentStep > step.num ? <CheckCircle2 className="w-4 h-4" /> : step.num}
                 </div>
-                <span className="text-[10px] font-semibold text-gray-400 hidden sm:block">
+                <span className={`text-[10px] font-semibold hidden sm:block ${
+                  currentStep === step.num ? "text-sky-700 font-bold" : currentStep > step.num ? "text-emerald-700" : "text-slate-500"
+                }`}>
                   {step.label}
                 </span>
               </div>
@@ -408,8 +410,8 @@ function BookingFlow() {
       {currentStep === 1 && (
         <div className="space-y-6">
           <div className="text-center space-y-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Select Vehicle Type</h2>
-            <p className="text-xs sm:text-sm text-gray-400">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Select Vehicle Type</h2>
+            <p className="text-xs sm:text-sm text-slate-600">
               Pricing and wash chemistry adjust according to vehicle surface area.
             </p>
           </div>
@@ -424,14 +426,14 @@ function BookingFlow() {
                   key={v.id}
                   type="button"
                   onClick={() => handleSelectVehicle(v)}
-                  className={`group relative glass-card p-4 rounded-2xl text-left transition-all flex flex-col sm:flex-row items-center sm:items-start gap-4 border ${
+                  className={`group relative p-4 rounded-2xl text-left transition-all flex flex-col sm:flex-row items-center sm:items-start gap-4 border ${
                     isSelected
-                      ? "border-sky-500 bg-sky-950/30 ring-2 ring-sky-500 shadow-xl shadow-sky-600/20"
-                      : "border-gray-800 hover:border-gray-700 bg-gray-900/60"
+                      ? "border-sky-600 bg-sky-50/60 ring-2 ring-sky-600 shadow-lg shadow-sky-600/10"
+                      : "border-slate-200 hover:border-sky-300 bg-white shadow-sm hover:shadow-md"
                   }`}
                 >
                   {/* Vehicle Image Thumbnail */}
-                  <div className="relative w-full sm:w-36 h-28 rounded-xl overflow-hidden shrink-0 border border-gray-800/80 bg-gray-950">
+                  <div className="relative w-full sm:w-36 h-28 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-slate-100">
                     <Image
                       src={isSelected ? activeCarImage : meta.image}
                       alt={v.name}
@@ -439,7 +441,7 @@ function BookingFlow() {
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                       sizes="(max-width: 640px) 100vw, 150px"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent" />
                     {isSelected && (
                       <span className="absolute top-2 left-2 bg-sky-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md">
                         Selected
@@ -450,27 +452,27 @@ function BookingFlow() {
                   {/* Card Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-base font-bold text-white group-hover:text-sky-400 transition-colors">
+                      <h3 className="text-base font-bold text-slate-900 group-hover:text-sky-600 transition-colors">
                         {v.name}
                       </h3>
                       <div
                         className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
                           isSelected
                             ? "bg-sky-600 text-white shadow-md shadow-sky-600/40"
-                            : "border border-gray-700 text-transparent"
+                            : "border border-slate-300 text-transparent"
                         }`}
                       >
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     </div>
-                    <span className="inline-block text-[10px] font-bold text-sky-400/90 uppercase tracking-wider mt-0.5">
+                    <span className="inline-block text-[10px] font-bold text-sky-600 uppercase tracking-wider mt-0.5">
                       {meta.badge}
                     </span>
-                    <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
                       {v.description}
                     </p>
-                    <div className="mt-2 text-[10px] text-gray-500 flex items-center gap-1.5">
-                      <Layers className="w-3 h-3 text-sky-400" />
+                    <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-1.5 font-medium">
+                      <Layers className="w-3 h-3 text-sky-600" />
                       <span>{meta.surfaceArea}</span>
                     </div>
                   </div>
@@ -481,12 +483,12 @@ function BookingFlow() {
 
           {/* INTERACTIVE SELECTED VEHICLE SHOWCASE & MODEL SELECTOR */}
           {currentVehicle && currentVehicleMeta && (
-            <div className="relative glass-card rounded-3xl p-6 sm:p-8 border border-sky-500/40 bg-gradient-to-b from-[#0F172A]/90 to-[#0B0F17]/95 shadow-2xl space-y-6 overflow-hidden">
-              <div className="absolute -top-24 -right-24 w-80 h-80 bg-sky-500/10 blur-[100px] rounded-full pointer-events-none" />
+            <div className="relative rounded-3xl p-6 sm:p-8 border border-slate-200 bg-white shadow-xl space-y-6 overflow-hidden">
+              <div className="absolute -top-24 -right-24 w-80 h-80 bg-sky-500/5 blur-[100px] rounded-full pointer-events-none" />
 
               <div className="flex flex-col lg:flex-row items-center gap-6">
                 {/* Large Visual Car Photo Display */}
-                <div className="relative w-full lg:w-1/2 h-56 sm:h-64 rounded-2xl overflow-hidden border border-sky-500/30 shadow-2xl bg-gray-950 group">
+                <div className="relative w-full lg:w-1/2 h-56 sm:h-64 rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-900 group">
                   <Image
                     key={activeCarImage}
                     src={activeCarImage}
@@ -496,13 +498,13 @@ function BookingFlow() {
                     className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
                     sizes="(max-width: 1024px) 100vw, 50vw"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
                   <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <span className="bg-sky-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-lg border border-sky-400/30">
+                    <span className="bg-sky-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-lg">
                       Active Selection
                     </span>
-                    <span className="bg-gray-950/80 backdrop-blur-md text-gray-300 text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-800">
+                    <span className="bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full border border-slate-200">
                       {currentVehicleMeta.badge}
                     </span>
                   </div>
@@ -517,7 +519,7 @@ function BookingFlow() {
                       </h4>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] text-gray-400 block">Current Choice:</span>
+                      <span className="text-[10px] text-slate-300 block">Current Choice:</span>
                       <span className="text-xs font-bold text-sky-300">
                         {activeCarDisplayName}
                       </span>
@@ -528,42 +530,42 @@ function BookingFlow() {
                 {/* Detailing Specifications & Model Picker */}
                 <div className="w-full lg:w-1/2 space-y-5">
                   <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-sky-400" />
+                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-sky-600" />
                       <span>Detailing Calibrations &amp; Specifications</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-slate-600 mt-0.5">
                       Chemistry and pressure equipment pre-calibrated for {currentVehicle.name}.
                     </p>
                   </div>
 
                   {/* 4 Detailing Specs */}
                   <div className="grid grid-cols-2 gap-2.5">
-                    <div className="bg-gray-900/80 border border-gray-800 p-2.5 rounded-xl">
-                      <span className="text-[10px] text-gray-400 block font-medium">Surface Coverage</span>
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
-                        <Layers className="w-3.5 h-3.5 text-sky-400" />
+                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block font-medium">Surface Coverage</span>
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                        <Layers className="w-3.5 h-3.5 text-sky-600" />
                         {currentVehicleMeta.surfaceArea}
                       </span>
                     </div>
-                    <div className="bg-gray-900/80 border border-gray-800 p-2.5 rounded-xl">
-                      <span className="text-[10px] text-gray-400 block font-medium">Snow Foam Volume</span>
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
-                        <Droplets className="w-3.5 h-3.5 text-cyan-400" />
+                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block font-medium">Snow Foam Volume</span>
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                        <Droplets className="w-3.5 h-3.5 text-sky-600" />
                         {currentVehicleMeta.foamCapacity}
                       </span>
                     </div>
-                    <div className="bg-gray-900/80 border border-gray-800 p-2.5 rounded-xl">
-                      <span className="text-[10px] text-gray-400 block font-medium">Est. Detailing Time</span>
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
-                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block font-medium">Est. Detailing Time</span>
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" />
                         {currentVehicleMeta.estDuration}
                       </span>
                     </div>
-                    <div className="bg-gray-900/80 border border-gray-800 p-2.5 rounded-xl">
-                      <span className="text-[10px] text-gray-400 block font-medium">Water TDS Quality</span>
-                      <span className="text-xs font-bold text-white flex items-center gap-1.5 mt-0.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                      <span className="text-[10px] text-slate-500 block font-medium">Water TDS Quality</span>
+                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                         TDS &lt; 50 No-Spots
                       </span>
                     </div>
@@ -571,7 +573,7 @@ function BookingFlow() {
 
                   {/* Model Selector Pills */}
                   <div className="space-y-2 pt-1">
-                    <label className="text-xs font-bold text-gray-200 block">
+                    <label className="text-xs font-bold text-slate-900 block">
                       Select Your Car Model (or type custom model):
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -587,11 +589,11 @@ function BookingFlow() {
                             }}
                             className={`group px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                               isModelSelected
-                                ? "bg-sky-600 text-white font-bold ring-2 ring-sky-400 shadow-md shadow-sky-600/30 scale-[1.02]"
-                                : "bg-gray-900/90 text-gray-300 border border-gray-800 hover:border-gray-600 hover:text-white"
+                                ? "bg-sky-600 text-white font-bold ring-2 ring-sky-500 shadow-md shadow-sky-600/30 scale-[1.02]"
+                                : "bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-200/60"
                             }`}
                           >
-                            <div className="relative w-7 h-5 rounded overflow-hidden bg-gray-950 shrink-0 border border-gray-700/60">
+                            <div className="relative w-7 h-5 rounded overflow-hidden bg-slate-200 shrink-0 border border-slate-300">
                               <Image
                                 src={modelObj.image}
                                 alt={modelObj.name}
@@ -614,7 +616,7 @@ function BookingFlow() {
                         placeholder="Or enter custom model &amp; color (e.g. 2024 Black Safari Adventure)"
                         value={customCarModel}
                         onChange={(e) => setCustomCarModel(e.target.value)}
-                        className="w-full bg-gray-950/80 border border-gray-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-sky-500 transition-colors"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-600 focus:bg-white transition-colors"
                       />
                     </div>
                   </div>
@@ -642,9 +644,9 @@ function BookingFlow() {
         <div className="space-y-6">
           {/* Selected Vehicle Sticky Banner */}
           {currentVehicle && currentVehicleMeta && (
-            <div className="glass-card p-3 sm:p-4 rounded-2xl border border-sky-500/30 bg-sky-950/20 flex items-center justify-between gap-4">
+            <div className="p-3 sm:p-4 rounded-2xl border border-sky-200 bg-sky-50 flex items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-3.5">
-                <div className="relative w-16 h-12 rounded-xl overflow-hidden shrink-0 border border-sky-500/30 bg-gray-950">
+                <div className="relative w-16 h-12 rounded-xl overflow-hidden shrink-0 border border-sky-200 bg-slate-100">
                   <Image
                     src={activeCarImage}
                     alt={activeCarDisplayName}
@@ -654,18 +656,18 @@ function BookingFlow() {
                   />
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-sky-400 tracking-wider block">
+                  <span className="text-[10px] uppercase font-bold text-sky-700 tracking-wider block">
                     Selected Vehicle
                   </span>
-                  <p className="text-xs sm:text-sm font-bold text-white">
-                    {currentVehicle.name} <span className="text-sky-300 font-semibold">• {activeCarDisplayName}</span>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">
+                    {currentVehicle.name} <span className="text-sky-700 font-semibold">• {activeCarDisplayName}</span>
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold shrink-0"
+                className="text-xs text-sky-600 hover:text-sky-800 underline font-semibold shrink-0"
               >
                 Change Car
               </button>
@@ -674,14 +676,14 @@ function BookingFlow() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white">Choose Service Package</h2>
-              <p className="text-xs text-gray-400">
-                Displaying calibrated prices for <span className="text-sky-400 font-semibold">{currentVehicle?.name}</span> ({activeCarDisplayName})
+              <h2 className="text-xl font-bold text-slate-900">Choose Service Package</h2>
+              <p className="text-xs text-slate-600">
+                Displaying calibrated prices for <span className="text-sky-600 font-semibold">{currentVehicle?.name}</span> ({activeCarDisplayName})
               </p>
             </div>
             <button
               onClick={() => setCurrentStep(1)}
-              className="text-xs text-gray-400 hover:text-white underline"
+              className="text-xs text-slate-500 hover:text-slate-900 underline font-medium"
             >
               Change Car
             </button>
@@ -698,55 +700,55 @@ function BookingFlow() {
                 <div
                   key={pkg.id}
                   onClick={() => setSelectedPackageId(pkg.id)}
-                  className={`glass-card p-5 rounded-2xl cursor-pointer transition-all border ${
+                  className={`p-5 rounded-2xl cursor-pointer transition-all border ${
                     isSelected
-                      ? "border-sky-500 bg-sky-950/25 ring-1 ring-sky-500 shadow-xl shadow-sky-600/10"
-                      : "border-gray-800 hover:border-gray-700"
+                      ? "border-sky-600 bg-sky-50/70 ring-2 ring-sky-600 shadow-lg shadow-sky-600/10"
+                      : "border-slate-200 hover:border-sky-300 bg-white shadow-sm hover:shadow-md"
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-bold text-white">{pkg.name}</h3>
+                        <h3 className="text-lg font-bold text-slate-900">{pkg.name}</h3>
                         {pkg.badge_text && (
-                          <span className="text-[10px] uppercase font-bold bg-sky-900/60 text-sky-400 border border-sky-800 px-2.5 py-0.5 rounded-full">
+                          <span className="text-[10px] uppercase font-bold bg-sky-100 text-sky-700 border border-sky-200 px-2.5 py-0.5 rounded-full">
                             {pkg.badge_text}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 max-w-xl">
+                      <p className="text-xs text-slate-600 max-w-xl">
                         {pkg.short_description}
                       </p>
                     </div>
 
                     <div className="flex items-center sm:flex-col sm:items-end justify-between shrink-0">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-black text-white">
+                        <span className="text-2xl font-black text-slate-900">
                           ₹{priceObj ? priceObj.effective_price : "—"}
                         </span>
                         {priceObj && priceObj.discounted_price && (
-                          <span className="text-xs text-gray-500 line-through">
+                          <span className="text-xs text-slate-400 line-through">
                             ₹{priceObj.base_price}
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
-                        <Clock className="w-3 h-3 text-sky-400" />
+                      <span className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
+                        <Clock className="w-3 h-3 text-sky-600" />
                         {pkg.estimated_duration_minutes} mins
                       </span>
                     </div>
                   </div>
 
                   {/* Feature preview */}
-                  <div className="mt-3 pt-3 border-t border-gray-800/80 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-300">
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
                     {pkg.features.slice(0, 3).map((f, idx) => (
                       <span key={idx} className="flex items-center gap-1.5 text-[11px]">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                         {f}
                       </span>
                     ))}
                     {pkg.features.length > 3 && (
-                      <span className="text-[11px] text-gray-500">
+                      <span className="text-[11px] text-slate-400 font-medium">
                         +{pkg.features.length - 3} more perks
                       </span>
                     )}
@@ -760,7 +762,7 @@ function BookingFlow() {
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-white px-4 py-2"
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
@@ -783,9 +785,9 @@ function BookingFlow() {
         <div className="space-y-6">
           {/* Selected Vehicle Banner */}
           {currentVehicle && currentVehicleMeta && (
-            <div className="glass-card p-3 sm:p-4 rounded-2xl border border-sky-500/30 bg-sky-950/20 flex items-center justify-between gap-4">
+            <div className="p-3 sm:p-4 rounded-2xl border border-sky-200 bg-sky-50 flex items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-3.5">
-                <div className="relative w-16 h-12 rounded-xl overflow-hidden shrink-0 border border-sky-500/30 bg-gray-950">
+                <div className="relative w-16 h-12 rounded-xl overflow-hidden shrink-0 border border-sky-200 bg-slate-100">
                   <Image
                     src={activeCarImage}
                     alt={activeCarDisplayName}
@@ -795,18 +797,18 @@ function BookingFlow() {
                   />
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-sky-400 tracking-wider block">
+                  <span className="text-[10px] uppercase font-bold text-sky-700 tracking-wider block">
                     Selected Vehicle &amp; Package
                   </span>
-                  <p className="text-xs sm:text-sm font-bold text-white">
-                    {currentVehicle.name} ({activeCarDisplayName}) • <span className="text-sky-300">{currentPackage?.name}</span>
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">
+                    {currentVehicle.name} ({activeCarDisplayName}) • <span className="text-sky-700">{currentPackage?.name}</span>
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold shrink-0"
+                className="text-xs text-sky-600 hover:text-sky-800 underline font-semibold shrink-0"
               >
                 Change Car
               </button>
@@ -814,16 +816,16 @@ function BookingFlow() {
           )}
 
           <div>
-            <h2 className="text-xl font-bold text-white">Select Date &amp; Arrival Slot</h2>
-            <p className="text-xs text-gray-400">
+            <h2 className="text-xl font-bold text-slate-900">Select Date &amp; Arrival Slot</h2>
+            <p className="text-xs text-slate-600">
               Live capacity engine: slots are validated real-time against active technician schedules.
             </p>
           </div>
 
           {/* Date Picker & Service Area */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="glass-card p-4 rounded-xl space-y-1.5 border-gray-800">
-              <label className="text-xs font-semibold text-gray-300 block">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 block">
                 Select Service Date
               </label>
               <input
@@ -831,18 +833,18 @@ function BookingFlow() {
                 min={new Date().toISOString().split("T")[0]}
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
               />
             </div>
 
-            <div className="glass-card p-4 rounded-xl space-y-1.5 border-gray-800">
-              <label className="text-xs font-semibold text-gray-300 block">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 block">
                 Locality / Service Area
               </label>
               <select
                 value={selectedAreaId || ""}
                 onChange={(e) => setSelectedAreaId(parseInt(e.target.value, 10))}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
               >
                 {serviceAreas.map((area) => (
                   <option key={area.id} value={area.id}>
@@ -856,11 +858,11 @@ function BookingFlow() {
           {/* Slots View */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-200 uppercase tracking-wider">
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                 Available Start Times for {selectedDate}
               </span>
               {loadingSlots && (
-                <span className="text-xs text-sky-400 flex items-center gap-1.5">
+                <span className="text-xs text-sky-600 flex items-center gap-1.5 font-medium">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   Calculating slot capacity...
                 </span>
@@ -868,17 +870,17 @@ function BookingFlow() {
             </div>
 
             {slotError && (
-              <div className="p-4 rounded-xl bg-red-950/40 border border-red-800/80 text-xs text-red-300 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
                 <span>{slotError}</span>
               </div>
             )}
 
             {!loadingSlots && slots.length === 0 && !slotError && (
-              <div className="glass-card p-8 rounded-2xl text-center space-y-2 border-gray-800">
-                <CalendarIcon className="w-8 h-8 text-gray-500 mx-auto" />
-                <h4 className="text-sm font-bold text-white">No Slots Available on this Date</h4>
-                <p className="text-xs text-gray-400">
+              <div className="bg-white p-8 rounded-2xl text-center space-y-2 border border-slate-200 shadow-sm">
+                <CalendarIcon className="w-8 h-8 text-slate-400 mx-auto" />
+                <h4 className="text-sm font-bold text-slate-900">No Slots Available on this Date</h4>
+                <p className="text-xs text-slate-500">
                   Please choose another date or contact our support team on WhatsApp.
                 </p>
               </div>
@@ -895,25 +897,27 @@ function BookingFlow() {
                     onClick={() => setSelectedSlotTime(slot.time)}
                     className={`p-3.5 rounded-xl text-left border transition-all ${
                       isSelected
-                        ? "bg-sky-600 border-sky-400 text-white shadow-lg shadow-sky-600/30 scale-[1.02]"
+                        ? "bg-sky-600 border-sky-600 text-white shadow-lg shadow-sky-600/25 scale-[1.02]"
                         : slot.available
-                        ? "glass-card border-gray-800 text-gray-200 hover:border-sky-500/50"
-                        : "bg-gray-950/60 border-gray-900 text-gray-600 cursor-not-allowed opacity-60"
+                        ? "bg-white border-slate-200 text-slate-800 hover:border-sky-400 hover:shadow-sm"
+                        : "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold">{slot.label}</span>
                       {slot.available ? (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 font-semibold">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                          isSelected ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        }`}>
                           Open
                         </span>
                       ) : (
-                        <span className="text-[9px] uppercase px-1 py-0.5 rounded bg-gray-900 text-gray-500">
+                        <span className="text-[9px] uppercase px-1 py-0.5 rounded bg-slate-200 text-slate-500">
                           {slot.unavailable_reason || "Full"}
                         </span>
                       )}
                     </div>
-                    <span className="text-[10px] block mt-1 opacity-70">
+                    <span className={`text-[10px] block mt-1 ${isSelected ? "text-sky-100" : "text-slate-500"}`}>
                       Ends approx. {slot.end_label}
                     </span>
                   </button>
@@ -926,7 +930,7 @@ function BookingFlow() {
             <button
               type="button"
               onClick={() => setCurrentStep(2)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-white px-4 py-2"
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
@@ -949,9 +953,9 @@ function BookingFlow() {
         <div className="space-y-6">
           {/* Selected Vehicle Banner */}
           {currentVehicle && currentVehicleMeta && (
-            <div className="glass-card p-3 sm:p-4 rounded-2xl border border-sky-500/30 bg-sky-950/20 flex items-center justify-between gap-4">
+            <div className="p-3 sm:p-4 rounded-2xl border border-sky-200 bg-sky-50 flex items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-3.5">
-                <div className="relative w-16 h-12 rounded-xl overflow-hidden shrink-0 border border-sky-500/30 bg-gray-950">
+                <div className="relative w-16 h-12 rounded-xl overflow-hidden shrink-0 border border-sky-200 bg-slate-100">
                   <Image
                     src={activeCarImage}
                     alt={activeCarDisplayName}
@@ -961,10 +965,10 @@ function BookingFlow() {
                   />
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-sky-400 tracking-wider block">
+                  <span className="text-[10px] uppercase font-bold text-sky-700 tracking-wider block">
                     Car &amp; Appointment Selected
                   </span>
-                  <p className="text-xs sm:text-sm font-bold text-white">
+                  <p className="text-xs sm:text-sm font-bold text-slate-900">
                     {currentVehicle.name} ({activeCarDisplayName}) • {selectedDate} @ {selectedSlotTime}
                   </p>
                 </div>
@@ -972,7 +976,7 @@ function BookingFlow() {
               <button
                 type="button"
                 onClick={() => setCurrentStep(1)}
-                className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold shrink-0"
+                className="text-xs text-sky-600 hover:text-sky-800 underline font-semibold shrink-0"
               >
                 Change Car
               </button>
@@ -980,8 +984,8 @@ function BookingFlow() {
           )}
 
           <div>
-            <h2 className="text-xl font-bold text-white">Doorstep Address &amp; Contact</h2>
-            <p className="text-xs text-gray-400">
+            <h2 className="text-xl font-bold text-slate-900">Doorstep Address &amp; Contact</h2>
+            <p className="text-xs text-slate-600">
               Where should our detailing team arrive?
             </p>
           </div>
@@ -989,35 +993,35 @@ function BookingFlow() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Full Name *
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-gray-500 absolute left-3 top-3" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. Vikramaditya Rao"
                     value={formData.customerName}
                     onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   10-Digit Mobile Number *
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-gray-500 absolute left-3 top-3" />
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="tel"
                     required
                     placeholder="e.g. 7087811881"
                     value={formData.customerPhone}
                     onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
                   />
                 </div>
               </div>
@@ -1025,88 +1029,88 @@ function BookingFlow() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Email Address (Optional)
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-gray-500 absolute left-3 top-3" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="email"
                     placeholder="name@example.com"
                     value={formData.customerEmail}
                     onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Locality / Neighborhood *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Indiranagar 12th Main / HSR Sector 2"
+                  placeholder="e.g. Sector 17 / Phase 7 Mohali / MDC Panchkula"
                   value={formData.locality}
                   onChange={(e) => setFormData({ ...formData, locality: e.target.value })}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-300 block">
+              <label className="text-xs font-semibold text-slate-700 block">
                 Complete Street / Apartment Address *
               </label>
               <textarea
                 required
                 rows={2}
-                placeholder="e.g. Flat 402, Oakwood Manor, 12th Main Road, Behind Sony Signal"
+                placeholder="e.g. House #242, Sector 8-C, Near Inner Market"
                 value={formData.addressLine}
                 onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Landmark (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="Near Defence Colony Club"
+                  placeholder="Near Gurudwara Sahib"
                   value={formData.landmark}
                   onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-colors"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-300 block">
+                <label className="text-xs font-semibold text-slate-700 block">
                   Postal Code (PIN)
                 </label>
                 <input
                   type="text"
-                  placeholder="560038"
+                  placeholder="160017"
                   value={formData.pincode}
                   onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 transition-colors"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-300 block">
+              <label className="text-xs font-semibold text-slate-700 block">
                 Parking Instructions or Gate Code (Optional)
               </label>
               <input
                 type="text"
-                placeholder="e.g. Basement -2, Bay 44. Gate security code 1234."
+                placeholder="e.g. Park outside front driveway, water tap available near gate."
                 value={formData.specialInstructions}
                 onChange={(e) => setFormData({ ...formData, specialInstructions: e.target.value })}
-                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 transition-colors"
               />
             </div>
           </div>
@@ -1115,7 +1119,7 @@ function BookingFlow() {
             <button
               type="button"
               onClick={() => setCurrentStep(3)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-white px-4 py-2"
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
@@ -1140,24 +1144,24 @@ function BookingFlow() {
       {currentStep === 5 && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-xl font-bold text-white">Review Appointment Summary</h2>
-            <p className="text-xs text-gray-400">
+            <h2 className="text-xl font-bold text-slate-900">Review Appointment Summary</h2>
+            <p className="text-xs text-slate-600">
               Please double check your details before confirming your car wash slot.
             </p>
           </div>
 
           {bookingError && (
-            <div className="p-4 rounded-xl bg-red-950/50 border border-red-800 text-xs text-red-300 flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
               <span>{bookingError}</span>
             </div>
           )}
 
-          <div className="glass-card p-6 rounded-2xl border-gray-800 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b border-gray-800">
-              <div className="glass-card p-4 rounded-2xl border border-sky-500/30 bg-gray-950/60 flex items-center gap-4">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b border-slate-100">
+              <div className="p-4 rounded-2xl border border-sky-200 bg-sky-50/60 flex items-center gap-4">
                 {currentVehicleMeta && (
-                  <div className="relative w-24 h-16 rounded-xl overflow-hidden shrink-0 border border-sky-500/30 bg-gray-900 shadow-md">
+                  <div className="relative w-24 h-16 rounded-xl overflow-hidden shrink-0 border border-sky-300 bg-slate-900 shadow-sm">
                     <Image
                       src={activeCarImage}
                       alt={activeCarDisplayName}
@@ -1168,74 +1172,74 @@ function BookingFlow() {
                   </div>
                 )}
                 <div className="min-w-0">
-                  <span className="text-[10px] uppercase tracking-wider text-sky-400 block font-bold">
+                  <span className="text-[10px] uppercase tracking-wider text-sky-700 block font-bold">
                     Vehicle Selected
                   </span>
-                  <p className="text-sm font-bold text-white mt-0.5 truncate">
+                  <p className="text-sm font-bold text-slate-900 mt-0.5 truncate">
                     {currentVehicle?.name}
                   </p>
-                  <p className="text-xs text-sky-300 font-semibold truncate">
+                  <p className="text-xs text-sky-700 font-semibold truncate">
                     {activeCarDisplayName}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
+                  <p className="text-[10px] text-slate-500 mt-0.5">
                     {currentVehicleMeta?.surfaceArea}
                   </p>
                 </div>
               </div>
 
               <div>
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 block font-semibold">
+                <span className="text-[11px] uppercase tracking-wider text-slate-500 block font-semibold">
                   Selected Service Package
                 </span>
-                <p className="text-base font-bold text-white mt-1">
+                <p className="text-base font-bold text-slate-900 mt-1">
                   {currentPackage?.name}
                 </p>
-                <p className="text-xs text-sky-400 font-medium">
+                <p className="text-xs text-sky-600 font-medium">
                   Est. Duration: {currentPackage?.estimated_duration_minutes} Minutes
                 </p>
               </div>
 
               <div>
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 block font-semibold">
+                <span className="text-[11px] uppercase tracking-wider text-slate-500 block font-semibold">
                   Date &amp; Time Slot
                 </span>
-                <p className="text-base font-bold text-white mt-1">
+                <p className="text-base font-bold text-slate-900 mt-1">
                   {selectedDate} @ {selectedSlotTime}
                 </p>
               </div>
 
               <div>
-                <span className="text-[11px] uppercase tracking-wider text-gray-400 block font-semibold">
+                <span className="text-[11px] uppercase tracking-wider text-slate-500 block font-semibold">
                   Service Address
                 </span>
-                <p className="text-sm font-semibold text-white mt-1">
+                <p className="text-sm font-semibold text-slate-900 mt-1">
                   {formData.addressLine}, {formData.locality}
                 </p>
                 {formData.landmark && (
-                  <p className="text-xs text-gray-400">Landmark: {formData.landmark}</p>
+                  <p className="text-xs text-slate-500">Landmark: {formData.landmark}</p>
                 )}
               </div>
             </div>
 
             {/* Price breakdown */}
             <div className="space-y-2">
-              <div className="flex justify-between text-xs text-gray-300">
+              <div className="flex justify-between text-xs text-slate-600">
                 <span>Base Package Rate ({currentVehicle?.name}):</span>
-                <span className="font-semibold text-white">
+                <span className="font-semibold text-slate-900">
                   ₹{currentPriceObj ? currentPriceObj.effective_price : "0.00"}
                 </span>
               </div>
-              <div className="flex justify-between text-xs text-gray-300">
+              <div className="flex justify-between text-xs text-slate-600">
                 <span>Doorstep Travel &amp; Soft Water Surcharge:</span>
-                <span className="text-emerald-400 font-semibold">FREE</span>
+                <span className="text-emerald-600 font-semibold">FREE</span>
               </div>
-              <div className="pt-3 border-t border-gray-800 flex justify-between items-baseline">
-                <span className="text-sm font-bold text-white">Total Amount Due:</span>
-                <span className="text-2xl font-black text-sky-400">
+              <div className="pt-3 border-t border-slate-100 flex justify-between items-baseline">
+                <span className="text-sm font-bold text-slate-900">Total Amount Due:</span>
+                <span className="text-2xl font-black text-sky-600">
                   ₹{currentPriceObj ? currentPriceObj.effective_price : "0.00"}
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500 text-right">
+              <p className="text-[11px] text-slate-500 text-right">
                 Payment mode: Pay after service completion via Cash or UPI.
               </p>
             </div>
@@ -1246,7 +1250,7 @@ function BookingFlow() {
               type="button"
               disabled={submittingBooking}
               onClick={() => setCurrentStep(4)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-white px-4 py-2"
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
@@ -1275,28 +1279,28 @@ function BookingFlow() {
 
       {/* STEP 6: CONFIRMATION SUCCESS SCREEN */}
       {currentStep === 6 && confirmedBooking && (
-        <div className="glass-card p-8 sm:p-12 rounded-3xl border-emerald-500/30 text-center space-y-8 shadow-2xl relative">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-950 border border-emerald-800 text-emerald-400 flex items-center justify-center mx-auto shadow-xl shadow-emerald-900/30">
+        <div className="bg-white p-8 sm:p-12 rounded-3xl border border-slate-200 text-center space-y-8 shadow-xl relative">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-md">
             <CheckCircle2 className="w-8 h-8" />
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">
+            <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest">
               Booking Request Received
             </span>
-            <h2 className="text-3xl font-extrabold text-white">
+            <h2 className="text-3xl font-extrabold text-slate-900">
               Appointment Successfully Confirmed!
             </h2>
-            <p className="text-sm text-gray-300 max-w-lg mx-auto">
+            <p className="text-sm text-slate-600 max-w-lg mx-auto">
               Our detailing crew will arrive at your home on the scheduled date. A confirmation message has been logged for your records.
             </p>
           </div>
 
           {/* Reference Card */}
-          <div className="bg-gray-900/80 p-6 rounded-2xl border border-gray-800 max-w-md mx-auto space-y-4 text-left">
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 max-w-md mx-auto space-y-4 text-left shadow-sm">
             {/* Visual Vehicle Confirmation Header */}
             {currentVehicleMeta && (
-              <div className="relative w-full h-36 rounded-xl overflow-hidden border border-sky-500/30 bg-gray-950 shadow-inner">
+              <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-200 bg-slate-900 shadow-inner">
                 <Image
                   src={activeCarImage}
                   alt={confirmedBooking.vehicle_type_name}
@@ -1304,7 +1308,7 @@ function BookingFlow() {
                   className="object-cover"
                   sizes="400px"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
                 <div className="absolute bottom-2.5 left-3 right-3 flex items-end justify-between">
                   <div>
                     <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider block">
@@ -1321,40 +1325,40 @@ function BookingFlow() {
               </div>
             )}
 
-            <div className="flex justify-between items-center pb-3 border-b border-gray-800">
-              <span className="text-xs text-gray-400">Booking Reference:</span>
-              <span className="text-base font-black text-sky-400 font-mono tracking-wider">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+              <span className="text-xs text-slate-500">Booking Reference:</span>
+              <span className="text-base font-black text-sky-600 font-mono tracking-wider">
                 {confirmedBooking.booking_reference}
               </span>
             </div>
-            <div className="space-y-1.5 text-xs text-gray-300">
+            <div className="space-y-1.5 text-xs text-slate-700">
               <div className="flex justify-between">
-                <span className="text-gray-400">Customer:</span>
-                <span className="font-semibold text-white">{confirmedBooking.customer_name}</span>
+                <span className="text-slate-500">Customer:</span>
+                <span className="font-semibold text-slate-900">{confirmedBooking.customer_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Vehicle &amp; Model:</span>
-                <span className="font-semibold text-white">{confirmedBooking.vehicle_type_name} ({activeCarDisplayName})</span>
+                <span className="text-slate-500">Vehicle &amp; Model:</span>
+                <span className="font-semibold text-slate-900">{confirmedBooking.vehicle_type_name} ({activeCarDisplayName})</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Package:</span>
-                <span className="font-semibold text-white">{confirmedBooking.service_package_name}</span>
+                <span className="text-slate-500">Package:</span>
+                <span className="font-semibold text-slate-900">{confirmedBooking.service_package_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Date &amp; Time:</span>
-                <span className="font-semibold text-white">
+                <span className="text-slate-500">Date &amp; Time:</span>
+                <span className="font-semibold text-slate-900">
                   {confirmedBooking.service_date} @ {confirmedBooking.slot_start_time}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Address:</span>
-                <span className="font-semibold text-white text-right max-w-[200px] truncate">
+                <span className="text-slate-500">Address:</span>
+                <span className="font-semibold text-slate-900 text-right max-w-[200px] truncate">
                   {confirmedBooking.address_line}, {confirmedBooking.locality}
                 </span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-gray-800 text-sm font-bold text-white">
+              <div className="flex justify-between pt-2 border-t border-slate-200 text-sm font-bold text-slate-900">
                 <span>Amount Due:</span>
-                <span className="text-emerald-400">₹{confirmedBooking.final_amount}</span>
+                <span className="text-emerald-600">₹{confirmedBooking.final_amount}</span>
               </div>
             </div>
           </div>
@@ -1372,7 +1376,7 @@ function BookingFlow() {
               href={`https://wa.me/917087811881?text=Hi%2C%20I%20have%20booked%20car%20wash%20ref%20${confirmedBooking.booking_reference}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 font-semibold text-xs px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all"
+              className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20"
             >
               <MessageSquare className="w-4 h-4" />
               <span>Contact on WhatsApp</span>

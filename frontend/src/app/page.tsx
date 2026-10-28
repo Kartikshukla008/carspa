@@ -255,14 +255,14 @@ const SERVICE_AREAS = [
 /* ─── FAQ Accordion Item ─── */
 function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boolean; onToggle: () => void }) {
   return (
-    <div className="glass-card rounded-xl overflow-hidden border-white/[0.06]">
+    <div className="glass-card rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-5 text-left group transition-colors"
+        className="w-full flex items-center justify-between p-5 text-left group transition-colors hover:bg-slate-50/60"
         aria-expanded={isOpen}
       >
-        <span className="text-sm font-semibold text-white flex items-center gap-2.5 pr-4">
-          <HelpCircle className="w-4 h-4 text-[#0099FF] shrink-0" />
+        <span className="text-sm font-bold text-slate-900 flex items-center gap-2.5 pr-4">
+          <HelpCircle className="w-4 h-4 text-sky-600 shrink-0" />
           {q}
         </span>
         <motion.div
@@ -270,7 +270,7 @@ function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boo
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="shrink-0"
         >
-          <ChevronDown className="w-4 h-4 text-slate-500 group-hover:text-sky-400 transition-colors" />
+          <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-sky-600 transition-colors" />
         </motion.div>
       </button>
       <AnimatePresence>
@@ -282,7 +282,7 @@ function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boo
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="px-5 pb-5 pt-0">
-              <p className="text-sm text-slate-400 leading-relaxed pl-6.5">
+              <p className="text-sm text-slate-600 leading-relaxed pl-6.5">
                 {a}
               </p>
             </div>
@@ -337,11 +337,11 @@ export default function HomePage() {
   const selectedVehicleObj = vehicles.find((v) => v.id === selectedVehicle);
 
   return (
-    <div className="space-y-20 lg:space-y-28 pb-20">
+    <div className="space-y-20 lg:space-y-28 pb-20 bg-[#F8FAFC]">
       {/* ═══════════════════════════════════════════════════
-          1. HERO SECTION (Aligned with CARSPA design)
+          1. HERO SECTION (Clean Bright Studio)
       ═══════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden min-h-[90vh] flex items-center -mt-18 sm:-mt-24 border-b border-white/[0.06]">
+      <section className="relative overflow-hidden min-h-[90vh] flex items-center -mt-18 sm:-mt-24 border-b border-slate-200">
         {/* Background Action Layer */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -350,17 +350,17 @@ export default function HomePage() {
             fill
             priority
             quality={92}
-            className="object-cover object-[78%_center] md:object-[72%_center] lg:object-[68%_center] filter brightness-[0.80] contrast-[1.08]"
+            className="object-cover object-[80%_center] md:object-[72%_center] lg:object-[68%_center] filter brightness-[1.02] contrast-[1.04]"
             sizes="100vw"
           />
 
-          {/* Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#07111F] via-[#07111F]/95 via-[42%] to-[#07111F]/30 lg:from-[#07111F] lg:via-[#07111F]/90 lg:via-[50%] lg:to-transparent z-10" />
-          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#07111F] via-[#07111F]/60 to-transparent z-10" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#07111F] via-[#07111F]/90 to-transparent z-10" />
+          {/* Clean Bright Studio Gradients */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAFC] via-[#F8FAFC]/95 via-[48%] to-[#F8FAFC]/30 lg:from-[#F8FAFC] lg:via-[#F8FAFC]/92 lg:via-[52%] lg:to-transparent z-10" />
+          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#F8FAFC] via-[#F8FAFC]/70 to-transparent z-10" />
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#F8FAFC] via-[#F8FAFC]/80 to-transparent z-10" />
 
-          {/* Ambient Blue Glow */}
-          <div className="absolute top-1/4 right-1/4 w-[500px] h-[350px] bg-[#0099FF]/10 blur-[140px] pointer-events-none rounded-full z-10" />
+          {/* Ambient Blue Radial Glow */}
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[350px] bg-sky-400/10 blur-[130px] pointer-events-none rounded-full z-10" />
         </div>
 
         {/* Content Layer */}
@@ -375,21 +375,21 @@ export default function HomePage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="flex items-center gap-2"
               >
-                <span className="text-xs font-black tracking-[0.22em] uppercase text-sky-400 bg-sky-950/60 border border-sky-800/80 px-3.5 py-1.5 rounded-full backdrop-blur-md">
+                <span className="text-xs font-black tracking-[0.22em] uppercase text-sky-700 bg-sky-50 border border-sky-200 px-3.5 py-1.5 rounded-full shadow-sm">
                   PREMIUM CAR CARE
                 </span>
-                <span className="text-xs text-slate-400 hidden sm:inline">• Chandigarh • Mohali • Panchkula</span>
+                <span className="text-xs text-slate-500 hidden sm:inline font-medium">• Chandigarh • Mohali • Panchkula</span>
               </motion.div>
 
-              {/* Main Headline (Exactly matching image: "AT YOUR DOORSTEP") */}
+              {/* Main Headline */}
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.05]"
+                className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-[1.05]"
               >
                 AT YOUR{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0099FF] via-sky-300 to-[#38BDF8]">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600">
                   DOORSTEP
                 </span>
               </motion.h1>
@@ -399,12 +399,12 @@ export default function HomePage() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="text-base sm:text-lg text-slate-300 max-w-lg leading-relaxed"
+                className="text-base sm:text-lg text-slate-600 max-w-lg leading-relaxed font-medium"
               >
-                Professional car washing and detailing at your home or office.
+                Professional car washing and detailing at your home or office. Purified soft water, zero scratches, transparent pricing.
               </motion.p>
 
-              {/* 4 Feature Circles (Directly from design) */}
+              {/* 4 Feature Cards */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -417,11 +417,11 @@ export default function HomePage() {
                   { icon: Tag, title: "Transparent Pricing" },
                   { icon: Calendar, title: "Flexible Scheduling" },
                 ].map((item, idx) => (
-                  <div key={idx} className="flex flex-col items-center sm:items-start text-center sm:text-left gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05] backdrop-blur-sm">
-                    <div className="w-9 h-9 rounded-full bg-[#0099FF]/15 border border-[#0099FF]/30 text-[#0099FF] flex items-center justify-center shrink-0">
+                  <div key={idx} className="flex flex-col items-center sm:items-start text-center sm:text-left gap-2 p-3 rounded-2xl bg-white/90 border border-slate-200 shadow-sm backdrop-blur-sm hover:shadow-md transition-all">
+                    <div className="w-9 h-9 rounded-full bg-sky-50 border border-sky-200 text-sky-600 flex items-center justify-center shrink-0">
                       <item.icon className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-semibold text-slate-200 leading-snug">
+                    <span className="text-xs font-bold text-slate-800 leading-snug">
                       {item.title}
                     </span>
                   </div>
@@ -437,7 +437,7 @@ export default function HomePage() {
               >
                 <Link
                   href="/book"
-                  className="btn-primary text-sm px-8 py-4 rounded-xl shadow-xl shadow-sky-600/30 flex items-center justify-center gap-2 font-bold"
+                  className="btn-primary text-sm px-8 py-4 rounded-xl shadow-lg shadow-sky-600/30 flex items-center justify-center gap-2 font-bold"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Book a Car Wash →</span>
@@ -446,56 +446,56 @@ export default function HomePage() {
                   href="https://wa.me/917087811881?text=Hi%20CARSPA%2C%20I%20would%20like%20to%20enquire%20about%20a%20doorstep%20car%20wash."
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-secondary text-sm px-6 py-4 rounded-xl text-emerald-400 border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-950/40 hover:bg-emerald-950/60 flex items-center justify-center gap-2 font-semibold"
+                  className="btn-secondary text-sm px-6 py-4 rounded-xl text-emerald-700 hover:text-emerald-800 border-emerald-200 hover:border-emerald-300 bg-emerald-50 hover:bg-emerald-100/80 flex items-center justify-center gap-2 font-bold shadow-sm"
                 >
-                  <MessageSquare className="w-4 h-4" />
+                  <MessageSquare className="w-4 h-4 text-emerald-600" />
                   <span>Chat on WhatsApp</span>
                 </a>
               </motion.div>
             </div>
 
-            {/* Right: Badge Card with Live Doorstep Telemetry */}
+            {/* Right: Telemetry Card */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.7, delay: 0.4 }}
               className="lg:col-span-5 hidden lg:flex flex-col items-end"
             >
-              <div className="glass-card p-6 rounded-3xl border-sky-500/25 max-w-sm space-y-4 shadow-2xl bg-[#07111F]/80 backdrop-blur-2xl">
-                <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <div className="glass-card p-6 rounded-3xl border border-slate-200/90 max-w-sm space-y-4 shadow-xl bg-white/95 backdrop-blur-xl">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-wider text-white">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
                       CARSPA Mobile Van
                     </span>
                   </div>
-                  <span className="text-[10px] text-sky-400 font-mono bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800">
+                  <span className="text-[10px] text-sky-700 font-mono font-bold bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
                     Tricity Fleet Active
                   </span>
                 </div>
 
                 <div className="space-y-3 text-xs">
-                  <div className="flex justify-between items-center text-slate-300">
-                    <span className="text-slate-400">Coverage</span>
-                    <span className="font-semibold text-white">Chandigarh • Mohali • Panchkula</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Coverage</span>
+                    <span className="font-bold text-slate-800">Chandigarh • Mohali • Panchkula</span>
                   </div>
-                  <div className="flex justify-between items-center text-slate-300">
-                    <span className="text-slate-400">Water Technology</span>
-                    <span className="font-semibold text-sky-400">RO Purified Soft Water (TDS &lt; 50)</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Water Technology</span>
+                    <span className="font-bold text-sky-700">RO Soft Water (TDS &lt; 50)</span>
                   </div>
-                  <div className="flex justify-between items-center text-slate-300">
-                    <span className="text-slate-400">Equipment</span>
-                    <span className="font-semibold text-white">135 Bar German Foam Cannon</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Equipment</span>
+                    <span className="font-bold text-slate-800">135 Bar German Foam Cannon</span>
                   </div>
-                  <div className="flex justify-between items-center text-slate-300">
-                    <span className="text-slate-400">Payment</span>
-                    <span className="font-semibold text-emerald-400">Pay after inspection</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Payment</span>
+                    <span className="font-bold text-emerald-600">Pay after inspection</span>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Helpline:</span>
-                  <a href="tel:+917087811881" className="font-bold text-white hover:text-sky-400">
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Direct Helpline:</span>
+                  <a href="tel:+917087811881" className="font-bold text-slate-900 hover:text-sky-600">
                     +91 70878 11881
                   </a>
                 </div>
@@ -506,33 +506,36 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          2. OUR SERVICES (Directly matching CARSPA design)
+          2. OUR SERVICES (Clean Studio Cards)
       ═══════════════════════════════════════════════════ */}
       <section id="services" className="container-premium">
         <FadeUp>
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase">
+              <span className="text-xs font-bold uppercase tracking-widest text-sky-600">
+                Transparent Doorstep Packages
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase mt-0.5">
                 OUR SERVICES
               </h2>
-              <p className="text-sm text-slate-400 mt-1">
+              <p className="text-sm text-slate-500 mt-1">
                 Choose the perfect package for your car.
               </p>
             </div>
 
-            {/* 3 Trust Badges from Design */}
+            {/* 3 Trust Badges */}
             <div className="flex flex-wrap items-center gap-3 text-xs">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-300">
-                <Clock className="w-3.5 h-3.5 text-[#0099FF]" />
-                <span className="font-medium">Trained Professionals</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm">
+                <Clock className="w-3.5 h-3.5 text-sky-600" />
+                <span className="font-semibold">Trained Professionals</span>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-300">
-                <Leaf className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="font-medium">Eco-Friendly Products</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm">
+                <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="font-semibold">Eco-Friendly Products</span>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-300">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#0099FF]" />
-                <span className="font-medium">Safe for Your Car</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm">
+                <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
+                <span className="font-semibold">Zero-Scratch Guarantee</span>
               </div>
             </div>
           </div>
@@ -541,8 +544,8 @@ export default function HomePage() {
         {/* Vehicle Segment Selector */}
         {vehicles.length > 0 && (
           <FadeUp className="mb-8">
-            <div className="flex flex-wrap items-center gap-2 p-2 rounded-2xl bg-[#0D1626]/80 border border-white/[0.06] backdrop-blur-md">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3">
+            <div className="flex flex-wrap items-center gap-2 p-2 rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3">
                 Select Segment:
               </span>
               {vehicles.map((v) => {
@@ -552,13 +555,13 @@ export default function HomePage() {
                   <button
                     key={v.id}
                     onClick={() => setSelectedVehicle(v.id)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all duration-300 ${
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ${
                       isSelected
-                        ? "bg-[#0099FF] text-white shadow-lg shadow-sky-600/30 scale-[1.02]"
-                        : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+                        ? "bg-sky-600 text-white shadow-md shadow-sky-600/30 scale-[1.02]"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                     }`}
                   >
-                    <div className="relative w-6 h-4 rounded overflow-hidden bg-slate-900 shrink-0">
+                    <div className="relative w-6 h-4 rounded overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
                       <Image src={img} alt={v.name} fill className="object-cover" sizes="24px" />
                     </div>
                     <span>{v.name}</span>
@@ -569,7 +572,7 @@ export default function HomePage() {
           </FadeUp>
         )}
 
-        {/* 4 Service Cards Grid (Matching image exact layout) */}
+        {/* 4 Service Cards Grid */}
         <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {packages.slice(0, 4).map((pkg) => {
             const price = getPackagePrice(pkg);
@@ -579,22 +582,22 @@ export default function HomePage() {
             return (
               <StaggerItem key={pkg.id}>
                 <div
-                  className={`glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between relative h-full transition-all duration-300 ${
+                  className={`glass-card glass-card-hover rounded-3xl p-5 flex flex-col justify-between relative h-full transition-all duration-300 ${
                     isPopular
-                      ? "border-[#0099FF] ring-2 ring-[#0099FF]/30 shadow-xl shadow-sky-600/15"
-                      : "border-white/[0.08]"
+                      ? "border-2 border-sky-500 shadow-xl shadow-sky-500/10 ring-4 ring-sky-500/10 bg-white"
+                      : "border border-slate-200 shadow-sm hover:shadow-lg bg-white"
                   }`}
                 >
                   {/* MOST POPULAR badge */}
                   {isPopular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0099FF] text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md z-10">
-                      MOST POPULAR
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-sky-600 to-blue-600 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md z-10">
+                      ★ MOST POPULAR
                     </span>
                   )}
 
                   <div className="space-y-4">
                     {/* Package Image */}
-                    <div className="relative w-full h-32 rounded-xl overflow-hidden bg-slate-900 border border-white/[0.06]">
+                    <div className="relative w-full h-36 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
                       <Image
                         src={imageSrc}
                         alt={pkg.name}
@@ -602,25 +605,24 @@ export default function HomePage() {
                         className="object-cover transition-transform duration-500 hover:scale-105"
                         sizes="(max-width: 640px) 100vw, 250px"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#07111F]/70 via-transparent to-transparent" />
                     </div>
 
                     {/* Title & Short Description */}
                     <div>
-                      <h3 className="text-lg font-extrabold text-white">{pkg.name}</h3>
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                      <h3 className="text-lg font-black text-slate-900">{pkg.name}</h3>
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                         {pkg.short_description}
                       </p>
                     </div>
 
                     {/* Price - "From ₹..." */}
-                    <div className="pt-2 border-t border-white/[0.06] flex items-baseline gap-1.5">
-                      <span className="text-xs text-slate-400 font-medium">From</span>
-                      <span className="text-2xl font-black text-[#0099FF] tracking-tight">
+                    <div className="pt-2 border-t border-slate-100 flex items-baseline gap-1.5">
+                      <span className="text-xs text-slate-500 font-medium">From</span>
+                      <span className="text-3xl font-black text-sky-600 tracking-tight">
                         ₹{price ? price.effective : "—"}
                       </span>
                       {selectedVehicleObj && (
-                        <span className="text-[10px] text-slate-500 ml-auto">
+                        <span className="text-[10px] text-slate-500 ml-auto font-medium">
                           for {selectedVehicleObj.name}
                         </span>
                       )}
@@ -631,10 +633,10 @@ export default function HomePage() {
                   <div className="pt-5">
                     <Link
                       href={`/book?package=${pkg.id}&vehicle=${selectedVehicle || ""}`}
-                      className={`w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 ${
+                      className={`w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all duration-300 ${
                         isPopular
-                          ? "btn-primary"
-                          : "bg-white/[0.05] hover:bg-white/[0.1] text-white border border-white/[0.08]"
+                          ? "btn-primary shadow-md shadow-sky-600/30"
+                          : "btn-secondary hover:border-sky-500 hover:text-sky-600"
                       }`}
                     >
                       <span>Book Now</span>
@@ -649,15 +651,18 @@ export default function HomePage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════
-          3. HOW IT WORKS (Directly from CARSPA design)
+          3. HOW IT WORKS (High-Contrast Rich Navy Card)
       ═══════════════════════════════════════════════════ */}
       <section id="how-it-works" className="container-premium">
-        <div className="relative overflow-hidden rounded-3xl bg-[#091322] border border-white/[0.08] p-8 sm:p-12 shadow-2xl">
-          {/* Subtle water splash / foam decoration */}
-          <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#0099FF]/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-8 sm:p-12 shadow-2xl text-white">
+          {/* Subtle water glow */}
+          <div className="absolute bottom-0 right-0 w-80 h-80 bg-sky-500/10 blur-[120px] rounded-full pointer-events-none" />
 
           <FadeUp className="mb-10">
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
+            <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
+              Simple 4-Step Process
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase mt-0.5">
               HOW IT WORKS
             </h2>
             <p className="text-sm text-slate-400 mt-1">
@@ -665,7 +670,7 @@ export default function HomePage() {
             </p>
           </FadeUp>
 
-          {/* 4 Steps row with CTAs on right (Desktop) */}
+          {/* 4 Steps row with CTAs */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Steps (Cols 1-8) */}
             <div className="lg:col-span-8">
@@ -673,13 +678,13 @@ export default function HomePage() {
                 {HOW_IT_WORKS_STEPS.map((s) => (
                   <div
                     key={s.step}
-                    className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex flex-col justify-between space-y-3"
+                    className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-[#0099FF] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md shadow-sky-600/30">
+                      <div className="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-md shadow-sky-500/30">
                         {s.step}
                       </div>
-                      <s.icon className="w-4 h-4 text-[#0099FF]" />
+                      <s.icon className="w-4 h-4 text-sky-400" />
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white leading-snug">
@@ -698,7 +703,7 @@ export default function HomePage() {
             <div className="lg:col-span-4 flex flex-col gap-3 justify-center">
               <Link
                 href="/book"
-                className="w-full bg-[#0099FF] hover:bg-[#0088EE] text-white font-extrabold text-sm py-4 px-6 rounded-2xl shadow-xl shadow-sky-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-sm py-4 px-6 rounded-2xl shadow-xl shadow-sky-600/30 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>Book a Car Wash →</span>
               </Link>
@@ -706,7 +711,7 @@ export default function HomePage() {
                 href="https://wa.me/917087811881"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700/80 font-bold text-sm py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2.5 transition-all hover:border-slate-500"
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-sm py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-sm"
               >
                 <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950">
                   <MessageSquare className="w-3 h-3 fill-slate-950" />
@@ -723,13 +728,13 @@ export default function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <section className="container-premium">
         <FadeUp className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#0099FF]">
+          <span className="text-xs font-bold uppercase tracking-widest text-sky-600">
             Tricity Doorstep Hubs
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-white">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
             Chandigarh • Mohali • Panchkula
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500">
             Our detailing vans are stationed across Tricity to reach your home in under 45 minutes.
           </p>
         </FadeUp>
@@ -737,9 +742,9 @@ export default function HomePage() {
         <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {SERVICE_AREAS.map((loc, i) => (
             <StaggerItem key={i}>
-              <div className="glass-card glass-card-hover p-4 rounded-xl text-center space-y-1.5 cursor-default">
-                <MapPin className="w-4 h-4 text-[#0099FF] mx-auto" />
-                <h4 className="text-xs font-bold text-white">{loc.name}</h4>
+              <div className="glass-card glass-card-hover p-4 rounded-2xl text-center space-y-1.5 cursor-default bg-white border border-slate-200">
+                <MapPin className="w-4 h-4 text-sky-600 mx-auto" />
+                <h4 className="text-xs font-bold text-slate-900">{loc.name}</h4>
                 <p className="text-[10px] text-slate-500 font-mono">PIN: {loc.pin}</p>
               </div>
             </StaggerItem>
@@ -752,11 +757,11 @@ export default function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <section className="container-premium">
         <FadeUp className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <div className="inline-flex items-center gap-1.5 text-xs text-amber-400 bg-amber-950/40 border border-amber-900/60 px-3 py-1 rounded-full font-medium">
-            <Star className="w-3.5 h-3.5 fill-amber-400" />
+          <div className="inline-flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 px-3.5 py-1 rounded-full font-bold shadow-sm">
+            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
             <span>Verified Customer Reviews</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
             What Our Customers Say
           </h2>
         </FadeUp>
@@ -764,20 +769,20 @@ export default function HomePage() {
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {TESTIMONIALS.map((item, idx) => (
             <StaggerItem key={idx}>
-              <div className="glass-card glass-card-hover p-6 rounded-2xl space-y-4 flex flex-col justify-between h-full">
+              <div className="glass-card glass-card-hover p-6 rounded-3xl space-y-4 flex flex-col justify-between h-full bg-white border border-slate-200 shadow-sm">
                 <div className="space-y-3">
-                  <div className="flex gap-0.5 text-amber-400">
+                  <div className="flex gap-0.5 text-amber-500">
                     {[...Array(item.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400" />
+                      <Star key={i} className="w-4 h-4 fill-amber-500" />
                     ))}
                   </div>
-                  <p className="text-sm text-slate-300 leading-relaxed italic">
+                  <p className="text-sm text-slate-600 leading-relaxed italic">
                     &ldquo;{item.text}&rdquo;
                   </p>
                 </div>
-                <div className="pt-4 border-t border-white/[0.06]">
-                  <h4 className="text-xs font-bold text-white">{item.name}</h4>
-                  <p className="text-[11px] text-[#0099FF] font-medium mt-0.5">{item.car}</p>
+                <div className="pt-4 border-t border-slate-100">
+                  <h4 className="text-xs font-bold text-slate-900">{item.name}</h4>
+                  <p className="text-[11px] text-sky-600 font-semibold mt-0.5">{item.car}</p>
                   <p className="text-[10px] text-slate-500">{item.area}</p>
                 </div>
               </div>
@@ -791,10 +796,10 @@ export default function HomePage() {
       ═══════════════════════════════════════════════════ */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <FadeUp className="text-center mb-10 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#0099FF]">
+          <span className="text-xs font-bold uppercase tracking-widest text-sky-600">
             Common Questions
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-white">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
             Frequently Asked Questions
           </h2>
         </FadeUp>
