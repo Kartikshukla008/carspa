@@ -85,6 +85,38 @@ export async function launchRazorpayCheckout({
       color: "#06B6D4", // Electric cyan accent
       backdrop_color: "rgba(5, 8, 17, 0.85)",
     },
+    config: {
+      display: {
+        blocks: {
+          upi: {
+            name: "Pay using UPI (Google Pay, PhonePe, Paytm, QR)",
+            instruments: [
+              {
+                method: "upi",
+              },
+            ],
+          },
+          other: {
+            name: "Cards, Netbanking & Wallets",
+            instruments: [
+              {
+                method: "card",
+              },
+              {
+                method: "netbanking",
+              },
+              {
+                method: "wallet",
+              },
+            ],
+          },
+        },
+        sequence: ["block.upi", "block.other"],
+        preferences: {
+          show_default_blocks: true,
+        },
+      },
+    },
     modal: {
       ondismiss: () => {
         if (onDismiss) onDismiss();

@@ -41,6 +41,8 @@ import {
   Copy,
   SlidersHorizontal,
   ChevronDown,
+  Pencil,
+  Tag,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -122,6 +124,14 @@ export default function AdminPortalPage() {
   const [configData, setConfigData] = useState<any>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const [configSuccess, setConfigSuccess] = useState(false);
+
+  // Pricing Matrix Inline Editor
+  const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
+  const [priceEditValues, setPriceEditValues] = useState<{ base_price: string; discounted_price: string }>({
+    base_price: "",
+    discounted_price: "",
+  });
+  const [savingPriceId, setSavingPriceId] = useState<number | null>(null);
 
   // Toast helper
   const showToast = (type: "success" | "error", text: string) => {
@@ -435,6 +445,42 @@ export default function AdminPortalPage() {
       alert(err.message);
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const handleStartEditPrice = (price: any) => {
+    setEditingPriceId(price.id);
+    setPriceEditValues({
+      base_price: price.base_price !== undefined && price.base_price !== null ? String(price.base_price) : "",
+      discounted_price: price.discounted_price ? String(price.discounted_price) : "",
+    });
+  };
+
+  const handleCancelEditPrice = () => {
+    setEditingPriceId(null);
+    setPriceEditValues({ base_price: "", discounted_price: "" });
+  };
+
+  const handleSavePrice = async (priceId: number) => {
+    setSavingPriceId(priceId);
+    try {
+      const payload: any = {
+        base_price: priceEditValues.base_price,
+        discounted_price:
+          priceEditValues.discounted_price.trim() === ""
+            ? null
+            : priceEditValues.discounted_price,
+      };
+      await api.updateAdminPrice(priceId, payload);
+      showToast("success", "Service package rate updated successfully");
+      setEditingPriceId(null);
+      // Refresh package data
+      const updatedPackages = await api.getServicePackages();
+      setServicePackages(updatedPackages);
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to update package rate");
+    } finally {
+      setSavingPriceId(null);
     }
   };
 
@@ -2144,170 +2190,369 @@ export default function AdminPortalPage() {
         </div>
       )}
 
-      {/* 5. CAPACITY & SETTINGS TAB */}
+      {/* 5. CAPACITY & PRICING CONFIG TAB */}
       {activeTab === "settings" && configData && (
-        <div className="max-w-2xl bg-[#0B1220]/90 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-xl space-y-6">
-          <div className="space-y-1">
-            <h2 className="text-xl font-bold text-white">Scheduling &amp; Business Rules</h2>
-            <p className="text-xs text-slate-500">
-              Changes update the live scheduling engine immediately.
-            </p>
+        <div className="space-y-10 relative z-10">
+          {/* Section Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+            <div>
+              <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5" />
+                Live Business Rules &amp; Pricing
+              </span>
+              <h2 className="text-2xl font-black text-white tracking-tight mt-0.5">
+                Capacity &amp; Pricing Configuration
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Configure doorstep car wash service rates per vehicle size and operational dispatch rules.
+              </p>
+            </div>
+
+            <a
+              href={`${api.getApiBaseUrl()}/admin/django/services/servicepackage/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all self-start sm:self-auto"
+            >
+              <span>Django Service Database</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
           </div>
 
-          {configSuccess && (
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Configuration successfully saved to database.</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSaveConfig} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Opening Time
-                </label>
-                <input
-                  type="text"
-                  value={configData.day_open_time}
-                  onChange={(e) =>
-                    setConfigData({ ...configData, day_open_time: e.target.value })
-                  }
-                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Closing Time
-                </label>
-                <input
-                  type="text"
-                  value={configData.day_close_time}
-                  onChange={(e) =>
-                    setConfigData({ ...configData, day_close_time: e.target.value })
-                  }
-                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Slot Interval (Minutes)
-                </label>
-                <input
-                  type="number"
-                  value={configData.slot_interval_minutes}
-                  onChange={(e) =>
-                    setConfigData({
-                      ...configData,
-                      slot_interval_minutes: parseInt(e.target.value, 10),
-                    })
-                  }
-                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Buffer &amp; Travel Time (Minutes)
-                </label>
-                <input
-                  type="number"
-                  value={configData.default_buffer_minutes}
-                  onChange={(e) =>
-                    setConfigData({
-                      ...configData,
-                      default_buffer_minutes: parseInt(e.target.value, 10),
-                    })
-                  }
-                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Min Advance Notice (Hours)
-                </label>
-                <input
-                  type="number"
-                  value={configData.min_advance_hours}
-                  onChange={(e) =>
-                    setConfigData({
-                      ...configData,
-                      min_advance_hours: parseInt(e.target.value, 10),
-                    })
-                  }
-                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Max Booking Advance (Days)
-                </label>
-                <input
-                  type="number"
-                  value={configData.max_advance_days}
-                  onChange={(e) =>
-                    setConfigData({
-                      ...configData,
-                      max_advance_days: parseInt(e.target.value, 10),
-                    })
-                  }
-                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                />
+          {/* PART 1: SERVICE PACKAGES & VEHICLE PRICING CONFIGURATION */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                    ₹
+                  </div>
+                  <h3 className="text-lg font-black text-white tracking-tight">
+                    Service Packages &amp; Vehicle Pricing Matrix
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Update live prices for any vehicle size. Changes take effect on the booking portal immediately.
+                </p>
               </div>
             </div>
 
-            <div className="pt-2 space-y-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={configData.auto_confirm_bookings}
-                  onChange={(e) =>
-                    setConfigData({
-                      ...configData,
-                      auto_confirm_bookings: e.target.checked,
-                    })
-                  }
-                  className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                />
-                <span className="text-xs text-slate-300 font-semibold">
-                  Auto-confirm new customer booking submissions immediately
-                </span>
-              </label>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {servicePackages.map((pkg) => (
+                <div
+                  key={pkg.id}
+                  className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 p-5 space-y-4 shadow-xl hover:border-cyan-500/30 transition-all"
+                >
+                  {/* Package Top */}
+                  <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/10">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-black text-white">{pkg.name}</h4>
+                        {pkg.is_popular && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                            {pkg.badge_text || "Popular"}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">
+                        {pkg.short_description}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-[11px] font-bold text-slate-400 bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/5 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-cyan-400" />
+                      {pkg.estimated_duration_minutes}m
+                    </span>
+                  </div>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={configData.same_day_booking_allowed}
-                  onChange={(e) =>
-                    setConfigData({
-                      ...configData,
-                      same_day_booking_allowed: e.target.checked,
-                    })
-                  }
-                  className="rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                />
-                <span className="text-xs text-slate-300 font-semibold">
-                  Allow same-day booking requests (subject to advance notice window)
-                </span>
-              </label>
+                  {/* Vehicle Pricing Rows */}
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                      Vehicle Rates
+                    </span>
+                    <div className="divide-y divide-white/5 rounded-xl bg-[#060A14] border border-white/5 overflow-hidden">
+                      {pkg.prices && pkg.prices.length > 0 ? (
+                        pkg.prices.map((price) => {
+                          const isEditing = editingPriceId === price.id;
+                          return (
+                            <div
+                              key={price.id}
+                              className="p-3 flex items-center justify-between gap-3 text-xs"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Car className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="font-semibold text-slate-200 truncate">
+                                  {price.vehicle_type_name || `Vehicle Type #${price.vehicle_type}`}
+                                </span>
+                              </div>
+
+                              {isEditing ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 bg-[#0B1220] px-2 py-1 rounded-lg border border-cyan-500/40">
+                                    <span className="text-[11px] text-slate-400">Base ₹</span>
+                                    <input
+                                      type="number"
+                                      value={priceEditValues.base_price}
+                                      onChange={(e) =>
+                                        setPriceEditValues({
+                                          ...priceEditValues,
+                                          base_price: e.target.value,
+                                        })
+                                      }
+                                      className="w-16 bg-transparent text-white text-xs font-bold focus:outline-none"
+                                      placeholder="0"
+                                    />
+                                  </div>
+
+                                  <div className="flex items-center gap-1 bg-[#0B1220] px-2 py-1 rounded-lg border border-cyan-500/40">
+                                    <span className="text-[11px] text-slate-400">Offer ₹</span>
+                                    <input
+                                      type="number"
+                                      value={priceEditValues.discounted_price}
+                                      onChange={(e) =>
+                                        setPriceEditValues({
+                                          ...priceEditValues,
+                                          discounted_price: e.target.value,
+                                        })
+                                      }
+                                      className="w-16 bg-transparent text-cyan-300 text-xs font-bold focus:outline-none"
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+
+                                  <button
+                                    onClick={() => handleSavePrice(price.id)}
+                                    disabled={savingPriceId === price.id}
+                                    className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-bold transition-colors disabled:opacity-50"
+                                    title="Save Rate"
+                                  >
+                                    {savingPriceId === price.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <Check className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEditPrice}
+                                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 transition-colors"
+                                    title="Cancel"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-3">
+                                  <div className="text-right">
+                                    {price.discounted_price && Number(price.discounted_price) > 0 ? (
+                                      <div className="flex items-center gap-1.5 justify-end">
+                                        <span className="text-[11px] text-slate-400 line-through">
+                                          ₹{price.base_price}
+                                        </span>
+                                        <span className="font-black text-cyan-400 text-sm">
+                                          ₹{price.discounted_price}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="font-black text-white text-sm">
+                                        ₹{price.base_price}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <button
+                                    onClick={() => handleStartEditPrice(price)}
+                                    className="p-1.5 rounded-lg bg-white/[0.05] hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-white/10 transition-colors"
+                                    title="Edit price"
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-3 text-xs text-slate-500 italic text-center">
+                          No rates configured yet.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* PART 2: SCHEDULING & BUSINESS RULES */}
+          <div className="bg-[#0B1220]/90 backdrop-blur-md p-6 sm:p-8 rounded-3xl border border-white/10 shadow-xl space-y-6">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                  <SlidersHorizontal className="w-4 h-4" />
+                </div>
+                <h3 className="text-lg font-black text-white tracking-tight">
+                  Scheduling &amp; Business Rules
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400">
+                Changes update the live scheduling engine, slot limits, and customer booking windows immediately.
+              </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={savingConfig}
-              className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all shadow-md flex items-center gap-2"
-            >
-              {savingConfig ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <span>Save Scheduling Configuration</span>
-              )}
-            </button>
-          </form>
+            {configSuccess && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 font-medium flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Configuration successfully saved to database.</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveConfig} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Opening Time
+                  </label>
+                  <input
+                    type="text"
+                    value={configData.day_open_time}
+                    onChange={(e) =>
+                      setConfigData({ ...configData, day_open_time: e.target.value })
+                    }
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Closing Time
+                  </label>
+                  <input
+                    type="text"
+                    value={configData.day_close_time}
+                    onChange={(e) =>
+                      setConfigData({ ...configData, day_close_time: e.target.value })
+                    }
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Slot Interval (Minutes)
+                  </label>
+                  <input
+                    type="number"
+                    value={configData.slot_interval_minutes}
+                    onChange={(e) =>
+                      setConfigData({
+                        ...configData,
+                        slot_interval_minutes: parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Buffer &amp; Travel Time (Minutes)
+                  </label>
+                  <input
+                    type="number"
+                    value={configData.default_buffer_minutes}
+                    onChange={(e) =>
+                      setConfigData({
+                        ...configData,
+                        default_buffer_minutes: parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Min Advance Notice (Hours)
+                  </label>
+                  <input
+                    type="number"
+                    value={configData.min_advance_hours}
+                    onChange={(e) =>
+                      setConfigData({
+                        ...configData,
+                        min_advance_hours: parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Max Booking Advance (Days)
+                  </label>
+                  <input
+                    type="number"
+                    value={configData.max_advance_days}
+                    onChange={(e) =>
+                      setConfigData({
+                        ...configData,
+                        max_advance_days: parseInt(e.target.value, 10),
+                      })
+                    }
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 space-y-3">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={configData.auto_confirm_bookings}
+                    onChange={(e) =>
+                      setConfigData({
+                        ...configData,
+                        auto_confirm_bookings: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 rounded border-white/10 bg-[#060A14] text-cyan-500 focus:ring-cyan-400/40"
+                  />
+                  <span className="text-xs text-slate-300 font-semibold">
+                    Auto-confirm new customer booking submissions immediately
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={configData.same_day_booking_allowed}
+                    onChange={(e) =>
+                      setConfigData({
+                        ...configData,
+                        same_day_booking_allowed: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 rounded border-white/10 bg-[#060A14] text-cyan-500 focus:ring-cyan-400/40"
+                  />
+                  <span className="text-xs text-slate-300 font-semibold">
+                    Allow same-day booking requests (subject to advance notice window)
+                  </span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingConfig}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-2"
+              >
+                {savingConfig ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <span>Save Scheduling Configuration</span>
+                )}
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>

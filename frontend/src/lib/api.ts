@@ -182,4 +182,12 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+  updateAdminPrice: (
+    id: number,
+    data: { base_price?: string | number; discounted_price?: string | number | null }
+  ) =>
+    request<any>(`/api/admin/prices/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 };
