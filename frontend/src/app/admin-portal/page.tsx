@@ -1430,6 +1430,22 @@ export default function AdminPortalPage() {
                           <span className="text-slate-500">Payment Method:</span>
                           <span className="font-semibold text-slate-200">{selectedBooking.payment_method_display || selectedBooking.payment_method}</span>
                         </div>
+                        {selectedBooking.payment_details && (
+                          <div className="pt-2 border-t border-white/10 space-y-1 text-[11px]">
+                            {selectedBooking.payment_details.order_id && (
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">Razorpay Order:</span>
+                                <span className="font-mono text-cyan-300 font-semibold">{selectedBooking.payment_details.order_id}</span>
+                              </div>
+                            )}
+                            {selectedBooking.payment_details.payment_id && (
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">Razorpay Payment ID:</span>
+                                <span className="font-mono text-emerald-400 font-semibold">{selectedBooking.payment_details.payment_id}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <div className="flex justify-between items-center pt-1">
                           <span className="text-slate-500">Update Payment:</span>
                           <select

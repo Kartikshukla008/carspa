@@ -88,8 +88,43 @@ export interface BookingResponse {
   cancellation_reason: string;
   cancelled_at: string | null;
   admin_notes: string;
+  payment_details?: PaymentDetails | null;
+  razorpay_order?: RazorpayOrderData | null;
+  razorpay_order_error?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface RazorpayOrderData {
+  enabled: boolean;
+  key_id: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  booking_reference: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  service_name?: string;
+  vehicle_name?: string;
+  payment_id?: number;
+}
+
+export interface PaymentDetails {
+  id: number;
+  provider: string;
+  amount: string;
+  currency: string;
+  order_id: string;
+  payment_id: string;
+  status: string;
+  created_at: string;
+}
+
+export interface RazorpayConfig {
+  enabled: boolean;
+  key_id: string;
+  currency: string;
 }
 
 export interface Lead {

@@ -15,9 +15,11 @@ import {
   ShieldCheck,
   Phone,
   MessageSquare,
-  FileText
+  FileText,
+  CreditCard,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { launchRazorpayCheckout } from "@/lib/razorpay";
 import { BookingResponse } from "@/types";
 
 function TrackFlow() {
@@ -28,6 +30,36 @@ function TrackFlow() {
   const [booking, setBooking] = useState<BookingResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [payingOnline, setPayingOnline] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handlePayOnline = async () => {
+    if (!booking) return;
+    setPayingOnline(true);
+    setPaymentMessage(null);
+    try {
+      const orderData = await api.createRazorpayOrder(booking.booking_reference);
+      await launchRazorpayCheckout({
+        orderData,
+        onSuccess: (verifiedBooking) => {
+          setBooking(verifiedBooking);
+          setPayingOnline(false);
+          setPaymentMessage({ type: "success", text: "Payment verified successfully via Razorpay!" });
+        },
+        onFailure: (err) => {
+          setPayingOnline(false);
+          const msg = typeof err === "string" ? err : err?.description || "Payment attempt failed or was cancelled. Please try again.";
+          setPaymentMessage({ type: "error", text: msg });
+        },
+        onDismiss: () => {
+          setPayingOnline(false);
+        },
+      });
+    } catch (err: any) {
+      setPayingOnline(false);
+      setPaymentMessage({ type: "error", text: err.message || "Failed to initialize Razorpay checkout." });
+    }
+  };
 
   const handleLookup = async (refToSearch?: string) => {
     const target = refToSearch || reference;
@@ -204,17 +236,87 @@ function TrackFlow() {
             </div>
 
             {/* Pricing & settlement info */}
-            <div className="pt-4 border-t border-white/10 flex justify-between items-center bg-white/[0.03] p-4 rounded-xl border border-white/10">
-              <div>
-                <span className="text-[11px] text-slate-400">Payment Status:</span>
-                <p className="text-xs font-semibold text-white">
-                  {booking.payment_method_display} ({booking.payment_status})
-                </p>
+            <div className="pt-4 border-t border-white/10 space-y-3">
+              {paymentMessage && (
+                <div
+                  className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                    paymentMessage.type === "success"
+                      ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-300"
+                      : "bg-red-950/40 border-red-500/30 text-red-300"
+                  }`}
+                >
+                  {paymentMessage.type === "success" ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                  )}
+                  <span>{paymentMessage.text}</span>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.03] p-4 rounded-xl border border-white/10">
+                <div className="space-y-1">
+                  <span className="text-[11px] text-slate-400 block font-semibold uppercase tracking-wider">
+                    Payment Status
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {booking.payment_status === "PAID" ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Paid via Razorpay</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Payment Pending ({booking.payment_method_display || "Pay on Arrival"})</span>
+                      </span>
+                    )}
+                  </div>
+                  {booking.payment_details?.payment_id && (
+                    <p className="text-[11px] text-slate-400 pt-0.5">
+                      Razorpay ID: <span className="font-mono text-cyan-300">{booking.payment_details.payment_id}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-left sm:text-right">
+                  <span className="text-[11px] text-slate-400 block">Total Amount</span>
+                  <p className="text-2xl font-black text-cyan-400">₹{booking.final_amount}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <span className="text-[11px] text-slate-400">Total Amount:</span>
-                <p className="text-xl font-black text-cyan-400">₹{booking.final_amount}</p>
-              </div>
+
+              {/* Pay Online CTA if pending */}
+              {booking.payment_status !== "PAID" && booking.status !== "CANCELLED" && (
+                <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <CreditCard className="w-4 h-4 text-cyan-400" />
+                      <span>Settle Payment Online</span>
+                    </span>
+                    <p className="text-[11px] text-slate-400">
+                      Pay instantly via Google Pay, PhonePe, Paytm, UPI QR, or Debit/Credit Card.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={payingOnline}
+                    onClick={handlePayOnline}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all shadow-md shadow-cyan-500/20 shrink-0 flex items-center justify-center gap-2"
+                  >
+                    {payingOnline ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Launching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-3.5 h-3.5" />
+                        <span>Pay ₹{booking.final_amount} via Razorpay</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Action buttons */}

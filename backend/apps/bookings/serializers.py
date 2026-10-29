@@ -196,6 +196,22 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     assigned_staff_name = serializers.CharField(source="assigned_staff.name", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     payment_method_display = serializers.CharField(source="get_payment_method_display", read_only=True)
+    payment_details = serializers.SerializerMethodField()
+
+    def get_payment_details(self, obj):
+        latest = obj.payments.order_by("-created_at").first()
+        if latest:
+            return {
+                "id": latest.id,
+                "provider": latest.provider,
+                "amount": str(latest.amount),
+                "currency": latest.currency,
+                "order_id": latest.order_id,
+                "payment_id": latest.payment_id,
+                "status": latest.status,
+                "created_at": latest.created_at.isoformat(),
+            }
+        return None
 
     class Meta:
         model = Booking
@@ -223,6 +239,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             "payment_method",
             "payment_method_display",
             "payment_status",
+            "payment_details",
             "vehicle_type",
             "vehicle_type_name",
             "service_package",

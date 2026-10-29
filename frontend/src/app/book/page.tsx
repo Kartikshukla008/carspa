@@ -23,10 +23,14 @@ import {
   FileText,
   Droplets,
   Layers,
-  Check
+  Check,
+  CreditCard,
+  QrCode,
+  RefreshCw,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { VehicleType, ServicePackage, ServiceArea, TimeSlot, BookingResponse } from "@/types";
+import { launchRazorpayCheckout } from "@/lib/razorpay";
+import { VehicleType, ServicePackage, ServiceArea, TimeSlot, BookingResponse, RazorpayConfig } from "@/types";
 
 // Vehicle metadata for rich visual presentation
 export interface CarModelItem {
@@ -147,17 +151,20 @@ function BookingFlow() {
 
   const [leadCapturedId, setLeadCapturedId] = useState<string | null>(null);
   const [submittingBooking, setSubmittingBooking] = useState(false);
+  const [retryingPayment, setRetryingPayment] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<BookingResponse | null>(null);
+  const [razorpayConfig, setRazorpayConfig] = useState<RazorpayConfig | null>(null);
 
   // 1. Initial Data Fetch
   useEffect(() => {
     async function init() {
       try {
-        const [vtypes, pkgs, areas] = await Promise.all([
+        const [vtypes, pkgs, areas, rzpConfig] = await Promise.all([
           api.getVehicleTypes(),
           api.getServicePackages(),
           api.getServiceAreas(),
+          api.getRazorpayConfig().catch(() => null),
         ]);
         const cleanVtypes = Array.isArray(vtypes) ? vtypes : (vtypes as any)?.results || [];
         const cleanPkgs = Array.isArray(pkgs) ? pkgs : (pkgs as any)?.results || [];
@@ -165,6 +172,13 @@ function BookingFlow() {
         setVehicles(cleanVtypes);
         setPackages(cleanPkgs);
         setServiceAreas(cleanAreas);
+
+        if (rzpConfig) {
+          setRazorpayConfig(rzpConfig);
+          if (rzpConfig.enabled) {
+            setFormData((prev) => ({ ...prev, paymentMethod: "RAZORPAY" }));
+          }
+        }
 
         if (cleanAreas.length > 0) {
           setSelectedAreaId(cleanAreas[0].id);
@@ -327,11 +341,69 @@ function BookingFlow() {
 
       const result = await api.createBooking(bookingPayload);
       setConfirmedBooking(result);
+
+      // If customer chose online payment with Razorpay and server returned order
+      if (formData.paymentMethod === "RAZORPAY" && result.razorpay_order) {
+        setSubmittingBooking(false);
+        try {
+          await launchRazorpayCheckout({
+            orderData: result.razorpay_order,
+            onSuccess: (verifiedBooking) => {
+              setConfirmedBooking(verifiedBooking);
+              setCurrentStep(6);
+            },
+            onFailure: (err) => {
+              const errMsg = typeof err === "string" ? err : err?.description || "Payment was not completed. Your appointment slot is held; you can retry below or pay on arrival.";
+              setBookingError(errMsg);
+              setCurrentStep(6);
+            },
+            onDismiss: () => {
+              setBookingError("Checkout window was closed. Your appointment is reserved; you can complete payment now or pay upon arrival.");
+              setCurrentStep(6);
+            },
+          });
+          return;
+        } catch (checkoutErr: any) {
+          console.error("Razorpay launcher error:", checkoutErr);
+          setBookingError("Could not launch Razorpay checkout. Your booking has been saved; you can retry online or pay on arrival.");
+          setCurrentStep(6);
+          return;
+        }
+      }
+
       setCurrentStep(6); // Success step
     } catch (err: any) {
       setBookingError(err.message || "Failed to confirm booking. The slot may have just been booked.");
     } finally {
       setSubmittingBooking(false);
+    }
+  };
+
+  const handleRetryPayment = async (targetBooking?: BookingResponse) => {
+    const b = targetBooking || confirmedBooking;
+    if (!b) return;
+    setRetryingPayment(true);
+    setBookingError(null);
+    try {
+      const orderData = await api.createRazorpayOrder(b.booking_reference);
+      await launchRazorpayCheckout({
+        orderData,
+        onSuccess: (verifiedBooking) => {
+          setConfirmedBooking(verifiedBooking);
+          setRetryingPayment(false);
+        },
+        onFailure: (err) => {
+          setRetryingPayment(false);
+          const errMsg = typeof err === "string" ? err : err?.description || "Payment attempt failed. Please try again.";
+          setBookingError(errMsg);
+        },
+        onDismiss: () => {
+          setRetryingPayment(false);
+        },
+      });
+    } catch (err: any) {
+      setRetryingPayment(false);
+      setBookingError(err.message || "Failed to initialize Razorpay payment. Please try again.");
     }
   };
 
@@ -1241,9 +1313,97 @@ function BookingFlow() {
                   ₹{currentPriceObj ? currentPriceObj.effective_price : "0.00"}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 text-right">
-                Payment mode: Pay after service completion via Cash or UPI.
-              </p>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="space-y-3 pt-4 border-t border-white/10">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-cyan-400" />
+                  <span>Choose Payment Method</span>
+                </span>
+                <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Verified 256-Bit SSL</span>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Option 1: Razorpay Online */}
+                <div
+                  onClick={() => setFormData({ ...formData, paymentMethod: "RAZORPAY" })}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
+                    formData.paymentMethod === "RAZORPAY"
+                      ? "bg-cyan-950/40 border-cyan-400 ring-2 ring-cyan-400/30 shadow-lg shadow-cyan-500/20"
+                      : "bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white">Pay Online (Razorpay)</span>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm">
+                          POPULAR
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Instant confirmation via UPI apps, Cards &amp; NetBanking.
+                      </p>
+                    </div>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                        formData.paymentMethod === "RAZORPAY"
+                          ? "border-cyan-400 bg-cyan-400 text-slate-950"
+                          : "border-slate-500"
+                      }`}
+                    >
+                      {formData.paymentMethod === "RAZORPAY" && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                  </div>
+
+                  {/* Payment Badges */}
+                  <div className="flex flex-wrap items-center gap-1 mt-3 pt-2.5 border-t border-white/10 text-[9px] text-slate-300 font-semibold">
+                    <span className="px-2 py-0.5 rounded bg-black/50 border border-white/10 text-cyan-300">GPay</span>
+                    <span className="px-2 py-0.5 rounded bg-black/50 border border-white/10 text-purple-300">PhonePe</span>
+                    <span className="px-2 py-0.5 rounded bg-black/50 border border-white/10 text-sky-300">Paytm</span>
+                    <span className="px-2 py-0.5 rounded bg-black/50 border border-white/10 text-emerald-300">UPI QR</span>
+                    <span className="px-2 py-0.5 rounded bg-black/50 border border-white/10 text-slate-300">Cards</span>
+                    <span className="px-2 py-0.5 rounded bg-black/50 border border-white/10 text-slate-300">NetBanking</span>
+                  </div>
+                </div>
+
+                {/* Option 2: Pay on Service Completion */}
+                <div
+                  onClick={() => setFormData({ ...formData, paymentMethod: "PAY_ON_SERVICE" })}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
+                    formData.paymentMethod === "PAY_ON_SERVICE"
+                      ? "bg-cyan-950/40 border-cyan-400 ring-2 ring-cyan-400/30 shadow-lg shadow-cyan-500/20"
+                      : "bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <span className="text-xs font-bold text-white block">Pay on Completion</span>
+                      <p className="text-[11px] text-slate-400">
+                        Pay doorstep technician upon completion via Cash or UPI after inspection.
+                      </p>
+                    </div>
+                    <div
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                        formData.paymentMethod === "PAY_ON_SERVICE"
+                          ? "border-cyan-400 bg-cyan-400 text-slate-950"
+                          : "border-slate-500"
+                      }`}
+                    >
+                      {formData.paymentMethod === "PAY_ON_SERVICE" && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-white/10 text-[10px] text-slate-400">
+                    Zero advance payment required.
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1266,7 +1426,12 @@ function BookingFlow() {
               {submittingBooking ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Locking Slot &amp; Confirming...</span>
+                  <span>Locking Slot &amp; Initializing...</span>
+                </>
+              ) : formData.paymentMethod === "RAZORPAY" ? (
+                <>
+                  <CreditCard className="w-4 h-4" />
+                  <span>Proceed to Pay ₹{currentPriceObj ? currentPriceObj.effective_price : "0.00"} &amp; Confirm</span>
                 </>
               ) : (
                 <>
@@ -1358,12 +1523,73 @@ function BookingFlow() {
                   {confirmedBooking.address_line}, {confirmedBooking.locality}
                 </span>
               </div>
+
+              {/* Payment Summary Row */}
+              <div className="pt-2 border-t border-white/10 space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Payment Status:</span>
+                  {confirmedBooking.payment_status === "PAID" ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold uppercase tracking-wider text-[10px]">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Paid Online (Razorpay)</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold uppercase tracking-wider text-[10px]">
+                      <span>Pay on Arrival</span>
+                    </span>
+                  )}
+                </div>
+
+                {confirmedBooking.payment_details?.payment_id && (
+                  <div className="flex justify-between items-center text-[11px] text-slate-400">
+                    <span>Razorpay Payment ID:</span>
+                    <span className="font-mono text-cyan-300 font-semibold">{confirmedBooking.payment_details.payment_id}</span>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-between pt-2 border-t border-white/10 text-sm font-bold text-white">
-                <span>Amount Due:</span>
-                <span className="text-emerald-400">₹{confirmedBooking.final_amount}</span>
+                <span>{confirmedBooking.payment_status === "PAID" ? "Amount Paid:" : "Amount Due on Arrival:"}</span>
+                <span className={confirmedBooking.payment_status === "PAID" ? "text-cyan-400" : "text-emerald-400"}>
+                  ₹{confirmedBooking.final_amount}
+                </span>
               </div>
             </div>
           </div>
+
+          {/* Online Payment Option if still pending */}
+          {confirmedBooking.payment_status !== "PAID" && (
+            <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 max-w-md mx-auto text-left space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-cyan-400" />
+                  <span>Settle Online via Razorpay</span>
+                </span>
+                <span className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider">UPI / Cards / QR</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                You can pay now with Google Pay, PhonePe, Paytm, UPI apps, or credit/debit card for immediate online settlement.
+              </p>
+              <button
+                type="button"
+                disabled={retryingPayment}
+                onClick={() => handleRetryPayment()}
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-all shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2"
+              >
+                {retryingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Opening Razorpay Checkout...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Pay ₹{confirmedBooking.final_amount} Online Now</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
             <Link

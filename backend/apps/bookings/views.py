@@ -15,6 +15,7 @@ from apps.staff.models import StaffProfile
 from apps.crm.models import Lead
 from apps.scheduling.engine import AvailabilityEngine
 from apps.notifications.service import NotificationService
+from apps.payments.service import PaymentService
 
 class PublicBookingCreateAPIView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -23,8 +24,18 @@ class PublicBookingCreateAPIView(APIView):
         serializer = BookingCreateSerializer(data=request.data)
         if serializer.is_valid():
             booking = serializer.save()
+            data = BookingDetailSerializer(booking).data
+
+            # If customer chose online payment, generate Razorpay order securely
+            if booking.payment_method == "RAZORPAY" and PaymentService.is_razorpay_enabled():
+                try:
+                    order_data = PaymentService.create_order(booking)
+                    data["razorpay_order"] = order_data
+                except Exception as e:
+                    data["razorpay_order_error"] = str(e)
+
             return Response(
-                BookingDetailSerializer(booking).data,
+                data,
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

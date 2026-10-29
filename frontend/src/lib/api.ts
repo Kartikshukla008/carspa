@@ -84,6 +84,41 @@ export const api = {
   lookupBooking: (reference: string) =>
     request<import("../types").BookingResponse>(`/api/bookings/lookup/?reference=${encodeURIComponent(reference)}`),
 
+  // Razorpay Payments
+  getRazorpayConfig: () =>
+    request<import("../types").RazorpayConfig>("/api/payments/razorpay/config/"),
+  createRazorpayOrder: (bookingReference: string) =>
+    request<import("../types").RazorpayOrderData>("/api/payments/razorpay/create-order/", {
+      method: "POST",
+      body: JSON.stringify({ booking_reference: bookingReference }),
+    }),
+  verifyRazorpayPayment: (data: {
+    booking_reference: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) =>
+    request<{
+      success: boolean;
+      message: string;
+      booking: import("../types").BookingResponse;
+      payment: any;
+    }>("/api/payments/razorpay/verify/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  reportRazorpayPaymentFailed: (data: {
+    booking_reference: string;
+    razorpay_order_id: string;
+    error_code?: string;
+    error_description?: string;
+    error_metadata?: any;
+  }) =>
+    request<{ status: string; message: string }>("/api/payments/razorpay/failed/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   // Admin
   adminLogin: (credentials: { username: string; password: string }) =>
     request<{ message: string; user: any }>("/api/admin/login/", {

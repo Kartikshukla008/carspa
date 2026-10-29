@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
+load_dotenv(BASE_DIR.parent / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-vbl(97q8h&rja^0$q3_zjtgkn$7e=0gz@40rwmy7feu9s&bj-q")
 
@@ -175,7 +176,8 @@ WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
 ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "admin@carwashdoorstep.com")
 ADMIN_NOTIFICATION_PHONE = os.getenv("ADMIN_NOTIFICATION_PHONE", "+917087811881")
 
-# Payment Providers
+# Payment Providers (Razorpay Gateway)
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
-PAYMENTS_ENABLED = os.getenv("PAYMENTS_ENABLED", "False").lower() in ("true", "1", "t")
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
+PAYMENTS_ENABLED = os.getenv("PAYMENTS_ENABLED", "True").lower() in ("true", "1", "t")
