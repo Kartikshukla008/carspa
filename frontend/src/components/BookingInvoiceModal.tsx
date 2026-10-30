@@ -1,7 +1,20 @@
 "use client";
 
-import React, { useRef } from "react";
-import { Printer, Download, X, CheckCircle2, Clock, ShieldCheck, Car, MapPin, Phone, Mail, FileText } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import {
+  Printer,
+  Download,
+  X,
+  CheckCircle2,
+  Clock,
+  ShieldCheck,
+  Car,
+  MapPin,
+  Phone,
+  Mail,
+  FileText,
+} from "lucide-react";
 import { BookingResponse } from "@/types";
 
 interface BookingInvoiceModalProps {
@@ -12,8 +25,32 @@ interface BookingInvoiceModalProps {
 
 export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoiceModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Lock body scroll and handle Escape key while modal is active
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted) return null;
 
   const handlePrint = () => {
     if (typeof window !== "undefined") {
@@ -33,26 +70,46 @@ export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoice
   const taxAmount = Number(booking.tax_amount || 0);
   const finalAmount = Number(booking.final_amount || 0);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      {/* Container */}
-      <div className="relative w-full max-w-3xl bg-[#0B1220] border border-white/10 rounded-2xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
-        {/* Top Control Bar (Hidden when printing) */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#060B13]/80 shrink-0 no-print">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+  // Clean landmark to avoid "Near Near ..." duplicate phrasing
+  const cleanLandmark = booking.landmark
+    ? booking.landmark.trim().replace(/^near\s+/i, "")
+    : "";
+
+  const modalContent = (
+    <div
+      id="printable-invoice-portal"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-hidden bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+    >
+      {/* Click-away backdrop */}
+      <div
+        className="absolute inset-0 -z-10 no-print cursor-pointer"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Modal Dialog Card */}
+      <div className="relative w-full max-w-3xl bg-[#0B1220] border border-white/20 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col z-10">
+        {/* Top Control Bar (Hidden in print) */}
+        <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-white/10 bg-[#060B13] shrink-0 no-print">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shadow-inner">
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Tax Invoice &amp; Service Receipt</h3>
-              <p className="text-[11px] text-slate-400">Ref: {booking.booking_reference}</p>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Tax Invoice &amp; Service Receipt</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 font-mono">
+                  {booking.booking_reference}
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-400">Official CARSPA Doorstep Service Documentation</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/20 transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/25 transition-all"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print / Save as PDF</span>
@@ -60,20 +117,20 @@ export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoice
             <button
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-              title="Close"
+              title="Close (Esc)"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Scrollable Printable Sheet Container */}
-        <div className="overflow-y-auto p-4 sm:p-8 bg-slate-900/50">
-          {/* Printable Invoice Page (White background paper style) */}
+        {/* Scrollable Printable Paper Container */}
+        <div className="overflow-y-auto p-3 sm:p-8 bg-slate-950/70 space-y-4">
+          {/* Printable Invoice Page (White paper high-contrast style) */}
           <div
             ref={printRef}
             id="printable-invoice"
-            className="printable-invoice-container bg-white text-slate-900 p-6 sm:p-10 rounded-xl shadow-lg border border-slate-200 text-xs font-sans max-w-2xl mx-auto"
+            className="printable-invoice-container bg-white text-slate-900 p-6 sm:p-10 rounded-xl shadow-xl border border-slate-200 text-xs font-sans max-w-2xl mx-auto"
           >
             {/* Header / Brand */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b-2 border-slate-900 pb-6 gap-4">
@@ -82,7 +139,7 @@ export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoice
                   <div className="w-8 h-8 rounded-lg bg-slate-950 text-cyan-400 font-black text-sm flex items-center justify-center">
                     CS
                   </div>
-                  <span className="text-xl font-black tracking-tight text-slate-950 font-sans">
+                  <span className="text-2xl font-black tracking-tight text-slate-950 font-sans">
                     CARSPA
                   </span>
                 </div>
@@ -126,7 +183,7 @@ export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoice
                 )}
                 <p className="text-slate-700 mt-1.5 leading-relaxed">
                   {booking.address_line}, {booking.locality}
-                  {booking.landmark && ` (Near ${booking.landmark})`}
+                  {cleanLandmark && ` (Near ${cleanLandmark})`}
                   {booking.pincode && ` - ${booking.pincode}`}
                 </p>
               </div>
@@ -189,7 +246,7 @@ export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoice
                     <tr key={idx}>
                       <td className="py-2">
                         <span className="font-semibold text-slate-900 block">+ {addon.name}</span>
-                        <span className="text-[10px] text-slate-500">Studio add-on treatment</span>
+                        <span className="text-[10px] text-slate-500">Studio precision upgrade</span>
                       </td>
                       <td className="py-2 text-center text-[11px] text-slate-500">—</td>
                       <td className="py-2 text-right font-semibold">1</td>
@@ -268,11 +325,11 @@ export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoice
               {/* Stamp Badge */}
               <div className="sm:text-right">
                 {booking.payment_status === "PAID" ? (
-                  <div className="inline-block border-2 border-emerald-600 text-emerald-700 px-4 py-2 rounded-lg font-black uppercase tracking-wider text-xs rotate-[-2deg] bg-emerald-50">
+                  <div className="inline-block border-2 border-emerald-600 text-emerald-700 px-4 py-2 rounded-lg font-black uppercase tracking-wider text-xs rotate-[-2deg] bg-emerald-50 shadow-sm">
                     ✓ PAID &amp; SETTLED
                   </div>
                 ) : (
-                  <div className="inline-block border-2 border-amber-600 text-amber-700 px-4 py-2 rounded-lg font-black uppercase tracking-wider text-xs bg-amber-50">
+                  <div className="inline-block border-2 border-amber-600 text-amber-700 px-4 py-2 rounded-lg font-black uppercase tracking-wider text-xs bg-amber-50 shadow-sm">
                     PAYMENT DUE ON ARRIVAL
                   </div>
                 )}
@@ -293,16 +350,27 @@ export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoice
         </div>
 
         {/* Modal Bottom Bar (Hidden in print) */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-white/10 bg-[#060B13]/80 shrink-0 text-xs text-slate-400 no-print">
-          <span>Tip: Select &quot;Save as PDF&quot; in the print dialog to export a PDF document.</span>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            Close
-          </button>
+        <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-t border-white/10 bg-[#060B13] shrink-0 text-xs text-slate-400 no-print">
+          <span className="hidden sm:inline">Tip: Select &quot;Save as PDF&quot; in the print dialog to export a PDF document.</span>
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/25 transition-all"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print / Save as PDF</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 transition-colors font-semibold"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
