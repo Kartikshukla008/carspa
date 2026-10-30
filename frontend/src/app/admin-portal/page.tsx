@@ -43,6 +43,7 @@ import {
   ChevronDown,
   Pencil,
   Tag,
+  Send,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -53,6 +54,72 @@ import {
   ServicePackage,
   VehicleType,
 } from "@/types";
+
+function WhatsAppIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2ZM12.04 3.67C14.24 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.16 12.04 20.16C10.67 20.16 9.32 19.8 8.13 19.1L7.85 18.93L4.72 19.75L5.55 16.7L5.36 16.4C4.6 15.18 4.2 13.56 4.2 11.92C4.2 7.38 7.9 3.67 12.04 3.67ZM9.12 7.02C8.95 7.02 8.78 7.08 8.64 7.33C8.44 7.68 7.89 8.2 7.89 9.25C7.89 10.3 8.66 11.31 8.76 11.45C8.87 11.59 10.28 13.77 12.44 14.71C14.23 15.48 14.6 15.33 14.98 15.3C15.54 15.25 16.77 14.56 17.02 13.85C17.28 13.14 17.28 12.53 17.2 12.41C17.12 12.29 16.92 12.22 16.63 12.07C16.33 11.92 14.88 11.21 14.61 11.11C14.34 11.01 14.15 10.96 13.95 11.25C13.76 11.54 13.2 12.22 13.03 12.41C12.86 12.61 12.69 12.63 12.39 12.48C12.1 12.33 11.15 12.02 10.02 11.01C9.14 10.22 8.54 9.25 8.37 8.96C8.2 8.67 8.35 8.51 8.5 8.36C8.63 8.23 8.79 8.01 8.94 7.84C9.09 7.67 9.14 7.54 9.24 7.34C9.34 7.14 9.29 6.97 9.21 6.82C9.14 6.67 8.54 5.2 8.29 4.61C8.05 4.03 7.8 4.11 7.62 4.1C7.45 4.1 7.25 4.09 7.05 4.09" />
+    </svg>
+  );
+}
+
+function getWhatsAppCleanPhone(phone: string): string {
+  const digits = (phone || "").replace(/\D/g, "");
+  if (digits.length === 10) return `91${digits}`;
+  return digits;
+}
+
+function getWhatsAppTemplate(
+  type: "dispatch" | "confirmed" | "completed" | "rescheduled" | "custom",
+  booking: BookingResponse
+): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://carspa-seven.vercel.app";
+  const trackingUrl = `${origin}/track?ref=${encodeURIComponent(booking.booking_reference)}`;
+
+  if (type === "dispatch") {
+    const techName = booking.assigned_staff_name || "CARSPA Mobile Detailing Crew";
+    return `Hello ${booking.customer_name}! 🚗\n\nGreat news — our CARSPA mobile detailing van is *ON THE WAY* to your doorstep!\n\n📋 *Booking Ref:* #${booking.booking_reference}\n🚘 *Vehicle:* ${booking.vehicle_type_name} (${booking.service_package_name})\n📍 *Location:* ${booking.address_line}, ${booking.locality}\n👨‍🔧 *Technician:* ${techName}\n\n🕒 *Estimated Arrival:* Next 15–20 minutes\n\nPlease ensure your vehicle is parked with adequate space for our wash van.\n\n📍 *Live Track Your Service:* ${trackingUrl}\n\nCARSPA Doorstep Detailing Tricity 🚿`;
+  }
+
+  if (type === "confirmed") {
+    return `Hello ${booking.customer_name}! ✅\n\nYour CARSPA doorstep car detailing booking is *CONFIRMED*!\n\n📋 *Booking Ref:* #${booking.booking_reference}\n📅 *Date:* ${booking.service_date}\n⏰ *Slot Window:* ${booking.slot_start_time.slice(0, 5)} - ${booking.slot_end_time.slice(0, 5)}\n🚘 *Vehicle:* ${booking.vehicle_type_name}\n✨ *Package:* ${booking.service_package_name}\n📍 *Service Address:* ${booking.address_line}, ${booking.locality}\n💰 *Total:* ₹${booking.final_amount} (${booking.payment_status})\n\n📍 *Track or View Details:* ${trackingUrl}\n\nSee you on ${booking.service_date}! Thank you for choosing CARSPA. 🚗✨`;
+  }
+
+  if (type === "completed") {
+    return `Hello ${booking.customer_name}! 🌟\n\nYour CARSPA doorstep car detailing for *#${booking.booking_reference}* is now *COMPLETED*!\n\nWe hope you love the mirror-shine reflection and spotless interior. 🚗💎\n\n🧾 *Download Tax Invoice & Service Receipt:*\n${trackingUrl}\n\nHave feedback or need assistance? Reply directly to this WhatsApp chat or call us at +91 70878 11881.\n\nThank you for choosing CARSPA! 🚿✨`;
+  }
+
+  if (type === "rescheduled") {
+    return `Hello ${booking.customer_name}! ⏰\n\nYour CARSPA doorstep appointment *#${booking.booking_reference}* has been *RESCHEDULED*.\n\n📅 *New Date:* ${booking.service_date}\n⏰ *New Slot Window:* ${booking.slot_start_time.slice(0, 5)} - ${booking.slot_end_time.slice(0, 5)}\n🚘 *Package:* ${booking.service_package_name}\n📍 *Location:* ${booking.address_line}, ${booking.locality}\n\n📍 *Track Live Status:* ${trackingUrl}\n\nIf you have any questions or need further changes, simply reply here! 🙏`;
+  }
+
+  return `Hello ${booking.customer_name}! This is CARSPA doorstep detailing regarding your booking #${booking.booking_reference}. How can we assist you today?`;
+}
+
+function getLeadWhatsAppTemplate(lead: Lead): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://carspa-seven.vercel.app";
+  return `Hello ${lead.customer_name}! 👋\n\nThank you for checking out CARSPA Doorstep Car Detailing!\n\nWe bring professional studio-grade foam wash and interior detailing right to your home or office parking spot in ${lead.locality || "Tricity"}. 🚗✨\n\nWould you like help picking the perfect package for your ${lead.vehicle_type_name || "vehicle"}?\n\n👉 *Book Online in 60 seconds:* ${origin}/book\nOr feel free to reply directly here with your preferred date!`;
+}
+
+function formatWhatsAppPreview(text: string) {
+  return text.split("\n").map((line, idx) => {
+    const parts = line.split(/(\*[^*]+\*)/g);
+    return (
+      <span key={idx} className="block min-h-[1.25em]">
+        {parts.map((p, i) => {
+          if (p.startsWith("*") && p.endsWith("*") && p.length > 2) {
+            return (
+              <strong key={i} className="font-bold text-white">
+                {p.slice(1, -1)}
+              </strong>
+            );
+          }
+          return <span key={i}>{p}</span>;
+        })}
+      </span>
+    );
+  });
+}
 
 export default function AdminPortalPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -145,6 +212,95 @@ export default function AdminPortalPage() {
     showToast("success", `Copied "${text}" to clipboard`);
     setTimeout(() => setCopiedRef(null), 2000);
   };
+
+  // WhatsApp Customer Dispatch & Notification Modal State
+  const [whatsAppModal, setWhatsAppModal] = useState<{
+    isOpen: boolean;
+    phone: string;
+    customerName: string;
+    bookingRef?: string;
+    templateType: "dispatch" | "confirmed" | "completed" | "rescheduled" | "lead" | "custom";
+    message: string;
+    booking?: BookingResponse | null;
+    lead?: Lead | null;
+  } | null>(null);
+  const [copiedWAMessage, setCopiedWAMessage] = useState(false);
+
+  const openWhatsAppModal = (
+    booking: BookingResponse,
+    defaultType?: "dispatch" | "confirmed" | "completed" | "rescheduled" | "custom"
+  ) => {
+    let type: "dispatch" | "confirmed" | "completed" | "rescheduled" | "custom" = defaultType || "dispatch";
+    if (!defaultType) {
+      if (booking.status === "PENDING") type = "confirmed";
+      else if (booking.status === "CONFIRMED") type = "dispatch";
+      else if (booking.status === "COMPLETED") type = "completed";
+      else type = "custom";
+    }
+    const initialMsg = getWhatsAppTemplate(type, booking);
+    setWhatsAppModal({
+      isOpen: true,
+      phone: booking.customer_phone,
+      customerName: booking.customer_name,
+      bookingRef: booking.booking_reference,
+      templateType: type,
+      message: initialMsg,
+      booking,
+      lead: null,
+    });
+  };
+
+  const openLeadWhatsAppModal = (lead: Lead) => {
+    const initialMsg = getLeadWhatsAppTemplate(lead);
+    setWhatsAppModal({
+      isOpen: true,
+      phone: lead.mobile_number,
+      customerName: lead.customer_name,
+      bookingRef: lead.booking_reference,
+      templateType: "lead",
+      message: initialMsg,
+      booking: null,
+      lead,
+    });
+  };
+
+  const handleSwitchTemplate = (type: "dispatch" | "confirmed" | "completed" | "rescheduled" | "custom") => {
+    if (!whatsAppModal || !whatsAppModal.booking) return;
+    const newMsg = getWhatsAppTemplate(type, whatsAppModal.booking);
+    setWhatsAppModal({
+      ...whatsAppModal,
+      templateType: type,
+      message: newMsg,
+    });
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!whatsAppModal) return;
+    const fullPhone = getWhatsAppCleanPhone(whatsAppModal.phone);
+    const encoded = encodeURIComponent(whatsAppModal.message);
+    const url = `https://wa.me/${fullPhone}?text=${encoded}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    showToast("success", `WhatsApp window opened for ${whatsAppModal.customerName}`);
+  };
+
+  const handleCopyWAMessage = () => {
+    if (!whatsAppModal) return;
+    navigator.clipboard.writeText(whatsAppModal.message);
+    setCopiedWAMessage(true);
+    setTimeout(() => setCopiedWAMessage(false), 2000);
+    showToast("success", "Message copied to clipboard!");
+  };
+
+  // Close WhatsApp Modal on Esc key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && whatsAppModal?.isOpen) {
+        setWhatsAppModal(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [whatsAppModal]);
 
   // 1. Check Authentication on Mount
   useEffect(() => {
@@ -717,12 +873,13 @@ export default function AdminPortalPage() {
                     <th className="p-4">Locality</th>
                     <th className="p-4">Technician</th>
                     <th className="p-4">Status</th>
+                    <th className="p-4 text-right">Dispatch</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 text-slate-300">
                   {upcomingBookings.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-500">
+                      <td colSpan={8} className="p-8 text-center text-slate-500">
                         No upcoming bookings found.
                       </td>
                     </tr>
@@ -760,6 +917,16 @@ export default function AdminPortalPage() {
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
                             {b.status_display}
                           </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={() => openWhatsAppModal(b, b.status === "CONFIRMED" ? "dispatch" : "confirmed")}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 font-semibold text-[11px] inline-flex items-center gap-1.5 transition-all shadow-sm"
+                            title="1-Click WhatsApp Dispatch & Notification"
+                          >
+                            <WhatsAppIcon className="w-3.5 h-3.5" />
+                            <span>WhatsApp</span>
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -1055,16 +1222,17 @@ export default function AdminPortalPage() {
                             <span className="text-slate-500 font-mono text-[11px]">
                               {b.customer_phone}
                             </span>
-                            <a
-                              href={`https://wa.me/91${b.customer_phone.replace(/\D/g, "")}?text=Hello%20${encodeURIComponent(b.customer_name)},%20this%20is%20CARSPA%20doorstep%20wash.`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-emerald-600 hover:text-emerald-700 text-[10px] p-0.5 rounded"
-                              title="WhatsApp Customer"
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openWhatsAppModal(b);
+                              }}
+                              className="text-emerald-400 hover:text-emerald-300 text-[10px] p-0.5 rounded hover:bg-emerald-500/10 transition-colors inline-flex items-center"
+                              title="1-Click WhatsApp Dispatch & Notification"
                             >
-                              <MessageSquare className="w-3 h-3" />
-                            </a>
+                              <WhatsAppIcon className="w-3.5 h-3.5" />
+                            </button>
                             <a
                               href={`tel:${b.customer_phone}`}
                               onClick={(e) => e.stopPropagation()}
@@ -1195,6 +1363,16 @@ export default function AdminPortalPage() {
                             >
                               <Eye className="w-3 h-3 text-sky-600" />
                               <span>View</span>
+                            </button>
+
+                            {/* 1-Click WhatsApp Dispatch */}
+                            <button
+                              onClick={() => openWhatsAppModal(b)}
+                              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all"
+                              title="1-Click WhatsApp Customer Dispatch & Notification"
+                            >
+                              <WhatsAppIcon className="w-3 h-3" />
+                              <span>WhatsApp</span>
                             </button>
 
                             {/* Confirm Action */}
@@ -1351,15 +1529,15 @@ export default function AdminPortalPage() {
                           <span>Customer Details</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <a
-                            href={`https://wa.me/91${selectedBooking.customer_phone.replace(/\D/g, "")}?text=Hello%20${encodeURIComponent(selectedBooking.customer_name)},%20regarding%20your%20CARSPA%20appointment%20${selectedBooking.booking_reference}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition-colors"
+                          <button
+                            type="button"
+                            onClick={() => openWhatsAppModal(selectedBooking)}
+                            className="flex items-center gap-1 text-[11px] font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-lg hover:bg-emerald-500/25 transition-colors"
+                            title="1-Click WhatsApp Customer Dispatch & Notification"
                           >
-                            <MessageSquare className="w-3 h-3" />
+                            <WhatsAppIcon className="w-3.5 h-3.5" />
                             <span>WhatsApp</span>
-                          </a>
+                          </button>
                           <a
                             href={`tel:${selectedBooking.customer_phone}`}
                             className="flex items-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg hover:bg-sky-100 transition-colors"
@@ -1625,6 +1803,16 @@ export default function AdminPortalPage() {
                         <span>Cancel Booking</span>
                       </button>
                     )}
+
+                    {/* WhatsApp Customer Dispatch & Notification */}
+                    <button
+                      onClick={() => openWhatsAppModal(selectedBooking)}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-semibold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                      title="Open 1-Click WhatsApp Notification Manager"
+                    >
+                      <WhatsAppIcon className="w-4 h-4" />
+                      <span>WhatsApp Customer</span>
+                    </button>
                   </div>
 
                   <button
@@ -2080,7 +2268,17 @@ export default function AdminPortalPage() {
                         </td>
                         <td className="p-4">
                           <span className="font-semibold block text-white">{lead.customer_name}</span>
-                          <span className="text-slate-500">{lead.mobile_number}</span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-slate-500 font-mono text-[11px]">{lead.mobile_number}</span>
+                            <button
+                              type="button"
+                              onClick={() => openLeadWhatsAppModal(lead)}
+                              className="text-emerald-400 hover:text-emerald-300 text-[10px] p-0.5 rounded hover:bg-emerald-500/10 transition-colors inline-flex items-center"
+                              title="1-Click WhatsApp Follow-Up"
+                            >
+                              <WhatsAppIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                         <td className="p-4">
                           <span className="block font-medium text-white">
@@ -2099,7 +2297,16 @@ export default function AdminPortalPage() {
                             {lead.status}
                           </span>
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="p-4 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => openLeadWhatsAppModal(lead)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold inline-flex items-center gap-1 shadow-sm transition-all mr-2"
+                            title="1-Click WhatsApp Follow-Up"
+                          >
+                            <WhatsAppIcon className="w-3 h-3" />
+                            <span>WhatsApp</span>
+                          </button>
                           <select
                             value={lead.status}
                             onChange={(e) => handleUpdateLead(lead.id, e.target.value)}
@@ -2552,6 +2759,234 @@ export default function AdminPortalPage() {
                 )}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. WHATSAPP CUSTOMER DISPATCH & NOTIFICATION MODAL */}
+      {whatsAppModal && whatsAppModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 my-auto">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-white/10 bg-[#080D1A] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <WhatsAppIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white">
+                      WhatsApp Customer Dispatch &amp; Notification
+                    </h3>
+                    {whatsAppModal.bookingRef && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                        {whatsAppModal.bookingRef}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Send 1-click status updates, dispatch alerts, and invoices directly to customer&apos;s WhatsApp
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setWhatsAppModal(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                title="Close (Esc)"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Customer Summary Bar */}
+            <div className="px-5 py-3 bg-[#060A14] border-b border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-1.5 text-white font-semibold">
+                  <User className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{whatsAppModal.customerName}</span>
+                </div>
+                <div className="flex items-center gap-1.5 font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-lg text-[11px]">
+                  <Phone className="w-3 h-3 text-emerald-400" />
+                  <span>+{getWhatsAppCleanPhone(whatsAppModal.phone)}</span>
+                </div>
+                {whatsAppModal.booking && (
+                  <div className="text-slate-400 text-[11px] flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3 text-slate-500" />
+                    <span>{whatsAppModal.booking.locality}</span>
+                    <span className="text-slate-600">•</span>
+                    <span>{whatsAppModal.booking.service_date}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Template Selector Pills */}
+            <div className="px-5 py-2.5 bg-slate-950/40 border-b border-white/5 flex items-center gap-1.5 overflow-x-auto text-xs shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 shrink-0 mr-1">
+                Templates:
+              </span>
+              {whatsAppModal.booking ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTemplate("dispatch")}
+                    className={`px-3 py-1.5 rounded-xl font-semibold text-[11px] whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      whatsAppModal.templateType === "dispatch"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                        : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/5 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <span>🚗 On The Way / Dispatch</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTemplate("confirmed")}
+                    className={`px-3 py-1.5 rounded-xl font-semibold text-[11px] whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      whatsAppModal.templateType === "confirmed"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                        : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/5 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <span>✅ Booking Confirmed</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTemplate("completed")}
+                    className={`px-3 py-1.5 rounded-xl font-semibold text-[11px] whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      whatsAppModal.templateType === "completed"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                        : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/5 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <span>🌟 Completed &amp; Invoice</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTemplate("rescheduled")}
+                    className={`px-3 py-1.5 rounded-xl font-semibold text-[11px] whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      whatsAppModal.templateType === "rescheduled"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                        : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/5 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <span>⏰ Rescheduled</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchTemplate("custom")}
+                    className={`px-3 py-1.5 rounded-xl font-semibold text-[11px] whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      whatsAppModal.templateType === "custom"
+                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                        : "bg-white/[0.04] text-slate-400 hover:text-white border border-white/5 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    <span>💬 Custom Chat</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-xl font-semibold text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                >
+                  <span>👋 CRM Lead Follow-Up</span>
+                </button>
+              )}
+            </div>
+
+            {/* Modal Body: Two column / preview + editor */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+              {/* WhatsApp Message Preview Bubble */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>WhatsApp Chat Bubble Preview</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500">Live preview as received by customer</span>
+                </div>
+
+                <div className="rounded-2xl bg-[#0b141a] p-4 border border-emerald-950/60 shadow-inner relative overflow-hidden">
+                  {/* Subtle WhatsApp wallpaper doodle dots */}
+                  <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
+
+                  {/* Outgoing Message Bubble */}
+                  <div className="relative max-w-lg ml-auto bg-[#005c4b] text-white text-xs rounded-2xl rounded-tr-sm p-3.5 shadow-md space-y-2 border border-emerald-600/30">
+                    <div className="text-[12px] leading-relaxed text-slate-100 font-sans whitespace-pre-wrap select-text">
+                      {formatWhatsAppPreview(whatsAppModal.message)}
+                    </div>
+                    <div className="flex items-center justify-end gap-1 text-[10px] text-emerald-200/80 pt-1">
+                      <span>Just now</span>
+                      <span className="text-cyan-300 font-bold">✓✓</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Composer / Editor */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Pencil className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Customize Message Content</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {whatsAppModal.message.length} chars
+                  </span>
+                </div>
+                <textarea
+                  rows={5}
+                  value={whatsAppModal.message}
+                  onChange={(e) =>
+                    setWhatsAppModal({
+                      ...whatsAppModal,
+                      message: e.target.value,
+                    })
+                  }
+                  className="w-full bg-[#060A14] border border-white/10 rounded-2xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 leading-relaxed font-sans shadow-inner"
+                  placeholder="Type your message here or customize template text..."
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="px-5 py-3.5 border-t border-white/10 bg-[#080D1A] flex flex-wrap items-center justify-between gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyWAMessage}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-colors"
+              >
+                {copiedWAMessage ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-300 font-bold">Copied to Clipboard!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Copy Message</span>
+                  </>
+                )}
+              </button>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setWhatsAppModal(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-transparent hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendWhatsApp}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 transition-all cursor-pointer"
+                >
+                  <WhatsAppIcon className="w-4 h-4" />
+                  <span>Open in WhatsApp</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
