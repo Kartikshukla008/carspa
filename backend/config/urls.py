@@ -16,6 +16,7 @@ from apps.services.views import (
     PublicVehicleTypeListView,
     PublicServicePackageListView,
     PublicServiceAreaListView,
+    PublicAddonListView,
     AdminServicePackageViewSet,
     AdminVehicleTypeViewSet,
     AdminServiceAreaViewSet,
@@ -64,6 +65,7 @@ urlpatterns = [
     # Public APIs
     path("api/vehicle-types/", PublicVehicleTypeListView.as_view(), name="public-vehicle-types"),
     path("api/services/", PublicServicePackageListView.as_view(), name="public-services"),
+    path("api/services/addons/", PublicAddonListView.as_view(), name="public-addons"),
     path("api/service-areas/", PublicServiceAreaListView.as_view(), name="public-service-areas"),
     path("api/availability/", PublicAvailabilityAPIView.as_view(), name="public-availability"),
     path("api/leads/", PublicLeadCreateView.as_view(), name="public-lead-create"),

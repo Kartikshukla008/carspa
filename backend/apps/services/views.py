@@ -1,5 +1,8 @@
 from rest_framework import generics, permissions, viewsets
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from apps.services.models import VehicleType, ServicePackage, ServiceArea, ServicePackagePrice
+from apps.services.constants import AVAILABLE_ADDONS
 from apps.services.serializers import (
     VehicleTypeSerializer,
     ServicePackageSerializer,
@@ -24,6 +27,24 @@ class PublicServiceAreaListView(generics.ListAPIView):
     serializer_class = ServiceAreaSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = None
+
+class PublicAddonListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        data = [
+            {
+                "id": a["id"],
+                "name": a["name"],
+                "short_description": a["short_description"],
+                "price": float(a["price"]),
+                "duration_minutes": a["duration_minutes"],
+                "badge": a["badge"],
+                "icon": a["icon"],
+            }
+            for a in AVAILABLE_ADDONS
+        ]
+        return Response(data)
 
 # Admin Service Management
 class AdminServicePackageViewSet(viewsets.ModelViewSet):

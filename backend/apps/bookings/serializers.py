@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from apps.core.models import BusinessConfig
 from apps.services.models import VehicleType, ServicePackage, ServicePackagePrice, ServiceArea
+from apps.services.constants import ADDONS_BY_ID
 from apps.staff.models import StaffProfile
 from apps.crm.models import Lead
 from apps.bookings.models import Booking, Customer, BookingStatusHistory, BookingAssignment
@@ -29,6 +30,9 @@ class BookingCreateSerializer(serializers.Serializer):
     landmark = serializers.CharField(max_length=150, required=False, allow_blank=True)
     pincode = serializers.CharField(max_length=10, required=False, allow_blank=True)
     special_instructions = serializers.CharField(required=False, allow_blank=True)
+    selected_addon_ids = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list
+    )
     
     payment_method = serializers.ChoiceField(
         choices=["PAY_ON_SERVICE", "RAZORPAY"], default="PAY_ON_SERVICE"
@@ -82,12 +86,31 @@ class BookingCreateSerializer(serializers.Serializer):
         except ServicePackagePrice.DoesNotExist:
             raise serializers.ValidationError({"price": "No active pricing configured for this vehicle and package combination."})
 
+        # Calculate Add-ons total & validate IDs server-side
+        selected_addon_ids = validated_data.get("selected_addon_ids", [])
+        validated_addons = []
+        addons_total = Decimal("0.00")
+        addon_duration = 0
+
+        for addon_id in selected_addon_ids:
+            if addon_id in ADDONS_BY_ID:
+                info = ADDONS_BY_ID[addon_id]
+                validated_addons.append({
+                    "id": info["id"],
+                    "name": info["name"],
+                    "price": str(info["price"]),
+                })
+                addons_total += info["price"]
+                addon_duration += info.get("duration_minutes", 0)
+
+        subtotal = base_price + addons_total
+
         config = BusinessConfig.get_config()
         tax_amount = Decimal("0.00")
         if config.enable_tax:
-            tax_amount = (base_price * config.tax_percentage / Decimal("100.0")).quantize(Decimal("0.01"))
+            tax_amount = (subtotal * config.tax_percentage / Decimal("100.0")).quantize(Decimal("0.01"))
         
-        final_amount = base_price + tax_amount
+        final_amount = subtotal + tax_amount
 
         # Race-safe atomic validation and booking creation
         with transaction.atomic():
@@ -150,7 +173,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 service_date=service_date,
                 slot_start_time=slot_start,
                 slot_end_time=slot_end,
-                estimated_duration_minutes=service_package.estimated_duration_minutes,
+                estimated_duration_minutes=service_package.estimated_duration_minutes + addon_duration,
                 status=initial_status,
                 customer_name=validated_data["customer_name"],
                 customer_phone=phone,
@@ -160,6 +183,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 landmark=validated_data.get("landmark", ""),
                 pincode=validated_data.get("pincode", ""),
                 special_instructions=validated_data.get("special_instructions", ""),
+                selected_addons=validated_addons,
                 price_snapshot=base_price,
                 tax_amount=tax_amount,
                 final_amount=final_amount,
@@ -232,6 +256,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             "landmark",
             "pincode",
             "special_instructions",
+            "selected_addons",
             "price_snapshot",
             "tax_amount",
             "discount_amount",

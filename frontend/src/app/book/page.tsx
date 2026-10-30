@@ -27,10 +27,23 @@ import {
   CreditCard,
   QrCode,
   RefreshCw,
+  Wind,
+  Gauge,
+  Sun,
+  Tag,
+  Plus,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { launchRazorpayCheckout } from "@/lib/razorpay";
-import { VehicleType, ServicePackage, ServiceArea, TimeSlot, BookingResponse, RazorpayConfig } from "@/types";
+import {
+  VehicleType,
+  ServicePackage,
+  ServiceArea,
+  ServiceAddon,
+  TimeSlot,
+  BookingResponse,
+  RazorpayConfig,
+} from "@/types";
 
 // Vehicle metadata for rich visual presentation
 export interface CarModelItem {
@@ -108,6 +121,54 @@ const VEHICLE_METADATA: Record<string, VehicleCategoryMeta> = {
   },
 };
 
+const DEFAULT_ADDONS: ServiceAddon[] = [
+  {
+    id: "windshield-coating",
+    name: "Windshield Hydrophobic Nano-Coating",
+    short_description: "Crystal clear wet weather visibility without wiper chatter or night glare",
+    price: 199,
+    duration_minutes: 15,
+    badge: "Monsoon Essential",
+    icon: "ShieldCheck",
+  },
+  {
+    id: "ac-disinfection",
+    name: "AC Vent & Interior Anti-Bacterial Fogging",
+    short_description: "Deep duct sanitization that kills cabin bacteria, mold spores & damp AC odors",
+    price: 249,
+    duration_minutes: 15,
+    badge: "High Demand",
+    icon: "Wind",
+  },
+  {
+    id: "engine-bay",
+    name: "Engine Bay Foam Clean & Satin Dressing",
+    short_description: "Safe degreasing of grime with non-sticky dust-resistant OEM finish",
+    price: 299,
+    duration_minutes: 20,
+    badge: "Pro Detailing",
+    icon: "Gauge",
+  },
+  {
+    id: "alloy-ceramic",
+    name: "Alloy Wheel De-Brake Dust & Ceramic Gloss",
+    short_description: "Acid-free iron fallout wash with high-gloss hydrophobic rim shield",
+    price: 199,
+    duration_minutes: 15,
+    badge: "Shine Boost",
+    icon: "Sparkles",
+  },
+  {
+    id: "headlight-restoration",
+    name: "Headlight Lens Clarity Polish & UV Shield",
+    short_description: "Compound polish removes yellow oxidation haze for maximum night throw",
+    price: 349,
+    duration_minutes: 20,
+    badge: "Safety First",
+    icon: "Sun",
+  },
+];
+
 function BookingFlow() {
   const searchParams = useSearchParams();
   const preselectedPkgId = searchParams.get("package");
@@ -120,6 +181,7 @@ function BookingFlow() {
   const [vehicles, setVehicles] = useState<VehicleType[]>([]);
   const [packages, setPackages] = useState<ServicePackage[]>([]);
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
+  const [availableAddons, setAvailableAddons] = useState<ServiceAddon[]>(DEFAULT_ADDONS);
   const [loadingInitial, setLoadingInitial] = useState(true);
 
   // Selections
@@ -127,6 +189,7 @@ function BookingFlow() {
   const [selectedCarModel, setSelectedCarModel] = useState<string>("");
   const [customCarModel, setCustomCarModel] = useState<string>("");
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
 
   // Date & Slot
@@ -160,18 +223,21 @@ function BookingFlow() {
   useEffect(() => {
     async function init() {
       try {
-        const [vtypes, pkgs, areas, rzpConfig] = await Promise.all([
+        const [vtypes, pkgs, areas, rzpConfig, addonsRes] = await Promise.all([
           api.getVehicleTypes(),
           api.getServicePackages(),
           api.getServiceAreas(),
           api.getRazorpayConfig().catch(() => null),
+          api.getServiceAddons().catch(() => null),
         ]);
         const cleanVtypes = Array.isArray(vtypes) ? vtypes : (vtypes as any)?.results || [];
         const cleanPkgs = Array.isArray(pkgs) ? pkgs : (pkgs as any)?.results || [];
         const cleanAreas = Array.isArray(areas) ? areas : (areas as any)?.results || [];
+        const cleanAddons = Array.isArray(addonsRes) && addonsRes.length > 0 ? addonsRes : DEFAULT_ADDONS;
         setVehicles(cleanVtypes);
         setPackages(cleanPkgs);
         setServiceAreas(cleanAreas);
+        setAvailableAddons(cleanAddons);
 
         if (rzpConfig) {
           setRazorpayConfig(rzpConfig);
@@ -278,6 +344,19 @@ function BookingFlow() {
     }
   };
 
+  const toggleAddon = (addonId: string) => {
+    setSelectedAddons((prev) =>
+      prev.includes(addonId) ? prev.filter((id) => id !== addonId) : [...prev, addonId]
+    );
+  };
+
+  const selectedAddonObjects = availableAddons.filter((a) => selectedAddons.includes(a.id));
+  const addonsTotal = selectedAddonObjects.reduce((acc, a) => acc + Number(a.price || 0), 0);
+  const packageEffectivePrice = currentPriceObj
+    ? Number(currentPriceObj.effective_price || currentPriceObj.base_price || 0)
+    : 0;
+  const grandTotal = packageEffectivePrice + addonsTotal;
+
   // Background lead capture when advancing from Contact step
   const handleCaptureLead = async () => {
     if (!formData.customerName || !formData.customerPhone) return;
@@ -335,6 +414,7 @@ function BookingFlow() {
         landmark: formData.landmark,
         pincode: formData.pincode,
         special_instructions: finalInstructions,
+        selected_addon_ids: selectedAddons,
         payment_method: formData.paymentMethod,
         lead_id: leadCapturedId || "",
       };
@@ -350,28 +430,28 @@ function BookingFlow() {
             orderData: result.razorpay_order,
             onSuccess: (verifiedBooking) => {
               setConfirmedBooking(verifiedBooking);
-              setCurrentStep(6);
+              setCurrentStep(7);
             },
             onFailure: (err) => {
               const errMsg = typeof err === "string" ? err : err?.description || "Payment was not completed. Your appointment slot is held; you can retry below or pay on arrival.";
               setBookingError(errMsg);
-              setCurrentStep(6);
+              setCurrentStep(7);
             },
             onDismiss: () => {
               setBookingError("Checkout window was closed. Your appointment is reserved; you can complete payment now or pay upon arrival.");
-              setCurrentStep(6);
+              setCurrentStep(7);
             },
           });
           return;
         } catch (checkoutErr: any) {
           console.error("Razorpay launcher error:", checkoutErr);
           setBookingError("Could not launch Razorpay checkout. Your booking has been saved; you can retry online or pay on arrival.");
-          setCurrentStep(6);
+          setCurrentStep(7);
           return;
         }
       }
 
-      setCurrentStep(6); // Success step
+      setCurrentStep(7); // Success step
     } catch (err: any) {
       setBookingError(err.message || "Failed to confirm booking. The slot may have just been booked.");
     } finally {
@@ -446,17 +526,18 @@ function BookingFlow() {
         </p>
       </div>
 
-      {/* Progress Steps (1 to 5) */}
-      {currentStep < 6 && (
+      {/* Progress Steps (1 to 6) */}
+      {currentStep < 7 && (
         <div className="mb-10">
           <div className="flex items-center justify-between relative max-w-2xl mx-auto">
             <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-white/10 -translate-y-1/2 -z-0" />
             {[
               { num: 1, label: "Vehicle" },
               { num: 2, label: "Package" },
-              { num: 3, label: "Date & Slot" },
-              { num: 4, label: "Address" },
-              { num: 5, label: "Review" },
+              { num: 3, label: "Add-ons" },
+              { num: 4, label: "Date & Slot" },
+              { num: 5, label: "Address" },
+              { num: 6, label: "Review" },
             ].map((step) => (
               <div key={step.num} className="relative z-10 flex flex-col items-center gap-1.5 bg-[#060B13] px-2">
                 <div
@@ -847,15 +928,190 @@ function BookingFlow() {
               onClick={() => setCurrentStep(3)}
               className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25"
             >
-              <span>Next: Pick Date &amp; Slot</span>
+              <span>Next: Detailing Add-Ons</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
-      {/* STEP 3: DATE & TIME SLOT */}
+      {/* STEP 3: PRECISION DETAILING ADD-ONS & UPSELLS */}
       {currentStep === 3 && (
+        <div className="space-y-6">
+          {/* Selected Vehicle & Package Header */}
+          {currentVehicle && currentVehicleMeta && currentPackage && (
+            <div className="p-3 sm:p-4 rounded-2xl border border-cyan-500/30 bg-[#0B1220]/90 flex items-center justify-between gap-4 shadow-lg backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="relative w-14 h-10 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-slate-900">
+                  <Image
+                    src={activeCarImage}
+                    alt={currentVehicle.name}
+                    fill
+                    className="object-cover"
+                    sizes="56px"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-white">
+                      {currentVehicle.name} • {activeCarDisplayName}
+                    </span>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">
+                      {currentPackage.name}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Base package rate: ₹{packageEffectivePrice} • {currentPackage.estimated_duration_minutes} mins
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                className="text-xs font-bold text-cyan-400 hover:text-cyan-300 underline underline-offset-2 shrink-0"
+              >
+                Change Package
+              </button>
+            </div>
+          )}
+
+          <div className="text-center space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[11px] font-bold">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Optional Studio Upgrades</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-white">
+              Enhance Your Wash With Precision Add-Ons
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
+              Select specialized treatments performed alongside your wash. Check any box to add to your appointment.
+            </p>
+          </div>
+
+          {/* Add-on Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {availableAddons.map((addon) => {
+              const isChecked = selectedAddons.includes(addon.id);
+              return (
+                <div
+                  key={addon.id}
+                  onClick={() => toggleAddon(addon.id)}
+                  className={`p-5 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between ${
+                    isChecked
+                      ? "bg-cyan-950/40 border-cyan-400 ring-2 ring-cyan-400/30 shadow-xl shadow-cyan-500/20"
+                      : "bg-[#0B1220]/90 border-white/10 hover:border-white/20 hover:bg-[#0B1220]"
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 ${
+                            isChecked
+                              ? "bg-cyan-400 border-cyan-400 text-slate-950"
+                              : "border-white/20 bg-white/5"
+                          }`}
+                        >
+                          {isChecked && <Check className="w-4 h-4 stroke-[3]" />}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-white">{addon.name}</h3>
+                          {addon.badge && (
+                            <span className="inline-block text-[9px] font-bold uppercase tracking-wider text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.5 rounded mt-0.5">
+                              {addon.badge}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-base font-black text-cyan-400">
+                          +₹{addon.price}
+                        </span>
+                        <span className="text-[10px] text-slate-400 flex items-center justify-end gap-1 mt-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          +{addon.duration_minutes}m
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-400 pl-9">
+                      {addon.short_description}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] pl-9">
+                    <span className={isChecked ? "text-cyan-300 font-semibold" : "text-slate-500"}>
+                      {isChecked ? "✓ Added to your wash" : "Click card to add"}
+                    </span>
+                    <span className="text-slate-400 text-[10px]">
+                      Doorstep equipment ready
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Running Subtotal Bar */}
+          <div className="bg-[#0B1220]/90 border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+            <div className="space-y-0.5">
+              <span className="text-[11px] uppercase font-bold text-slate-400 block">
+                Estimated Service Total
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black text-white">₹{grandTotal}</span>
+                {addonsTotal > 0 && (
+                  <span className="text-xs text-cyan-400 font-semibold">
+                    (₹{packageEffectivePrice} package + ₹{addonsTotal} add-ons)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <span className="text-xs text-slate-400">
+              {selectedAddons.length === 0
+                ? "No add-ons selected — Standard package"
+                : `${selectedAddons.length} precision upgrade${selectedAddons.length > 1 ? "s" : ""} selected`}
+            </span>
+          </div>
+
+          {/* Nav Buttons */}
+          <div className="flex justify-between pt-4">
+            <button
+              type="button"
+              onClick={() => setCurrentStep(2)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white px-4 py-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Packages</span>
+            </button>
+            <div className="flex items-center gap-3">
+              {selectedAddons.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(4)}
+                  className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-2"
+                >
+                  Skip Add-Ons
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setCurrentStep(4)}
+                className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25"
+              >
+                <span>Continue: Pick Date &amp; Slot</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 4: DATE & TIME SLOT */}
+      {currentStep === 4 && (
         <div className="space-y-6">
           {/* Selected Vehicle Banner */}
           {currentVehicle && currentVehicleMeta && (
@@ -1003,16 +1259,16 @@ function BookingFlow() {
           <div className="flex justify-between pt-4">
             <button
               type="button"
-              onClick={() => setCurrentStep(2)}
+              onClick={() => setCurrentStep(3)}
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white px-4 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
+              <span>Back to Add-Ons</span>
             </button>
             <button
               type="button"
               disabled={!selectedSlotTime}
-              onClick={() => setCurrentStep(4)}
+              onClick={() => setCurrentStep(5)}
               className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25"
             >
               <span>Next: Customer Details</span>
@@ -1022,8 +1278,8 @@ function BookingFlow() {
         </div>
       )}
 
-      {/* STEP 4: CUSTOMER DETAILS & ADDRESS */}
-      {currentStep === 4 && (
+      {/* STEP 5: CUSTOMER DETAILS & ADDRESS */}
+      {currentStep === 5 && (
         <div className="space-y-6">
           {/* Selected Vehicle Banner */}
           {currentVehicle && currentVehicleMeta && (
@@ -1192,18 +1448,18 @@ function BookingFlow() {
           <div className="flex justify-between pt-4">
             <button
               type="button"
-              onClick={() => setCurrentStep(3)}
+              onClick={() => setCurrentStep(4)}
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white px-4 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
+              <span>Back to Slot</span>
             </button>
             <button
               type="button"
               disabled={!formData.customerName || !formData.customerPhone || !formData.addressLine || !formData.locality}
               onClick={async () => {
                 await handleCaptureLead();
-                setCurrentStep(5);
+                setCurrentStep(6);
               }}
               className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25"
             >
@@ -1214,8 +1470,8 @@ function BookingFlow() {
         </div>
       )}
 
-      {/* STEP 5: REVIEW & CONFIRM */}
-      {currentStep === 5 && (
+      {/* STEP 6: REVIEW & CONFIRM */}
+      {currentStep === 6 && (
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-bold text-white">Review Appointment Summary</h2>
@@ -1300,9 +1556,24 @@ function BookingFlow() {
               <div className="flex justify-between text-xs text-slate-400">
                 <span>Base Package Rate ({currentVehicle?.name}):</span>
                 <span className="font-semibold text-white">
-                  ₹{currentPriceObj ? currentPriceObj.effective_price : "0.00"}
+                  ₹{packageEffectivePrice}
                 </span>
               </div>
+
+              {selectedAddonObjects.length > 0 && (
+                <div className="pt-2 pb-1 border-t border-white/5 space-y-1.5">
+                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
+                    Selected Detailing Add-Ons ({selectedAddonObjects.length}):
+                  </span>
+                  {selectedAddonObjects.map((addon) => (
+                    <div key={addon.id} className="flex justify-between text-xs text-slate-300">
+                      <span>+ {addon.name}</span>
+                      <span className="font-semibold text-cyan-300">₹{addon.price}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="flex justify-between text-xs text-slate-400">
                 <span>Doorstep Travel &amp; Soft Water Surcharge:</span>
                 <span className="text-emerald-400 font-semibold">FREE</span>
@@ -1310,7 +1581,7 @@ function BookingFlow() {
               <div className="pt-3 border-t border-white/10 flex justify-between items-baseline">
                 <span className="text-sm font-bold text-white">Total Amount Due:</span>
                 <span className="text-2xl font-black text-cyan-400">
-                  ₹{currentPriceObj ? currentPriceObj.effective_price : "0.00"}
+                  ₹{grandTotal}
                 </span>
               </div>
             </div>
@@ -1411,11 +1682,11 @@ function BookingFlow() {
             <button
               type="button"
               disabled={submittingBooking}
-              onClick={() => setCurrentStep(4)}
+              onClick={() => setCurrentStep(5)}
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white px-4 py-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
+              <span>Back to Address</span>
             </button>
             <button
               type="button"
@@ -1431,12 +1702,12 @@ function BookingFlow() {
               ) : formData.paymentMethod === "RAZORPAY" ? (
                 <>
                   <CreditCard className="w-4 h-4" />
-                  <span>Proceed to Pay ₹{currentPriceObj ? currentPriceObj.effective_price : "0.00"} &amp; Confirm</span>
+                  <span>Proceed to Pay ₹{grandTotal} &amp; Confirm</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Confirm &amp; Book Appointment</span>
+                  <span>Confirm Doorstep Booking (₹{grandTotal})</span>
                 </>
               )}
             </button>
@@ -1444,8 +1715,8 @@ function BookingFlow() {
         </div>
       )}
 
-      {/* STEP 6: CONFIRMATION SUCCESS SCREEN */}
-      {currentStep === 6 && confirmedBooking && (
+      {/* STEP 7: CONFIRMATION SUCCESS SCREEN */}
+      {currentStep === 7 && confirmedBooking && (
         <div className="bg-[#0B1220]/95 p-8 sm:p-12 rounded-3xl border border-emerald-500/30 text-center space-y-8 shadow-2xl relative backdrop-blur-xl">
           <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-lg">
             <CheckCircle2 className="w-8 h-8" />
@@ -1523,6 +1794,21 @@ function BookingFlow() {
                   {confirmedBooking.address_line}, {confirmedBooking.locality}
                 </span>
               </div>
+
+              {/* Selected Add-ons Snapshot */}
+              {confirmedBooking.selected_addons && confirmedBooking.selected_addons.length > 0 && (
+                <div className="pt-2 border-t border-white/10 space-y-1">
+                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
+                    Add-On Enhancements:
+                  </span>
+                  {confirmedBooking.selected_addons.map((addon: any, idx: number) => (
+                    <div key={idx} className="flex justify-between text-xs text-slate-300">
+                      <span>+ {addon.name}</span>
+                      <span className="font-semibold text-white">₹{addon.price}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Payment Summary Row */}
               <div className="pt-2 border-t border-white/10 space-y-2">

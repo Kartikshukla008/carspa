@@ -91,6 +91,7 @@ class Booking(TimeStampedModel):
     landmark = models.CharField(max_length=150, blank=True)
     pincode = models.CharField(max_length=10, blank=True)
     special_instructions = models.TextField(blank=True)
+    selected_addons = models.JSONField(default=list, blank=True)
     
     # Financial snapshot
     price_snapshot = models.DecimalField(max_digits=10, decimal_places=2)

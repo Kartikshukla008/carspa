@@ -19,6 +19,16 @@ export interface ServicePackagePrice {
   is_active: boolean;
 }
 
+export interface ServiceAddon {
+  id: string;
+  name: string;
+  short_description: string;
+  price: number;
+  duration_minutes: number;
+  badge?: string;
+  icon?: string;
+}
+
 export interface ServicePackage {
   id: number;
   name: string;
@@ -70,6 +80,7 @@ export interface BookingResponse {
   landmark: string;
   pincode: string;
   special_instructions: string;
+  selected_addons?: { id: string; name: string; price: string }[];
   price_snapshot: string;
   tax_amount: string;
   discount_amount: string;
