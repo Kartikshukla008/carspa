@@ -108,13 +108,6 @@ export function BookingInvoiceModal({ booking, isOpen, onClose }: BookingInvoice
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-md shadow-cyan-500/25 transition-all"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print / Save as PDF</span>
-            </button>
-            <button
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
               title="Close (Esc)"
