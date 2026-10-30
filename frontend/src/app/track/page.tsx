@@ -17,10 +17,13 @@ import {
   MessageSquare,
   FileText,
   CreditCard,
+  Printer,
+  Download,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { launchRazorpayCheckout } from "@/lib/razorpay";
 import { BookingResponse } from "@/types";
+import { BookingInvoiceModal } from "@/components/BookingInvoiceModal";
 
 function TrackFlow() {
   const searchParams = useSearchParams();
@@ -32,6 +35,7 @@ function TrackFlow() {
   const [error, setError] = useState<string | null>(null);
   const [payingOnline, setPayingOnline] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   const handlePayOnline = async () => {
     if (!booking) return;
@@ -168,13 +172,23 @@ function TrackFlow() {
                   {booking.booking_reference}
                 </h2>
               </div>
-              <div
-                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold uppercase tracking-wider self-start sm:self-auto ${getStatusColor(
-                  booking.status
-                )}`}
-              >
-                <span className="w-2 h-2 rounded-full bg-current animate-ping" />
-                <span>{booking.status_display}</span>
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setShowInvoiceModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 text-xs font-bold transition-all shadow-sm"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Invoice / Receipt</span>
+                </button>
+                <div
+                  className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold uppercase tracking-wider ${getStatusColor(
+                    booking.status
+                  )}`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-current animate-ping" />
+                  <span>{booking.status_display}</span>
+                </div>
               </div>
             </div>
 
@@ -233,6 +247,26 @@ function TrackFlow() {
                   <p className="text-xs text-slate-500">Landmark: {booking.landmark}</p>
                 )}
               </div>
+
+              {/* Selected Add-ons Display */}
+              {booking.selected_addons && booking.selected_addons.length > 0 && (
+                <div className="sm:col-span-2 space-y-2 pt-2 border-t border-white/10">
+                  <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">
+                    Precision Add-On Treatments ({booking.selected_addons.length})
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {booking.selected_addons.map((addon: any, idx: number) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 text-xs font-semibold"
+                      >
+                        <span>+ {addon.name}</span>
+                        <span className="text-white font-bold">₹{addon.price}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Pricing & settlement info */}
@@ -321,23 +355,40 @@ function TrackFlow() {
 
             {/* Action buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowInvoiceModal(true)}
+                className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/25"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Download / Print Invoice (PDF)</span>
+              </button>
               <a
                 href={`https://wa.me/917087811881?text=Hi%2C%20I%20am%20checking%20status%20for%20my%20booking%20ref%20${booking.booking_reference}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20"
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20"
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>Contact Dispatcher on WhatsApp</span>
+                <span>Contact on WhatsApp</span>
               </a>
               <Link
                 href="/book"
-                className="flex-1 bg-white/[0.05] hover:bg-white/[0.09] text-white border border-white/10 font-semibold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
+                className="bg-white/[0.05] hover:bg-white/[0.09] text-white border border-white/10 font-semibold text-xs py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all"
               >
-                <span>Book Another Wash</span>
+                <span>Book Again</span>
               </Link>
             </div>
           </div>
+        )}
+
+        {/* Tax Invoice & Printable Receipt Modal */}
+        {booking && (
+          <BookingInvoiceModal
+            booking={booking}
+            isOpen={showInvoiceModal}
+            onClose={() => setShowInvoiceModal(false)}
+          />
         )}
       </div>
     </div>

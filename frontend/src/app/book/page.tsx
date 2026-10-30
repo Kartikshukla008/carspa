@@ -32,9 +32,11 @@ import {
   Sun,
   Tag,
   Plus,
+  Printer,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { launchRazorpayCheckout } from "@/lib/razorpay";
+import { BookingInvoiceModal } from "@/components/BookingInvoiceModal";
 import {
   VehicleType,
   ServicePackage,
@@ -218,6 +220,7 @@ function BookingFlow() {
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<BookingResponse | null>(null);
   const [razorpayConfig, setRazorpayConfig] = useState<RazorpayConfig | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   // 1. Initial Data Fetch
   useEffect(() => {
@@ -1877,13 +1880,22 @@ function BookingFlow() {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowInvoiceModal(true)}
+              className="w-full sm:w-auto bg-white/[0.08] hover:bg-white/[0.14] text-cyan-300 border border-cyan-500/30 font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Download Invoice (PDF)</span>
+            </button>
+
             <Link
               href={`/track?reference=${confirmedBooking.booking_reference}`}
               className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center gap-2"
             >
               <FileText className="w-4 h-4" />
-              <span>Track Booking Status</span>
+              <span>Track Status</span>
             </Link>
 
             <a
@@ -1893,9 +1905,18 @@ function BookingFlow() {
               className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Contact on WhatsApp</span>
+              <span>WhatsApp</span>
             </a>
           </div>
+
+          {/* Tax Invoice & Printable Receipt Modal */}
+          {confirmedBooking && (
+            <BookingInvoiceModal
+              booking={confirmedBooking}
+              isOpen={showInvoiceModal}
+              onClose={() => setShowInvoiceModal(false)}
+            />
+          )}
         </div>
       )}
       </div>

@@ -254,3 +254,46 @@
     animation: none !important;
   }
 }
+
+/* ─── High-Resolution Print Stylesheet (Invoice & Receipts) ─── */
+@media print {
+  @page {
+    margin: 12mm;
+    size: auto;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+  }
+
+  /* Hide website layout chrome when printing */
+  nav,
+  footer,
+  .no-print,
+  [data-no-print="true"],
+  button {
+    display: none !important;
+  }
+
+  /* Target modal backdrop to be invisible and un-fixed */
+  .fixed.inset-0 {
+    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+  }
+
+  .printable-invoice-container {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+}
+
