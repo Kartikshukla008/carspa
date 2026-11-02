@@ -1,4 +1,5 @@
 import csv
+from decimal import Decimal
 from django.db.models import Sum, Count, Q
 from django.contrib.auth import login, logout, get_user_model
 from django.http import HttpResponse
