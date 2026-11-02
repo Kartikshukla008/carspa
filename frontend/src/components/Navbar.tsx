@@ -105,12 +105,6 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/admin-portal"
-                className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 hover:text-cyan-300 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-all duration-200"
-              >
-                Admin
-              </Link>
             </div>
 
             {/* Desktop CTAs */}
@@ -268,21 +262,6 @@ export default function Navbar() {
                     </Link>
                   </motion.div>
                 ))}
-
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15, duration: 0.3 }}
-                >
-                  <Link
-                    href="/admin-portal"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between text-[15px] font-semibold text-cyan-400 py-3 px-3 rounded-xl hover:bg-cyan-500/10 transition-colors"
-                  >
-                    <span>Admin Portal</span>
-                    <ChevronRight className="w-4 h-4 text-slate-500" />
-                  </Link>
-                </motion.div>
 
                 {/* Mobile Auth Button */}
                 <motion.div
