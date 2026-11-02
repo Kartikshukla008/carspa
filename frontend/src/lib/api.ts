@@ -8,22 +8,30 @@ function getCsrfToken(): string | null {
 
 function getAuthToken(path: string): string | null {
   if (typeof window === "undefined") return null;
-  // Never send an Authorization header for public unauthenticated endpoints
-  if (
-    path === "/api/admin/login/" ||
-    path === "/api/accounts/login/" ||
-    path === "/api/accounts/register/" ||
-    path === "/api/accounts/forgot-password/" ||
-    path === "/api/accounts/reset-password/"
-  ) {
-    return null;
-  }
-  const adminToken = localStorage.getItem("carspa_admin_token");
-  const customerToken = localStorage.getItem("carspa_auth_token");
+  // Admin endpoints (except public login)
   if (path.startsWith("/api/admin/")) {
-    return adminToken;
+    if (path === "/api/admin/login/") return null;
+    return localStorage.getItem("carspa_admin_token");
   }
-  return customerToken;
+
+  // Customer endpoints that strictly require user authentication
+  if (
+    path.startsWith("/api/customer/") ||
+    path.startsWith("/api/accounts/profile/") ||
+    path.startsWith("/api/accounts/change-password/") ||
+    path.startsWith("/api/accounts/logout/") ||
+    path.startsWith("/api/accounts/me/")
+  ) {
+    return localStorage.getItem("carspa_auth_token");
+  }
+
+  // For booking creation, attach customer token if customer is logged in
+  if (path === "/api/bookings/") {
+    return localStorage.getItem("carspa_auth_token");
+  }
+
+  // All other endpoints are public (lookup, packages, vehicle types, slots, payment config, etc.)
+  return null;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -38,11 +46,27 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...(options.headers as any),
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: "include", // For session-based authentication
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: "include", // For session-based authentication
+    });
+  } catch (err: any) {
+    const errStr = String(err?.message || err);
+    if (
+      err?.name === "TypeError" ||
+      errStr.includes("NetworkError") ||
+      errStr.includes("Failed to fetch") ||
+      errStr.includes("Network request failed")
+    ) {
+      throw new Error(
+        "Unable to connect to CARSPA server. The backend may be waking up from idle (please allow a few seconds) or check your internet connection."
+      );
+    }
+    throw err;
+  }
 
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;

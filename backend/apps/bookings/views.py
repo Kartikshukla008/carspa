@@ -46,9 +46,10 @@ class PublicBookingCreateAPIView(APIView):
 
 class PublicBookingLookupAPIView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def get(self, request):
-        reference = request.query_params.get("reference", "").strip()
+        reference = request.query_params.get("reference", "").strip().lstrip("#")
         phone = request.query_params.get("phone", "").strip()
 
         if not reference:

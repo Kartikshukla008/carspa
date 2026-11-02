@@ -19,6 +19,7 @@ import {
   CreditCard,
   Printer,
   Download,
+  RefreshCw,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { launchRazorpayCheckout } from "@/lib/razorpay";
@@ -66,15 +67,16 @@ function TrackFlow() {
   };
 
   const handleLookup = async (refToSearch?: string) => {
-    const target = refToSearch || reference;
-    if (!target.trim()) return;
+    const rawTarget = refToSearch || reference;
+    if (!rawTarget.trim()) return;
+    const target = rawTarget.trim().replace(/^#/, "");
 
     setLoading(true);
     setError(null);
     setBooking(null);
 
     try {
-      const data = await api.lookupBooking(target.trim());
+      const data = await api.lookupBooking(target);
       setBooking(data);
     } catch (err: any) {
       setError(err.message || "No booking found with this reference.");
@@ -155,8 +157,26 @@ function TrackFlow() {
         {error && (
           <div className="bg-red-950/40 p-6 rounded-2xl border border-red-500/30 text-center space-y-2">
             <AlertCircle className="w-6 h-6 text-red-400 mx-auto" />
-            <h4 className="text-sm font-bold text-white">Booking Not Found</h4>
-            <p className="text-xs text-slate-400">{error}</p>
+            <h4 className="text-sm font-bold text-white">
+              {error.toLowerCase().includes("unable to connect") ||
+              error.toLowerCase().includes("network") ||
+              error.toLowerCase().includes("failed to fetch")
+                ? "Connection Issue"
+                : "Booking Not Found"}
+            </h4>
+            <p className="text-xs text-slate-300">{error}</p>
+            {(error.toLowerCase().includes("unable to connect") ||
+              error.toLowerCase().includes("network") ||
+              error.toLowerCase().includes("failed to fetch")) && (
+              <button
+                type="button"
+                onClick={() => handleLookup()}
+                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry Connection</span>
+              </button>
+            )}
           </div>
         )}
 
