@@ -136,7 +136,7 @@ function formatWhatsAppPreview(text: string) {
 
 export default function AdminPortalPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [loginForm, setLoginForm] = useState({ username: "admin", password: "" });
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -1037,24 +1037,6 @@ export default function AdminPortalPage() {
             <p className="text-xs text-slate-400">
               Access booking controls, capacity engine, user management &amp; CRM.
             </p>
-          </div>
-
-          {/* Quick Credential Helper Chip */}
-          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 flex items-center justify-between gap-2 shadow-inner">
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-cyan-400 shrink-0" />
-              <div>
-                <span className="font-semibold block text-[11px] text-cyan-200 uppercase tracking-wider">Super Admin Credentials</span>
-                <span className="font-mono text-white text-xs">admin / admin123</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setLoginForm({ username: "admin", password: "admin123" })}
-              className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 transition-colors"
-            >
-              Auto-fill
-            </button>
           </div>
 
           {loginError && (
