@@ -8,12 +8,22 @@ function getCsrfToken(): string | null {
 
 function getAuthToken(path: string): string | null {
   if (typeof window === "undefined") return null;
+  // Never send an Authorization header for public unauthenticated endpoints
+  if (
+    path === "/api/admin/login/" ||
+    path === "/api/accounts/login/" ||
+    path === "/api/accounts/register/" ||
+    path === "/api/accounts/forgot-password/" ||
+    path === "/api/accounts/reset-password/"
+  ) {
+    return null;
+  }
   const adminToken = localStorage.getItem("carspa_admin_token");
   const customerToken = localStorage.getItem("carspa_auth_token");
-  if (path.startsWith("/api/admin/") && adminToken) {
+  if (path.startsWith("/api/admin/")) {
     return adminToken;
   }
-  return adminToken || customerToken;
+  return customerToken;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -38,6 +48,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     let errorMessage = `Request failed with status ${response.status}`;
     try {
       const errorData = await response.json();
+      if (response.status === 401 && (errorData?.detail === "Invalid token." || errorData?.detail?.includes("token"))) {
+        if (typeof window !== "undefined") {
+          if (path.startsWith("/api/admin/")) {
+            localStorage.removeItem("carspa_admin_token");
+          } else {
+            localStorage.removeItem("carspa_auth_token");
+          }
+        }
+      }
       if (typeof errorData === "string") {
         errorMessage = errorData;
       } else if (errorData.error) {

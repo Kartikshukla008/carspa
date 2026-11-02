@@ -97,6 +97,7 @@ class AdminTeamUserSerializer(serializers.ModelSerializer):
 
 class AdminLoginAPIView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         try:

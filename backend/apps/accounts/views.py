@@ -34,6 +34,7 @@ User = get_user_model()
 
 class RegisterAPIView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -50,6 +51,7 @@ class RegisterAPIView(views.APIView):
 
 class LoginAPIView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -141,6 +143,7 @@ class ChangePasswordAPIView(views.APIView):
 
 class PasswordResetRequestAPIView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
@@ -170,6 +173,7 @@ class PasswordResetRequestAPIView(views.APIView):
 
 class PasswordResetConfirmAPIView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = PasswordResetConfirmSerializer(data=request.data)
