@@ -45,6 +45,15 @@ import {
   Tag,
   Send,
   UserCheck,
+  BarChart3,
+  PieChart,
+  Layers,
+  Lock,
+  Shield,
+  Activity,
+  ArrowUpRight,
+  Briefcase,
+  EyeOff,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -54,6 +63,9 @@ import {
   StaffMember,
   ServicePackage,
   VehicleType,
+  AdminAuditLogItem,
+  AdminTeamMember,
+  AdminPaymentRecord,
 } from "@/types";
 
 function WhatsAppIcon({ className = "w-4 h-4" }: { className?: string }) {
@@ -127,13 +139,17 @@ export default function AdminPortalPage() {
   const [loginForm, setLoginForm] = useState({ username: "admin", password: "" });
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [adminUser, setAdminUser] = useState<any>(null);
 
-  // Active Tab: overview | bookings | leads | staff | settings
+  // Active Tab: overview | bookings | orders | payments | customers | leads | staff | settings | team | audit
   const [activeTab, setActiveTab] = useState<string>("overview");
 
-  // Dashboard Data
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  // Dashboard Data & Charts
+  const [metrics, setMetrics] = useState<any | null>(null);
+  const [dashboardCharts, setDashboardCharts] = useState<any | null>(null);
+  const [recentActivity, setRecentActivity] = useState<any | null>(null);
+  const [revenueChartRange, setRevenueChartRange] = useState<"daily" | "weekly" | "monthly">("daily");
   const [upcomingBookings, setUpcomingBookings] = useState<BookingResponse[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
 
@@ -146,6 +162,79 @@ export default function AdminPortalPage() {
   const [bookingFilterVehicle, setBookingFilterVehicle] = useState<string>("");
   const [bookingSearch, setBookingSearch] = useState<string>("");
   const [loadingBookings, setLoadingBookings] = useState(false);
+
+  // Payments State
+  const [paymentsList, setPaymentsList] = useState<AdminPaymentRecord[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [paymentFilterStatus, setPaymentFilterStatus] = useState("ALL");
+  const [refundModal, setRefundModal] = useState<{ isOpen: boolean; payment: AdminPaymentRecord | null; reason: string }>({
+    isOpen: false,
+    payment: null,
+    reason: "",
+  });
+  const [processingRefund, setProcessingRefund] = useState(false);
+
+  // Audit Logs State
+  const [auditLogsList, setAuditLogsList] = useState<AdminAuditLogItem[]>([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
+  const [auditLogSearch, setAuditLogSearch] = useState("");
+  const [auditLogFilterAction, setAuditLogFilterAction] = useState("ALL");
+
+  // Team & RBAC State
+  const [teamList, setTeamList] = useState<AdminTeamMember[]>([]);
+  const [loadingTeam, setLoadingTeam] = useState(false);
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+  const [newTeamForm, setNewTeamForm] = useState({
+    username: "",
+    email: "",
+    full_name: "",
+    phone: "",
+    password: "",
+    role: "ADMIN",
+  });
+  const [savingTeam, setSavingTeam] = useState(false);
+  const [updatingTeamId, setUpdatingTeamId] = useState<number | null>(null);
+
+  // Manual Booking Creation Modal State
+  const [showCreateBookingModal, setShowCreateBookingModal] = useState(false);
+  const [manualBookingForm, setManualBookingForm] = useState({
+    customer_name: "",
+    customer_phone: "",
+    customer_email: "",
+    vehicle_type_id: 0,
+    service_package_id: 0,
+    service_area_id: 0,
+    service_date: "",
+    slot_time: "10:00",
+    address_line: "",
+    locality: "",
+    landmark: "",
+    pincode: "",
+    payment_method: "PAY_ON_SERVICE",
+    special_instructions: "",
+  });
+  const [creatingBooking, setCreatingBooking] = useState(false);
+
+  // Status History Modal State
+  const [selectedBookingHistory, setSelectedBookingHistory] = useState<{ booking: BookingResponse; history: any[] } | null>(null);
+  const [loadingBookingHistory, setLoadingBookingHistory] = useState(false);
+
+  // Customer Edit Modal State
+  const [customerEditModal, setCustomerEditModal] = useState<{
+    isOpen: boolean;
+    customerId: number;
+    full_name: string;
+    email: string;
+    phone: string;
+  }>({
+    isOpen: false,
+    customerId: 0,
+    full_name: "",
+    email: "",
+    phone: "",
+  });
+  const [savingCustomerEdit, setSavingCustomerEdit] = useState(false);
 
   // Filter Metadata
   const [servicePackages, setServicePackages] = useState<ServicePackage[]>([]);
@@ -392,9 +481,11 @@ export default function AdminPortalPage() {
 
     if (activeTab === "overview") {
       fetchDashboardMetrics();
-    } else if (activeTab === "bookings") {
+    } else if (activeTab === "bookings" || activeTab === "orders") {
       fetchBookings();
       fetchStaff();
+    } else if (activeTab === "payments") {
+      fetchPayments();
     } else if (activeTab === "customers") {
       fetchCustomers();
     } else if (activeTab === "leads") {
@@ -403,6 +494,10 @@ export default function AdminPortalPage() {
       fetchStaff();
     } else if (activeTab === "settings") {
       fetchConfig();
+    } else if (activeTab === "team") {
+      fetchTeam();
+    } else if (activeTab === "audit") {
+      fetchAuditLogs();
     }
   }, [isAuthenticated, activeTab]);
 
@@ -412,9 +507,21 @@ export default function AdminPortalPage() {
     fetchCustomers(customerSearch, customerStatusFilter);
   }, [customerStatusFilter]);
 
+  // Re-fetch payments when payment filter changes
+  useEffect(() => {
+    if (!isAuthenticated || activeTab !== "payments") return;
+    fetchPayments(paymentSearch, paymentFilterStatus);
+  }, [paymentFilterStatus]);
+
+  // Re-fetch audit logs when action filter changes
+  useEffect(() => {
+    if (!isAuthenticated || activeTab !== "audit") return;
+    fetchAuditLogs(auditLogSearch, auditLogFilterAction);
+  }, [auditLogFilterAction]);
+
   // Re-fetch bookings when filters change
   useEffect(() => {
-    if (!isAuthenticated || activeTab !== "bookings") return;
+    if (!isAuthenticated || (activeTab !== "bookings" && activeTab !== "orders")) return;
     fetchBookings();
   }, [
     bookingFilterStatus,
@@ -429,11 +536,207 @@ export default function AdminPortalPage() {
     try {
       const data = await api.getAdminDashboard();
       setMetrics(data.metrics);
-      setUpcomingBookings(data.upcoming_appointments);
+      setDashboardCharts(data.charts || null);
+      setRecentActivity(data.recent_activity || null);
+      setUpcomingBookings(data.upcoming_appointments || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoadingDashboard(false);
+    }
+  };
+
+  const fetchPayments = async (searchQuery = paymentSearch, statusVal = paymentFilterStatus) => {
+    setLoadingPayments(true);
+    try {
+      const params: Record<string, string> = {};
+      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (statusVal !== "ALL") params.status = statusVal;
+      const res = await api.adminGetPayments(params);
+      const list = Array.isArray(res) ? res : (res as any)?.results || [];
+      setPaymentsList(list);
+    } catch {
+      showToast("error", "Failed to load payment transactions");
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  const fetchAuditLogs = async (searchQuery = auditLogSearch, actionVal = auditLogFilterAction) => {
+    setLoadingAuditLogs(true);
+    try {
+      const params: Record<string, string> = {};
+      if (searchQuery.trim()) params.search = searchQuery.trim();
+      if (actionVal !== "ALL") params.action = actionVal;
+      const res = await api.adminGetAuditLogs(params);
+      const list = Array.isArray(res) ? res : (res as any)?.results || [];
+      setAuditLogsList(list);
+    } catch {
+      showToast("error", "Failed to load administrative audit logs");
+    } finally {
+      setLoadingAuditLogs(false);
+    }
+  };
+
+  const fetchTeam = async () => {
+    setLoadingTeam(true);
+    try {
+      const res = await api.adminGetTeam();
+      const list = Array.isArray(res) ? res : (res as any)?.results || [];
+      setTeamList(list);
+    } catch {
+      showToast("error", "Failed to load administrative team accounts");
+    } finally {
+      setLoadingTeam(false);
+    }
+  };
+
+  const handleManualBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualBookingForm.customer_name || !manualBookingForm.customer_phone || !manualBookingForm.service_date || !manualBookingForm.slot_time) {
+      showToast("error", "Please fill in all required customer, date, and slot details.");
+      return;
+    }
+    setCreatingBooking(true);
+    try {
+      const res = await api.adminCreateBooking(manualBookingForm);
+      showToast("success", `Booking #${res.booking_reference} created successfully for ${res.customer_name}!`);
+      setShowCreateBookingModal(false);
+      setManualBookingForm({
+        customer_name: "",
+        customer_phone: "",
+        customer_email: "",
+        vehicle_type_id: vehicleTypes[0]?.id || 0,
+        service_package_id: servicePackages[0]?.id || 0,
+        service_area_id: 0,
+        service_date: "",
+        slot_time: "10:00",
+        address_line: "",
+        locality: "",
+        landmark: "",
+        pincode: "",
+        payment_method: "PAY_ON_SERVICE",
+        special_instructions: "",
+      });
+      fetchBookings();
+      fetchDashboardMetrics();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to create booking.");
+    } finally {
+      setCreatingBooking(false);
+    }
+  };
+
+  const handleTransitionBookingStatus = async (bookingId: number, newStatus: string, notes = "") => {
+    try {
+      const updated = await api.adminTransitionBookingStatus(bookingId, newStatus, notes);
+      showToast("success", `Booking #${updated.booking_reference} status changed to ${newStatus}!`);
+      fetchBookings();
+      fetchDashboardMetrics();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to update booking status.");
+    }
+  };
+
+  const handleViewBookingHistory = async (booking: BookingResponse) => {
+    setLoadingBookingHistory(true);
+    setSelectedBookingHistory({ booking, history: [] });
+    try {
+      const history = await api.adminGetBookingHistory(booking.id);
+      setSelectedBookingHistory({ booking, history });
+    } catch {
+      showToast("error", "Failed to load status change history");
+    } finally {
+      setLoadingBookingHistory(false);
+    }
+  };
+
+  const handleSaveCustomerEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerEditModal.full_name || !customerEditModal.phone) {
+      showToast("error", "Name and mobile number are required.");
+      return;
+    }
+    setSavingCustomerEdit(true);
+    try {
+      const updated = await api.adminUpdateCustomer(customerEditModal.customerId, {
+        full_name: customerEditModal.full_name,
+        email: customerEditModal.email,
+        phone: customerEditModal.phone,
+      });
+      showToast("success", `Customer ${updated.full_name} profile updated successfully.`);
+      setCustomerEditModal({ isOpen: false, customerId: 0, full_name: "", email: "", phone: "" });
+      fetchCustomers();
+      if (selectedCustomerDetail && selectedCustomerDetail.profile?.id === customerEditModal.customerId) {
+        setSelectedCustomerDetail((prev: any) => ({ ...prev, profile: updated }));
+      }
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to update customer profile.");
+    } finally {
+      setSavingCustomerEdit(false);
+    }
+  };
+
+  const handleRefundPaymentSubmit = async () => {
+    if (!refundModal.payment) return;
+    setProcessingRefund(true);
+    try {
+      await api.adminRefundPayment(refundModal.payment.id, refundModal.reason || "Refund issued by admin");
+      showToast("success", `Payment #${refundModal.payment.payment_id || refundModal.payment.id} marked as REFUNDED.`);
+      setRefundModal({ isOpen: false, payment: null, reason: "" });
+      fetchPayments();
+      fetchBookings();
+      fetchDashboardMetrics();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to process refund.");
+    } finally {
+      setProcessingRefund(false);
+    }
+  };
+
+  const handleCreateTeamMemberSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTeamForm.username || !newTeamForm.password || !newTeamForm.email) {
+      showToast("error", "Username, email, and password are required.");
+      return;
+    }
+    setSavingTeam(true);
+    try {
+      const created = await api.adminCreateTeamMember(newTeamForm);
+      showToast("success", `Admin account "${created.username}" (${created.role}) created successfully!`);
+      setShowAddTeamModal(false);
+      setNewTeamForm({ username: "", email: "", full_name: "", phone: "", password: "", role: "ADMIN" });
+      fetchTeam();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to create admin account.");
+    } finally {
+      setSavingTeam(false);
+    }
+  };
+
+  const handleToggleTeamMember = async (id: number) => {
+    setUpdatingTeamId(id);
+    try {
+      const res = await api.adminToggleTeamMember(id);
+      showToast("success", res.message || "Status updated.");
+      fetchTeam();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to toggle status.");
+    } finally {
+      setUpdatingTeamId(null);
+    }
+  };
+
+  const handleUpdateTeamRole = async (id: number, newRole: string) => {
+    setUpdatingTeamId(id);
+    try {
+      const res = await api.adminUpdateTeamRole(id, newRole);
+      showToast("success", res.message || "Role updated.");
+      fetchTeam();
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to update role.");
+    } finally {
+      setUpdatingTeamId(null);
     }
   };
 
@@ -732,8 +1035,26 @@ export default function AdminPortalPage() {
             </div>
             <h2 className="text-2xl font-black text-white tracking-tight">Administrator Login</h2>
             <p className="text-xs text-slate-400">
-              Access booking controls, capacity engine &amp; CRM.
+              Access booking controls, capacity engine, user management &amp; CRM.
             </p>
+          </div>
+
+          {/* Quick Credential Helper Chip */}
+          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 flex items-center justify-between gap-2 shadow-inner">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-cyan-400 shrink-0" />
+              <div>
+                <span className="font-semibold block text-[11px] text-cyan-200 uppercase tracking-wider">Super Admin Credentials</span>
+                <span className="font-mono text-white text-xs">admin / admin123</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLoginForm({ username: "admin", password: "admin123" })}
+              className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 transition-colors"
+            >
+              Auto-fill
+            </button>
           </div>
 
           {loginError && (
@@ -745,10 +1066,11 @@ export default function AdminPortalPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 block">Username</label>
+              <label className="text-xs font-semibold text-slate-300 block">Username or Email</label>
               <input
                 type="text"
                 required
+                placeholder="admin or admin@carspa.in"
                 value={loginForm.username}
                 onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                 className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
@@ -757,14 +1079,24 @@ export default function AdminPortalPage() {
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-300 block">Password</label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type={showLoginPassword ? "text" : "password"}
+                  required
+                  placeholder="••••••••"
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl pl-3 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-white transition-colors"
+                  tabIndex={-1}
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -807,27 +1139,61 @@ export default function AdminPortalPage() {
         </div>
       )}
 
-      {/* Top Header */}
+      {/* Top Header with Role & Quick Refresh */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-4 relative z-10">
         <div>
-          <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest">
-            Control Center
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest">
+              Control Center
+            </span>
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
+                adminUser?.role === "SUPER_ADMIN"
+                  ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
+                  : adminUser?.role === "ADMIN"
+                  ? "bg-blue-500/20 text-blue-300 border-blue-500/40"
+                  : adminUser?.role === "MANAGER"
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+              }`}
+            >
+              {adminUser?.role ? adminUser.role.replace("_", " ") : "SUPER ADMIN"}
+            </span>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
-            Operations &amp; Booking Dashboard
+            Operations &amp; Management Dashboard
           </h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
             <span className="text-xs font-bold text-white block">
-              {adminUser?.username || "Administrator"}
+              {adminUser?.full_name || adminUser?.username || "Administrator"}
             </span>
             <span className="text-[11px] text-emerald-400 font-semibold flex items-center justify-end gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Session Active
+              Authenticated Session
             </span>
           </div>
+
+          <button
+            onClick={() => {
+              if (activeTab === "overview") fetchDashboardMetrics();
+              else if (activeTab === "bookings" || activeTab === "orders") fetchBookings();
+              else if (activeTab === "payments") fetchPayments();
+              else if (activeTab === "customers") fetchCustomers();
+              else if (activeTab === "leads") fetchLeads();
+              else if (activeTab === "staff") fetchStaff();
+              else if (activeTab === "settings") fetchConfig();
+              else if (activeTab === "team") fetchTeam();
+              else if (activeTab === "audit") fetchAuditLogs();
+            }}
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 px-3 py-2 rounded-xl transition-all shadow-sm"
+            title="Refresh current tab"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
 
           <button
             onClick={handleLogout}
@@ -839,15 +1205,19 @@ export default function AdminPortalPage() {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3 relative z-10">
+      {/* Tabs Navigation (10 Centralized Tabs) */}
+      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-3 relative z-10 overflow-x-auto">
         {[
-          { id: "overview", label: "Overview Metrics", icon: TrendingUp },
-          { id: "bookings", label: "Bookings Management", icon: Calendar },
+          { id: "overview", label: "Overview & Analytics", icon: TrendingUp },
+          { id: "bookings", label: "Bookings", icon: Calendar },
+          { id: "orders", label: "Orders & Packages", icon: Layers },
+          { id: "payments", label: "Payments (Razorpay)", icon: CreditCard },
           { id: "customers", label: "Customers", icon: UserCheck },
-          { id: "leads", label: "Lead Capture CRM", icon: FileText },
+          { id: "leads", label: "CRM Leads", icon: FileText },
           { id: "staff", label: "Technicians & Staff", icon: Users },
-          { id: "settings", label: "Capacity & Pricing Config", icon: Settings },
+          { id: "settings", label: "Capacity & Pricing", icon: Settings },
+          { id: "team", label: "Admin Team & RBAC", icon: Shield },
+          { id: "audit", label: "Audit Logs", icon: Activity },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -855,7 +1225,7 @@ export default function AdminPortalPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                 isActive
                   ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20 font-bold border border-cyan-400/30"
                   : "text-slate-400 hover:text-white hover:bg-white/[0.06] border border-transparent"
@@ -871,59 +1241,412 @@ export default function AdminPortalPage() {
       {/* 1. OVERVIEW METRICS TAB */}
       {activeTab === "overview" && (
         <div className="space-y-8 relative z-10">
-          {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-1 hover:border-cyan-500/30 transition-all">
-              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                Total Bookings
-              </span>
+          {/* Top 4 Real-time KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Users */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-2 hover:border-cyan-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                  Registered Customers
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+              </div>
               <p className="text-2xl sm:text-3xl font-black text-white">
-                {metrics ? metrics.total_bookings : "—"}
+                {metrics ? metrics.total_users : "—"}
               </p>
-              <span className="text-[11px] text-cyan-400 font-medium">
-                {metrics ? metrics.today_bookings_count : 0} scheduled today
-              </span>
+              <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
+                <span className="text-cyan-400 font-semibold">+{metrics?.new_users_today || 0} today</span>
+                <span>•</span>
+                <span>+{metrics?.new_users_this_week || 0} this week</span>
+                <span>•</span>
+                <span>+{metrics?.new_users_this_month || 0} month</span>
+              </div>
             </div>
 
-            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-1 hover:border-amber-500/30 transition-all">
-              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                Pending Approval
-              </span>
-              <p className="text-2xl sm:text-3xl font-black text-amber-400">
-                {metrics ? metrics.pending_confirmations : "—"}
-              </p>
-              <span className="text-[11px] text-slate-400 font-medium">Requires confirmation</span>
-            </div>
-
-            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-1 hover:border-emerald-500/30 transition-all">
-              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                Gross Revenue
-              </span>
+            {/* Card 2: Revenue */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-2 hover:border-emerald-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                  Collected Revenue (PAID)
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                  <DollarSign className="w-4 h-4" />
+                </div>
+              </div>
               <p className="text-2xl sm:text-3xl font-black text-emerald-400">
                 ₹{metrics ? metrics.total_revenue : "0.00"}
               </p>
-              <span className="text-[11px] text-slate-400 font-medium">Completed &amp; settled</span>
+              <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
+                <span className="text-emerald-400 font-semibold">₹{metrics?.today_revenue || "0.00"} today</span>
+                <span>•</span>
+                <span>₹{metrics?.this_month_revenue || "0.00"} month</span>
+                <span>•</span>
+                <span>Avg ₹{metrics?.avg_booking_value || "0"}</span>
+              </div>
             </div>
 
-            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-1 hover:border-cyan-500/30 transition-all">
-              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                Lead Conversion
-              </span>
-              <p className="text-2xl sm:text-3xl font-black text-cyan-400">
-                {metrics ? metrics.conversion_rate : "0%"}
+            {/* Card 3: Bookings */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-2 hover:border-amber-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                  Total Bookings
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Calendar className="w-4 h-4" />
+                </div>
+              </div>
+              <p className="text-2xl sm:text-3xl font-black text-white">
+                {metrics ? metrics.total_bookings : "—"}
               </p>
-              <span className="text-[11px] text-slate-400 font-medium">
-                {metrics ? metrics.total_leads : 0} total leads
-              </span>
+              <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
+                <span className="text-amber-400 font-semibold">{metrics?.pending_confirmations || 0} pending</span>
+                <span>•</span>
+                <span className="text-cyan-400">{metrics?.confirmed_count || 0} confirmed</span>
+                <span>•</span>
+                <span className="text-emerald-400">{metrics?.completed_count || 0} completed</span>
+              </div>
+            </div>
+
+            {/* Card 4: Payments & Conversion */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-2xl border border-white/10 shadow-xl shadow-black/30 space-y-2 hover:border-purple-500/30 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                  Payment Health &amp; CRM
+                </span>
+                <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+              </div>
+              <p className="text-2xl sm:text-3xl font-black text-purple-300">
+                {metrics ? `${metrics.payments_paid} Paid` : "—"}
+              </p>
+              <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
+                <span className="text-amber-400">{metrics?.payments_pending || 0} pending</span>
+                <span>•</span>
+                <span className="text-rose-400">{metrics?.payments_failed || 0} failed</span>
+                <span>•</span>
+                <span className="text-cyan-400">{metrics?.conversion_rate || "0%"} conv</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance & Revenue Trend Visual Chart */}
+          <div className="bg-[#0B1220]/90 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-cyan-400" />
+                  <span>Revenue &amp; Booking Performance Trends</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Database-verified timeline of collected revenue and appointment volume.
+                </p>
+              </div>
+
+              {/* Time Range Pills */}
+              <div className="flex items-center bg-[#060A14] p-1 rounded-xl border border-white/10 self-start sm:self-auto">
+                {(["daily", "weekly", "monthly"] as const).map((rng) => (
+                  <button
+                    key={rng}
+                    onClick={() => setRevenueChartRange(rng)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
+                      revenueChartRange === rng
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {rng === "daily" ? "Daily (14D)" : rng === "weekly" ? "Weekly (8W)" : "Monthly (6M)"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bar Chart Visualization */}
+            <div className="pt-4">
+              {(() => {
+                const chartData = dashboardCharts ? dashboardCharts[revenueChartRange] || [] : [];
+                if (chartData.length === 0) {
+                  return (
+                    <div className="p-12 text-center text-xs text-slate-500">
+                      No trend data available for this timeline.
+                    </div>
+                  );
+                }
+                const maxRev = Math.max(...chartData.map((d: any) => d.revenue || 0), 100);
+                return (
+                  <div className="space-y-2">
+                    <div className="h-44 flex items-end gap-2 sm:gap-3 pt-6 pb-2 border-b border-white/10 overflow-x-auto">
+                      {chartData.map((item: any, idx: number) => {
+                        const rev = item.revenue || 0;
+                        const heightPct = Math.max(Math.round((rev / maxRev) * 100), 8);
+                        const label = item.date ? item.date.slice(5) : item.week || item.month || `#${idx + 1}`;
+                        return (
+                          <div
+                            key={idx}
+                            className="flex-1 min-w-[28px] sm:min-w-[40px] flex flex-col items-center gap-1 group relative h-full justify-end"
+                          >
+                            {/* Hover Tooltip */}
+                            <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 border border-cyan-500/30 px-2 py-1 rounded-lg text-[10px] text-white whitespace-nowrap shadow-lg pointer-events-none z-20">
+                              <span className="font-bold text-cyan-400">₹{rev}</span> • {item.bookings || 0} jobs
+                            </div>
+
+                            {/* Bar */}
+                            <div
+                              style={{ height: `${heightPct}%` }}
+                              className="w-full rounded-t-lg bg-gradient-to-t from-cyan-600/70 to-blue-500/90 group-hover:from-cyan-400 group-hover:to-blue-400 transition-all shadow-md shadow-cyan-500/10"
+                            />
+                            {/* X-axis Label */}
+                            <span className="text-[10px] text-slate-400 truncate w-full text-center">
+                              {label}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                      <span>Low: ₹0</span>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500" />
+                        <span>Revenue (₹) &amp; Booking Volume</span>
+                      </span>
+                      <span>Peak: ₹{maxRev}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Breakdown Distributions: 2 Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left: Status Distributions */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-xl space-y-4">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-cyan-400" />
+                <span>Booking &amp; Payment Status Breakdown</span>
+              </h4>
+
+              <div className="space-y-4">
+                <div>
+                  <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider block mb-2">
+                    Booking Lifecycle Stages
+                  </span>
+                  <div className="space-y-2">
+                    {(dashboardCharts?.status_distribution || [
+                      { status: "CONFIRMED", count: metrics?.confirmed_count || 0, color: "bg-cyan-500" },
+                      { status: "COMPLETED", count: metrics?.completed_count || 0, color: "bg-emerald-500" },
+                      { status: "PENDING", count: metrics?.pending_confirmations || 0, color: "bg-amber-500" },
+                      { status: "CANCELLED", count: metrics?.cancelled_count || 0, color: "bg-rose-500" },
+                    ]).map((st: any) => {
+                      const total = Number(metrics?.total_bookings) || 1;
+                      const pct = Math.round((Number(st.count || 0) / total) * 100);
+                      return (
+                        <div key={st.status} className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="font-semibold text-slate-300">{st.status}</span>
+                            <span className="text-slate-400 font-mono">{st.count} ({pct}%)</span>
+                          </div>
+                          <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                            <div style={{ width: `${pct}%` }} className={`h-full rounded-full ${st.color || "bg-cyan-500"}`} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider block mb-2">
+                    Payment Gateway Records (Razorpay)
+                  </span>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
+                      <span className="text-[10px] text-emerald-400 uppercase font-bold block">Paid / Settled</span>
+                      <span className="text-lg font-black text-white">{metrics?.payments_paid || 0}</span>
+                    </div>
+                    <div className="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+                      <span className="text-[10px] text-amber-400 uppercase font-bold block">Pending</span>
+                      <span className="text-lg font-black text-white">{metrics?.payments_pending || 0}</span>
+                    </div>
+                    <div className="bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl">
+                      <span className="text-[10px] text-rose-400 uppercase font-bold block">Failed</span>
+                      <span className="text-lg font-black text-white">{metrics?.payments_failed || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Popular Services & Vehicles */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-6 rounded-3xl border border-white/10 shadow-xl space-y-4">
+              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                <Tag className="w-4 h-4 text-cyan-400" />
+                <span>Service Popularity &amp; Vehicle Demand</span>
+              </h4>
+
+              <div className="space-y-4">
+                <div>
+                  <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider block mb-2">
+                    Most Booked Detailing Packages
+                  </span>
+                  <div className="space-y-2.5">
+                    {(dashboardCharts?.popular_services || []).length === 0 ? (
+                      <span className="text-xs text-slate-500">No package data available yet.</span>
+                    ) : (
+                      dashboardCharts.popular_services.map((item: any, i: number) => {
+                        const maxCount = Math.max(...dashboardCharts.popular_services.map((s: any) => s.count), 1);
+                        const pct = Math.round((item.count / maxCount) * 100);
+                        return (
+                          <div key={i} className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="font-semibold text-white truncate pr-2">{item.name}</span>
+                              <span className="text-cyan-400 font-bold shrink-0">{item.count} bookings</span>
+                            </div>
+                            <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                              <div style={{ width: `${pct}%` }} className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" />
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider block mb-2">
+                    Vehicle Type Distribution
+                  </span>
+                  <div className="space-y-2">
+                    {(dashboardCharts?.popular_vehicles || []).length === 0 ? (
+                      <span className="text-xs text-slate-500">No vehicle data available yet.</span>
+                    ) : (
+                      dashboardCharts.popular_vehicles.map((item: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between text-xs bg-white/[0.02] p-2 rounded-xl border border-white/5">
+                          <span className="text-slate-300 font-medium">{item.name}</span>
+                          <span className="text-slate-400 font-mono text-[11px] font-bold">{item.count} orders</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 360 Recent Activity Streams (3 Columns) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Stream 1: Recent Bookings */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-3xl border border-white/10 shadow-xl space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Recent Bookings</span>
+                </span>
+                <button onClick={() => setActiveTab("bookings")} className="text-[10px] text-cyan-400 hover:underline">
+                  View all
+                </button>
+              </div>
+              <div className="space-y-2.5">
+                {(recentActivity?.recent_bookings || []).length === 0 ? (
+                  <p className="text-xs text-slate-500 p-2">No bookings recorded yet.</p>
+                ) : (
+                  recentActivity.recent_bookings.map((b: any) => (
+                    <div key={b.id} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-cyan-400 font-bold">{b.reference}</span>
+                        <span className="text-emerald-400 font-bold">₹{b.amount}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] text-slate-300">
+                        <span>{b.customer_name}</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 font-semibold">
+                          {b.status}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 block truncate">{b.service}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Stream 2: Recent Customer Signups */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-3xl border border-white/10 shadow-xl space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>New Customer Signups</span>
+                </span>
+                <button onClick={() => setActiveTab("customers")} className="text-[10px] text-cyan-400 hover:underline">
+                  View all
+                </button>
+              </div>
+              <div className="space-y-2.5">
+                {(recentActivity?.recent_users || []).length === 0 ? (
+                  <p className="text-xs text-slate-500 p-2">No customers registered yet.</p>
+                ) : (
+                  recentActivity.recent_users.map((u: any) => (
+                    <div key={u.id} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-white">{u.name}</span>
+                        <span className="font-mono text-[10px] text-cyan-400 font-bold">{u.user_id}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 truncate">{u.email || u.phone}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Stream 3: Recent Payments */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-5 rounded-3xl border border-white/10 shadow-xl space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Razorpay Transactions</span>
+                </span>
+                <button onClick={() => setActiveTab("payments")} className="text-[10px] text-cyan-400 hover:underline">
+                  View all
+                </button>
+              </div>
+              <div className="space-y-2.5">
+                {(recentActivity?.recent_payments || []).length === 0 ? (
+                  <p className="text-xs text-slate-500 p-2">No transactions recorded yet.</p>
+                ) : (
+                  recentActivity.recent_payments.map((p: any) => (
+                    <div key={p.id} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono text-[11px] text-slate-300 truncate max-w-[130px]">
+                          {p.payment_id || p.order_id || `#${p.id}`}
+                        </span>
+                        <span className="text-emerald-400 font-bold">₹{p.amount}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-400 truncate">{p.customer}</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          p.status === "PAID"
+                            ? "bg-emerald-500/10 text-emerald-300"
+                            : p.status === "REFUNDED"
+                            ? "bg-purple-500/10 text-purple-300"
+                            : "bg-amber-500/10 text-amber-300"
+                        }`}>
+                          {p.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
           {/* Upcoming appointments */}
-          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl shadow-black/30 overflow-hidden">
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-3xl border border-white/10 shadow-xl overflow-hidden">
             <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/[0.02]">
               <div>
-                <h3 className="text-base font-bold text-white">Upcoming Appointments</h3>
-                <p className="text-xs text-slate-400">Next scheduled doorstep jobs</p>
+                <h3 className="text-base font-bold text-white">Upcoming Doorstep Appointments</h3>
+                <p className="text-xs text-slate-400">Next scheduled detailing units ready for dispatch</p>
               </div>
               <button
                 onClick={fetchDashboardMetrics}
@@ -1028,6 +1751,33 @@ export default function AdminPortalPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setManualBookingForm({
+                    customer_name: "",
+                    customer_phone: "",
+                    customer_email: "",
+                    vehicle_type_id: vehicleTypes[0]?.id || 0,
+                    service_package_id: servicePackages[0]?.id || 0,
+                    service_area_id: 0,
+                    service_date: new Date().toISOString().split("T")[0],
+                    slot_time: "10:00",
+                    address_line: "",
+                    locality: "",
+                    landmark: "",
+                    pincode: "",
+                    payment_method: "PAY_ON_SERVICE",
+                    special_instructions: "",
+                  });
+                  setShowCreateBookingModal(true);
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 px-3.5 py-2 rounded-xl transition-all shadow-md shadow-cyan-500/25 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Create Booking</span>
+              </button>
+
               <button
                 onClick={fetchBookings}
                 disabled={loadingBookings}
@@ -1422,6 +2172,23 @@ export default function AdminPortalPage() {
                               Tech: {b.assigned_staff_name}
                             </span>
                           )}
+
+                          {/* Quick Status Transition Dropdown */}
+                          <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+                            <select
+                              value={b.status}
+                              onChange={(e) => handleTransitionBookingStatus(b.id, e.target.value)}
+                              className="bg-[#060A14] border border-white/10 rounded-lg px-2 py-0.5 text-[10px] font-semibold text-slate-300 focus:outline-none focus:border-cyan-400 cursor-pointer"
+                              title="Transition booking status"
+                            >
+                              <option value="PENDING">PENDING</option>
+                              <option value="CONFIRMED">CONFIRMED</option>
+                              <option value="ASSIGNED">ASSIGNED</option>
+                              <option value="IN_PROGRESS">IN_PROGRESS</option>
+                              <option value="COMPLETED">COMPLETED</option>
+                              <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                          </div>
                         </td>
 
                         {/* Actions */}
@@ -1435,6 +2202,16 @@ export default function AdminPortalPage() {
                             >
                               <Eye className="w-3 h-3 text-sky-600" />
                               <span>View</span>
+                            </button>
+
+                            {/* View Status History */}
+                            <button
+                              onClick={() => handleViewBookingHistory(b)}
+                              className="px-2 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-300 text-[10px] font-semibold flex items-center gap-1 shadow-sm transition-all"
+                              title="Audit Status Transition History"
+                            >
+                              <Activity className="w-3 h-3 text-cyan-400" />
+                              <span>History</span>
                             </button>
 
                             {/* 1-Click WhatsApp Dispatch */}
@@ -2267,6 +3044,15 @@ export default function AdminPortalPage() {
               <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
                 {customers.length} Registered Accounts
               </span>
+              <a
+                href={`${api.getApiBaseUrl()}/api/admin/customers/export_csv/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-2 rounded-xl hover:bg-emerald-500/20 transition-colors shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
+              </a>
               <button
                 type="button"
                 onClick={() => fetchCustomers()}
@@ -2432,7 +3218,25 @@ export default function AdminPortalPage() {
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold text-xs transition-all"
                             >
                               <Eye className="w-3.5 h-3.5" />
-                              <span>Profile &amp; History</span>
+                              <span>Profile</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCustomerEditModal({
+                                  isOpen: true,
+                                  customerId: c.id,
+                                  full_name: c.full_name || "",
+                                  email: c.email || "",
+                                  phone: c.phone || "",
+                                })
+                              }
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 font-semibold text-xs transition-all"
+                              title="Edit Customer Profile"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              <span>Edit</span>
                             </button>
 
                             <button
@@ -3360,6 +4164,681 @@ export default function AdminPortalPage() {
         </div>
       )}
 
+
+      {/* 3. ORDERS & PACKAGES TAB */}
+      {activeTab === "orders" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+            <div>
+              <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5" />
+                Orders &amp; Service Fulfillment
+              </span>
+              <h2 className="text-2xl font-black text-white tracking-tight mt-0.5">
+                Service Packages &amp; Job Orders
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Unified ledger of customer orders, selected packages, vehicle types, and door-to-door fulfillment status.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
+                {bookingsList.length} Total Orders
+              </span>
+              <button
+                type="button"
+                onClick={fetchBookings}
+                disabled={loadingBookings}
+                className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 transition-all"
+                title="Refresh orders"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingBookings ? "animate-spin text-cyan-400" : ""}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Orders KPI Strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Total Orders</span>
+              <p className="text-2xl font-black text-white">{bookingsList.length}</p>
+              <span className="text-[11px] text-cyan-400">All customer bookings</span>
+            </div>
+            <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Fulfilled &amp; Completed</span>
+              <p className="text-2xl font-black text-emerald-400">
+                {bookingsList.filter((b) => b.status === "COMPLETED").length}
+              </p>
+              <span className="text-[11px] text-emerald-400/80">Delivered services</span>
+            </div>
+            <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">In Pipeline / Active</span>
+              <p className="text-2xl font-black text-amber-400">
+                {bookingsList.filter((b) => b.status === "CONFIRMED" || b.status === "IN_PROGRESS" || b.status === "ASSIGNED").length}
+              </p>
+              <span className="text-[11px] text-amber-400/80">Scheduled &amp; dispatched</span>
+            </div>
+            <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Paid Orders</span>
+              <p className="text-2xl font-black text-cyan-400">
+                {bookingsList.filter((b) => b.payment_status === "PAID").length}
+              </p>
+              <span className="text-[11px] text-cyan-400/80">Settled through gateway</span>
+            </div>
+          </div>
+
+          {/* Orders Table */}
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#080D1A] text-slate-400 uppercase tracking-wider text-[10px] border-b border-white/10 font-bold">
+                  <tr>
+                    <th className="p-3.5">Order Ref</th>
+                    <th className="p-3.5">Customer &amp; Account</th>
+                    <th className="p-3.5">Service Package &amp; Car</th>
+                    <th className="p-3.5">Scheduled Slot</th>
+                    <th className="p-3.5">Amount (₹)</th>
+                    <th className="p-3.5">Payment</th>
+                    <th className="p-3.5">Order Status</th>
+                    <th className="p-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-300">
+                  {bookingsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="p-10 text-center text-slate-500">
+                        No orders recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    bookingsList.map((b) => (
+                      <tr key={b.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3.5 font-mono font-bold text-cyan-400">{b.booking_reference}</td>
+                        <td className="p-3.5">
+                          <span className="font-semibold text-white block">{b.customer_name}</span>
+                          <span className="font-mono text-[11px] text-slate-400">{b.customer_phone}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-semibold text-white block">{b.service_package_name}</span>
+                          <span className="text-[11px] text-slate-400">{b.vehicle_type_name}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-semibold text-slate-200 block">{b.service_date}</span>
+                          <span className="text-[11px] text-slate-400">{b.slot_start_time.slice(0, 5)} - {b.slot_end_time.slice(0, 5)}</span>
+                        </td>
+                        <td className="p-3.5 font-bold text-emerald-400 text-sm">₹{b.final_amount}</td>
+                        <td className="p-3.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            b.payment_status === "PAID"
+                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                              : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                          }`}>
+                            {b.payment_status}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">
+                            {b.status_display}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setSelectedBooking(b)}
+                              className="px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 text-[11px] font-semibold border border-white/10"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => openWhatsAppModal(b)}
+                              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold flex items-center gap-1"
+                            >
+                              <WhatsAppIcon className="w-3 h-3" />
+                              <span>Dispatch</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. PAYMENTS (RAZORPAY) MANAGEMENT TAB */}
+      {activeTab === "payments" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+            <div>
+              <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5" />
+                Payment Gateway &amp; Settlements
+              </span>
+              <h2 className="text-2xl font-black text-white tracking-tight mt-0.5">
+                Razorpay Payment Transactions
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time online gateway orders, payment IDs, verification signatures, and administrative refund controls.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-purple-950/80 border border-purple-500/30 text-purple-300">
+                {paymentsList.length} Transactions
+              </span>
+              <button
+                type="button"
+                onClick={() => fetchPayments()}
+                disabled={loadingPayments}
+                className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 transition-all"
+                title="Refresh payment transactions"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingPayments ? "animate-spin text-purple-400" : ""}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Payments KPI Strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Total Recorded</span>
+              <p className="text-2xl font-black text-white">{paymentsList.length}</p>
+              <span className="text-[11px] text-purple-400">All gateway attempts</span>
+            </div>
+            <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Settled (PAID)</span>
+              <p className="text-2xl font-black text-emerald-400">
+                {paymentsList.filter((p) => p.status === "PAID").length}
+              </p>
+              <span className="text-[11px] text-emerald-400/80">Successful collections</span>
+            </div>
+            <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Pending Authorization</span>
+              <p className="text-2xl font-black text-amber-400">
+                {paymentsList.filter((p) => p.status === "PENDING").length}
+              </p>
+              <span className="text-[11px] text-amber-400/80">Awaiting customer payment</span>
+            </div>
+            <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 space-y-1">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Refunded / Failed</span>
+              <p className="text-2xl font-black text-rose-400">
+                {paymentsList.filter((p) => p.status === "FAILED" || p.status === "REFUNDED").length}
+              </p>
+              <span className="text-[11px] text-rose-400/80">Reversals &amp; drops</span>
+            </div>
+          </div>
+
+          {/* Search & Status Filter Bar */}
+          <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                fetchPayments(paymentSearch, paymentFilterStatus);
+              }}
+              className="relative w-full sm:w-96"
+            >
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="Search Payment ID, Order ID, Customer, User ID, or Booking..."
+                value={paymentSearch}
+                onChange={(e) => setPaymentSearch(e.target.value)}
+                className="w-full bg-[#060A14] border border-white/10 rounded-xl pl-9 pr-20 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-all"
+              />
+              <button
+                type="submit"
+                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 text-[11px] font-bold transition-all"
+              >
+                Search
+              </button>
+            </form>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+              <span className="text-xs text-slate-400 hidden sm:inline">Status:</span>
+              <div className="flex bg-[#060A14] p-1 rounded-xl border border-white/10">
+                {["ALL", "PAID", "PENDING", "FAILED", "REFUNDED"].map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setPaymentFilterStatus(st)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      paymentFilterStatus === st
+                        ? "bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Payments Table */}
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#080D1A] text-slate-400 uppercase tracking-wider text-[10px] border-b border-white/10 font-bold">
+                  <tr>
+                    <th className="p-3.5">Payment / Order ID</th>
+                    <th className="p-3.5">Booking Ref</th>
+                    <th className="p-3.5">Customer &amp; User ID</th>
+                    <th className="p-3.5">Amount (₹)</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5">Timestamp</th>
+                    <th className="p-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-300">
+                  {loadingPayments ? (
+                    <tr>
+                      <td colSpan={7} className="p-10 text-center text-slate-400">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-purple-400" />
+                        <span>Loading payment transactions...</span>
+                      </td>
+                    </tr>
+                  ) : paymentsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-10 text-center text-slate-500">
+                        No payment transactions match the selected criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    paymentsList.map((p) => (
+                      <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3.5">
+                          <span className="font-mono font-bold text-white block">
+                            {p.payment_id || "Uncaptured"}
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-500 block">
+                            {p.order_id || `#${p.id}`}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-mono font-bold text-cyan-400">
+                            {p.booking_reference || "—"}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-semibold text-white block">{p.customer_name}</span>
+                          <span className="font-mono text-[10px] text-slate-400">
+                            {p.customer_user_id || "Guest"}
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-bold text-emerald-400 text-sm">
+                          ₹{p.amount}
+                        </td>
+                        <td className="p-3.5">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            p.status === "PAID"
+                              ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                              : p.status === "REFUNDED"
+                              ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
+                              : p.status === "FAILED"
+                              ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                              : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                          }`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-slate-400 text-[11px]">
+                          {p.created_at ? new Date(p.created_at).toLocaleString("en-IN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }) : "—"}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          {p.status === "PAID" ? (
+                            <button
+                              type="button"
+                              onClick={() => setRefundModal({ isOpen: true, payment: p, reason: "" })}
+                              className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-semibold transition-all"
+                            >
+                              Refund
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-600">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. ADMIN TEAM & RBAC TAB */}
+      {activeTab === "team" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+            <div>
+              <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5" />
+                Staff Credentials &amp; RBAC Access Controls
+              </span>
+              <h2 className="text-2xl font-black text-white tracking-tight mt-0.5">
+                Administrative Team &amp; Permissions
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Manage backend administrative users, role hierarchies (Super Admin, Admin, Manager, Staff), and account privileges.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAddTeamModal(true)}
+                className="flex items-center gap-1.5 text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 px-3.5 py-2 rounded-xl transition-all shadow-md shadow-cyan-500/25 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Add Admin Account</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={fetchTeam}
+                disabled={loadingTeam}
+                className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 transition-all"
+                title="Refresh team accounts"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingTeam ? "animate-spin text-cyan-400" : ""}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* RBAC Info Card */}
+          <div className="p-4 rounded-2xl bg-cyan-500/5 border border-cyan-500/20 text-xs text-slate-300 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <span className="font-bold text-purple-400 block text-[11px] uppercase">Super Admin</span>
+              <span className="text-[11px] text-slate-400">Full system authority, team management, pricing configs, audit log inspection.</span>
+            </div>
+            <div>
+              <span className="font-bold text-blue-400 block text-[11px] uppercase">Admin</span>
+              <span className="text-[11px] text-slate-400">Manage bookings, view customer details, handle refunds, export data.</span>
+            </div>
+            <div>
+              <span className="font-bold text-amber-400 block text-[11px] uppercase">Manager</span>
+              <span className="text-[11px] text-slate-400">Assign technicians, confirm bookings, reschedule, monitor capacity.</span>
+            </div>
+            <div>
+              <span className="font-bold text-emerald-400 block text-[11px] uppercase">Staff / Executive</span>
+              <span className="text-[11px] text-slate-400">View assigned doorstep jobs, update status, trigger WhatsApp dispatches.</span>
+            </div>
+          </div>
+
+          {/* Team Table */}
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#080D1A] text-slate-400 uppercase tracking-wider text-[10px] border-b border-white/10 font-bold">
+                  <tr>
+                    <th className="p-3.5">Administrator</th>
+                    <th className="p-3.5">Email &amp; Mobile</th>
+                    <th className="p-3.5">Assigned Role</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5">Last Login</th>
+                    <th className="p-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-300">
+                  {loadingTeam ? (
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-slate-400">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                        <span>Loading team accounts...</span>
+                      </td>
+                    </tr>
+                  ) : teamList.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-slate-500">
+                        No administrative accounts found.
+                      </td>
+                    </tr>
+                  ) : (
+                    teamList.map((m) => (
+                      <tr key={m.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3.5">
+                          <span className="font-bold text-white block">{m.username}</span>
+                          <span className="text-[11px] text-slate-400">{m.full_name || "Staff Admin"}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="text-slate-300 block">{m.email}</span>
+                          <span className="font-mono text-[11px] text-slate-500">{m.phone || "—"}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              m.role === "SUPER_ADMIN"
+                                ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                                : m.role === "ADMIN"
+                                ? "bg-blue-500/20 text-blue-300 border border-blue-500/40"
+                                : m.role === "MANAGER"
+                                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                            }`}>
+                              {m.role_display || (m.role ? (m.role as string).replace("_", " ") : "ADMIN")}
+                            </span>
+                            {/* Super Admin can change role */}
+                            {adminUser?.role === "SUPER_ADMIN" && (
+                              <select
+                                value={m.role}
+                                onChange={(e) => handleUpdateTeamRole(m.id, e.target.value)}
+                                disabled={updatingTeamId === m.id}
+                                className="bg-[#060A14] border border-white/10 rounded-lg px-2 py-0.5 text-[10px] text-slate-300 focus:outline-none focus:border-cyan-400"
+                              >
+                                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="MANAGER">MANAGER</option>
+                                <option value="STAFF">STAFF</option>
+                              </select>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            m.is_active
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                              : "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                          }`}>
+                            {m.is_active ? "Active" : "Disabled"}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-slate-400 text-[11px]">
+                          {m.last_login
+                            ? new Date(m.last_login).toLocaleString("en-IN", {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })
+                            : "Never"}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTeamMember(m.id)}
+                            disabled={updatingTeamId === m.id || m.username === adminUser?.username}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                              m.is_active
+                                ? "bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border-rose-500/30"
+                                : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                            } ${m.username === adminUser?.username ? "opacity-40 cursor-not-allowed" : ""}`}
+                          >
+                            {updatingTeamId === m.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : m.is_active ? (
+                              "Disable"
+                            ) : (
+                              "Enable"
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. AUDIT LOGS TAB */}
+      {activeTab === "audit" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+            <div>
+              <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5" />
+                Compliance &amp; Security Timeline
+              </span>
+              <h2 className="text-2xl font-black text-white tracking-tight mt-0.5">
+                Administrative Audit Logs
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Immutable chronological log of all administrative actions, status transitions, user edits, and payment modifications.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
+                {auditLogsList.length} Logged Actions
+              </span>
+              <button
+                type="button"
+                onClick={() => fetchAuditLogs()}
+                disabled={loadingAuditLogs}
+                className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 transition-all"
+                title="Refresh audit logs"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingAuditLogs ? "animate-spin text-cyan-400" : ""}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Search & Action Filter */}
+          <div className="bg-[#0B1220]/90 p-4 rounded-2xl border border-white/10 shadow-lg flex flex-col sm:flex-row items-center justify-between gap-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                fetchAuditLogs(auditLogSearch, auditLogFilterAction);
+              }}
+              className="relative w-full sm:w-96"
+            >
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="Search by User, Resource, Description, or IP..."
+                value={auditLogSearch}
+                onChange={(e) => setAuditLogSearch(e.target.value)}
+                className="w-full bg-[#060A14] border border-white/10 rounded-xl pl-9 pr-20 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-all"
+              />
+              <button
+                type="submit"
+                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[11px] font-bold transition-all"
+              >
+                Search
+              </button>
+            </form>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+              <span className="text-xs text-slate-400 hidden sm:inline">Action:</span>
+              <div className="flex bg-[#060A14] p-1 rounded-xl border border-white/10">
+                {["ALL", "LOGIN", "STATUS_CHANGE", "UPDATE", "REFUND", "CREATE", "CANCEL"].map((act) => (
+                  <button
+                    key={act}
+                    type="button"
+                    onClick={() => setAuditLogFilterAction(act)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      auditLogFilterAction === act
+                        ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {act}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Audit Logs Table */}
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#080D1A] text-slate-400 uppercase tracking-wider text-[10px] border-b border-white/10 font-bold">
+                  <tr>
+                    <th className="p-3.5">Timestamp</th>
+                    <th className="p-3.5">Admin User</th>
+                    <th className="p-3.5">Action</th>
+                    <th className="p-3.5">Target Resource</th>
+                    <th className="p-3.5">Audit Details / Description</th>
+                    <th className="p-3.5 text-right">IP Address</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-300">
+                  {loadingAuditLogs ? (
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-slate-400">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                        <span>Loading audit logs...</span>
+                      </td>
+                    </tr>
+                  ) : auditLogsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-slate-500">
+                        No audit logs found.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditLogsList.map((log) => (
+                      <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3.5 whitespace-nowrap text-slate-400 text-[11px]">
+                          {log.created_at || log.timestamp ? new Date(log.created_at || (log.timestamp as string)).toLocaleString("en-IN", {
+                            dateStyle: "short",
+                            timeStyle: "medium",
+                          }) : "—"}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-bold text-white block">{log.user_name || log.user_username || "System"}</span>
+                          <span className="text-[10px] text-cyan-400 font-semibold">{log.user_email || log.user_role || "ADMIN"}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            log.action === "LOGIN" || log.action === "LOGOUT"
+                              ? "bg-blue-500/10 text-blue-300 border border-blue-500/20"
+                              : log.action === "STATUS_CHANGE"
+                              ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                              : log.action === "REFUND"
+                              ? "bg-rose-500/10 text-rose-300 border border-rose-500/20"
+                              : "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                          }`}>
+                            {log.action}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-semibold text-slate-200 block">{log.resource_type}</span>
+                          <span className="font-mono text-[10px] text-slate-400">{log.resource_id || "—"}</span>
+                        </td>
+                        <td className="p-3.5 max-w-xs text-slate-300 font-mono text-[11px]">
+                          {log.description || (log.details ? (typeof log.details === "object" ? JSON.stringify(log.details) : String(log.details)) : "—")}
+                        </td>
+                        <td className="p-3.5 text-right font-mono text-[10px] text-slate-500">
+                          {log.ip_address || "—"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 6. WHATSAPP CUSTOMER DISPATCH & NOTIFICATION MODAL */}
       {whatsAppModal && whatsAppModal.isOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
@@ -3587,6 +5066,565 @@ export default function AdminPortalPage() {
           </div>
         </div>
       )}
+
+      {/* 7. MANUAL BOOKING CREATION MODAL */}
+      {showCreateBookingModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 my-auto">
+            <div className="px-5 py-4 border-b border-white/10 bg-[#080D1A] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Manual Booking Desk</h3>
+                  <p className="text-[11px] text-slate-400">Book doorstep detailing on behalf of phone/walk-in customer</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateBookingModal(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleManualBookingSubmit} className="p-5 overflow-y-auto space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Customer Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ramesh Kumar"
+                    value={manualBookingForm.customer_name}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, customer_name: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Mobile Number * (+91)</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="9876543210"
+                    value={manualBookingForm.customer_phone}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, customer_phone: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Email Address (Optional)</label>
+                  <input
+                    type="email"
+                    placeholder="customer@example.com"
+                    value={manualBookingForm.customer_email}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, customer_email: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Vehicle Type *</label>
+                  <select
+                    required
+                    value={manualBookingForm.vehicle_type_id}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, vehicle_type_id: Number(e.target.value) })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    {vehicleTypes.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Detailing Package *</label>
+                  <select
+                    required
+                    value={manualBookingForm.service_package_id}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, service_package_id: Number(e.target.value) })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    {servicePackages.map((pkg) => (
+                      <option key={pkg.id} value={pkg.id}>
+                        {pkg.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Payment Method *</label>
+                  <select
+                    value={manualBookingForm.payment_method}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, payment_method: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                  >
+                    <option value="PAY_ON_SERVICE">Pay on Service / Cash on Doorstep</option>
+                    <option value="RAZORPAY">Razorpay Online Prepayment</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Service Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={manualBookingForm.service_date}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, service_date: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Time Slot *</label>
+                  <select
+                    value={manualBookingForm.slot_time}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, slot_time: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400 font-mono"
+                  >
+                    {["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"].map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-300 block">House / Flat / Building Address *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Flat 402, Oakwood Manor, 12th Main Road"
+                  value={manualBookingForm.address_line}
+                  onChange={(e) => setManualBookingForm({ ...manualBookingForm, address_line: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Locality / Sector *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Sector 35 / Indiranagar"
+                    value={manualBookingForm.locality}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, locality: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">Landmark</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Near Community Center"
+                    value={manualBookingForm.landmark}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, landmark: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-300 block">PIN Code</label>
+                  <input
+                    type="text"
+                    placeholder="160036"
+                    value={manualBookingForm.pincode}
+                    onChange={(e) => setManualBookingForm({ ...manualBookingForm, pincode: e.target.value })}
+                    className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-300 block">Special Instructions / Notes</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Gate code, basement parking spot, pet inside, etc."
+                  value={manualBookingForm.special_instructions}
+                  onChange={(e) => setManualBookingForm({ ...manualBookingForm, special_instructions: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateBookingModal(false)}
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingBooking}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-cyan-500/25 flex items-center gap-2"
+                >
+                  {creatingBooking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm & Create Booking"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. STATUS CHANGE AUDIT HISTORY TIMELINE MODAL */}
+      {selectedBookingHistory && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-lg w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 my-auto">
+            <div className="px-5 py-4 border-b border-white/10 bg-[#080D1A] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">
+                    Audit Trail: #{selectedBookingHistory.booking.booking_reference}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Status transition and lifecycle log</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedBookingHistory(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              {loadingBookingHistory ? (
+                <div className="p-8 text-center text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-cyan-400" />
+                  <span>Loading history records...</span>
+                </div>
+              ) : selectedBookingHistory.history.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-xs">
+                  No status transitions recorded yet. Initial state: {selectedBookingHistory.booking.status}.
+                </div>
+              ) : (
+                <div className="space-y-3 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-white/10 pl-6">
+                  {selectedBookingHistory.history.map((h: any, idx: number) => (
+                    <div key={idx} className="relative space-y-1">
+                      <div className="absolute -left-[19px] top-1.5 w-2.5 h-2.5 rounded-full bg-cyan-400 ring-4 ring-[#0B1220]" />
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-white">
+                          {h.from_status} → <span className="text-cyan-400">{h.to_status}</span>
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          {h.timestamp ? new Date(h.timestamp).toLocaleString("en-IN", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          }) : "—"}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        Changed by: <span className="text-slate-300 font-semibold">{h.changed_by_name || "Admin"}</span>
+                      </div>
+                      {h.notes && (
+                        <div className="p-2 rounded-lg bg-white/[0.03] border border-white/5 text-[11px] text-slate-300 italic">
+                          &ldquo;{h.notes}&rdquo;
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-white/10 bg-[#080D1A] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedBookingHistory(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white"
+              >
+                Close Trail
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. RECORD REFUND MODAL */}
+      {refundModal.isOpen && refundModal.payment && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 my-auto">
+            <div className="px-5 py-4 border-b border-white/10 bg-[#080D1A] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Record Payment Refund</h3>
+                  <p className="text-[11px] text-slate-400">Mark transaction refunded &amp; record audit entry</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRefundModal({ isOpen: false, payment: null, reason: "" })}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Payment ID:</span>
+                  <span className="font-mono text-white">{refundModal.payment.payment_id || `#${refundModal.payment.id}`}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Customer:</span>
+                  <span className="text-white font-semibold">{refundModal.payment.customer_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Amount Paid:</span>
+                  <span className="text-emerald-400 font-bold">₹{refundModal.payment.amount}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Refund Reason / Notes *</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="e.g. Customer cancelled appointment; weather condition; duplicate payment."
+                  value={refundModal.reason}
+                  onChange={(e) => setRefundModal({ ...refundModal, reason: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-rose-400"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-300">
+                Warning: This updates the transaction status to REFUNDED, marks the booking payment as refunded, and logs an entry to the compliance audit trail.
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRefundModal({ isOpen: false, payment: null, reason: "" })}
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRefundPaymentSubmit}
+                  disabled={processingRefund}
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-rose-600/30 flex items-center gap-2"
+                >
+                  {processingRefund ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm Refund"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. EDIT CUSTOMER PROFILE MODAL */}
+      {customerEditModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 my-auto">
+            <div className="px-5 py-4 border-b border-white/10 bg-[#080D1A] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Edit Customer Profile</h3>
+                  <p className="text-[11px] text-slate-400">Update verified customer details</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCustomerEditModal({ isOpen: false, customerId: 0, full_name: "", email: "", phone: "" })}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomerEdit} className="p-5 space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={customerEditModal.full_name}
+                  onChange={(e) => setCustomerEditModal({ ...customerEditModal, full_name: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Email Address</label>
+                <input
+                  type="email"
+                  value={customerEditModal.email}
+                  onChange={(e) => setCustomerEditModal({ ...customerEditModal, email: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Mobile Phone (+91) *</label>
+                <input
+                  type="tel"
+                  required
+                  value={customerEditModal.phone}
+                  onChange={(e) => setCustomerEditModal({ ...customerEditModal, phone: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400 font-mono"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCustomerEditModal({ isOpen: false, customerId: 0, full_name: "", email: "", phone: "" })}
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingCustomerEdit}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-cyan-500/25 flex items-center gap-2"
+                >
+                  {savingCustomerEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Customer"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 11. ADD ADMIN TEAM MEMBER MODAL */}
+      {showAddTeamModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 my-auto">
+            <div className="px-5 py-4 border-b border-white/10 bg-[#080D1A] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Create Admin Account</h3>
+                  <p className="text-[11px] text-slate-400">Provision backend staff or executive credentials</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddTeamModal(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateTeamMemberSubmit} className="p-5 space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Username *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. jatin_admin"
+                  value={newTeamForm.username}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, username: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Jatin Sharma"
+                  value={newTeamForm.full_name}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, full_name: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="jatin@carspa.in"
+                  value={newTeamForm.email}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, email: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Mobile Number (+91)</label>
+                <input
+                  type="tel"
+                  placeholder="9876543210"
+                  value={newTeamForm.phone}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, phone: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400 font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Initial Password *</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Minimum 8 characters"
+                  value={newTeamForm.password}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, password: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 block">Role &amp; Permissions *</label>
+                <select
+                  value={newTeamForm.role}
+                  onChange={(e) => setNewTeamForm({ ...newTeamForm, role: e.target.value })}
+                  className="w-full bg-[#060A14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cyan-400"
+                >
+                  <option value="ADMIN">ADMIN — Full Booking, Customer, and Refund Management</option>
+                  <option value="MANAGER">MANAGER — Operations, Technician Scheduling &amp; Capacity</option>
+                  <option value="STAFF">STAFF — Service Executive &amp; Customer WhatsApp Dispatch</option>
+                  <option value="SUPER_ADMIN">SUPER_ADMIN — Global Control, Team &amp; Audit Logs</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTeamModal(false)}
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingTeam}
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-purple-600/30 flex items-center gap-2"
+                >
+                  {savingTeam ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

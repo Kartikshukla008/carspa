@@ -16,6 +16,10 @@ from apps.crm.models import Lead
 from apps.scheduling.engine import AvailabilityEngine
 from apps.notifications.service import NotificationService
 from apps.payments.service import PaymentService
+from apps.accounts.models import UserProfile
+from apps.payments.models import Payment
+from apps.core.models import AdminAuditLog
+from apps.core.permissions import IsAdminOrManager, IsAdminStaffOrAbove
 
 class PublicBookingCreateAPIView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -300,7 +304,100 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
         )
 
         NotificationService.send_booking_cancelled(booking, reason)
+        AdminAuditLog.objects.create(
+            user=request.user,
+            action="CANCEL_BOOKING",
+            resource_type="BOOKING",
+            resource_id=booking.booking_reference,
+            details={"reason": reason},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
         return Response(BookingDetailSerializer(booking).data)
+
+    def create(self, request, *args, **kwargs):
+        """
+        Allows authorized administrators to manually create bookings for customers.
+        """
+        serializer = BookingCreateSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            booking = serializer.save()
+            AdminAuditLog.objects.create(
+                user=request.user,
+                action="MANUAL_BOOKING_CREATE",
+                resource_type="BOOKING",
+                resource_id=booking.booking_reference,
+                details={"customer": booking.customer_name, "amount": str(booking.final_amount)},
+                ip_address=request.META.get("REMOTE_ADDR"),
+            )
+            return Response(BookingDetailSerializer(booking).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"], url_path="transition-status")
+    def transition_status(self, request, pk=None):
+        booking = self.get_object()
+        new_status = request.data.get("status", "").upper()
+        notes = request.data.get("notes", "")
+
+        VALID_TRANSITIONS = {
+            "PENDING": ["CONFIRMED", "CANCELLED", "REJECTED"],
+            "CONFIRMED": ["ASSIGNED", "IN_PROGRESS", "CANCELLED"],
+            "ASSIGNED": ["IN_PROGRESS", "CONFIRMED", "CANCELLED"],
+            "IN_PROGRESS": ["COMPLETED", "CANCELLED"],
+            "COMPLETED": [],
+            "CANCELLED": [],
+            "REJECTED": [],
+        }
+
+        if new_status not in [c[0] for c in Booking.STATUS_CHOICES]:
+            return Response({"error": f"Invalid status: {new_status}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        force = request.data.get("force", False)
+        allowed = VALID_TRANSITIONS.get(booking.status, [])
+        if not force and new_status not in allowed:
+            return Response({
+                "error": f"Invalid status transition from {booking.status} to {new_status}. Allowed next states: {', '.join(allowed) or 'None (Terminal state)'}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        old_status = booking.status
+        booking.status = new_status
+        if new_status == "COMPLETED" and request.data.get("mark_paid", False):
+            booking.payment_status = "PAID"
+        booking.save(update_fields=["status", "payment_status", "updated_at"])
+
+        BookingStatusHistory.objects.create(
+            booking=booking,
+            from_status=old_status,
+            to_status=new_status,
+            changed_by=request.user,
+            notes=notes or f"Status changed to {new_status} by admin.",
+        )
+
+        AdminAuditLog.objects.create(
+            user=request.user,
+            action="CHANGE_BOOKING_STATUS",
+            resource_type="BOOKING",
+            resource_id=booking.booking_reference,
+            details={"old_status": old_status, "new_status": new_status, "notes": notes},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+
+        return Response(BookingDetailSerializer(booking).data)
+
+    @action(detail=True, methods=["get"], url_path="history")
+    def status_history(self, request, pk=None):
+        booking = self.get_object()
+        history = booking.status_history.select_related("changed_by").all()
+        return Response([
+            {
+                "id": h.id,
+                "from_status": h.from_status,
+                "to_status": h.to_status,
+                "changed_by": h.changed_by.get_full_name() or h.changed_by.username if h.changed_by else "System",
+                "notes": h.notes,
+                "created_at": h.created_at,
+            }
+            for h in history
+        ])
 
     @action(detail=False, methods=["get"], url_path="export-csv")
     def export_csv(self, request):
@@ -337,47 +434,202 @@ class AdminDashboardMetricsAPIView(APIView):
 
     def get(self, request):
         today = timezone.localdate()
-        
-        # Booking counts
-        all_bookings = Booking.objects.all()
-        today_bookings = all_bookings.filter(service_date=today)
-        pending_count = all_bookings.filter(status="PENDING").count()
-        confirmed_count = all_bookings.filter(status="CONFIRMED").count()
-        completed_count = all_bookings.filter(status="COMPLETED").count()
-        cancelled_count = all_bookings.filter(status="CANCELLED").count()
-        
-        # Revenue calculation (Sum of completed bookings or paid bookings)
-        revenue_agg = all_bookings.filter(
-            models.Q(status="COMPLETED") | models.Q(payment_status="PAID")
-        ).aggregate(total=models.Sum("final_amount"))
-        total_revenue = revenue_agg["total"] or Decimal("0.00")
+        week_ago = today - datetime.timedelta(days=7)
+        month_start = today.replace(day=1)
+
+        # 1. Registered Customers
+        all_profiles = UserProfile.objects.all()
+        total_registered_users = all_profiles.count()
+        new_users_today = all_profiles.filter(created_at__date=today).count()
+        new_users_this_week = all_profiles.filter(created_at__date__gte=week_ago).count()
+        new_users_this_month = all_profiles.filter(created_at__date__gte=month_start).count()
+
+        # 2. Bookings
+        all_bookings = Booking.objects.select_related("vehicle_type", "service_package").all()
+        total_bookings = all_bookings.count()
+        today_bookings = all_bookings.filter(service_date=today).count()
+        pending_bookings = all_bookings.filter(status="PENDING").count()
+        confirmed_bookings = all_bookings.filter(status="CONFIRMED").count()
+        in_progress_bookings = all_bookings.filter(status__in=["ASSIGNED", "IN_PROGRESS"]).count()
+        completed_bookings = all_bookings.filter(status="COMPLETED").count()
+        cancelled_bookings = all_bookings.filter(status__in=["CANCELLED", "REJECTED"]).count()
+
+        # 3. Revenue (Strictly Collected Revenue: payment_status="PAID")
+        paid_bookings = all_bookings.filter(payment_status="PAID")
+        total_revenue = paid_bookings.aggregate(total=models.Sum("final_amount"))["total"] or Decimal("0.00")
+        revenue_today = paid_bookings.filter(service_date=today).aggregate(total=models.Sum("final_amount"))["total"] or Decimal("0.00")
+        revenue_this_week = paid_bookings.filter(service_date__gte=week_ago).aggregate(total=models.Sum("final_amount"))["total"] or Decimal("0.00")
+        revenue_this_month = paid_bookings.filter(service_date__gte=month_start).aggregate(total=models.Sum("final_amount"))["total"] or Decimal("0.00")
+
+        paid_count = paid_bookings.count()
+        avg_booking_value = round(float(total_revenue) / max(paid_count, 1), 2) if paid_count > 0 else 0.0
+
+        # 4. Payments
+        successful_payments = paid_count
+        pending_payments = all_bookings.filter(payment_status="PENDING").count()
+        failed_payments = all_bookings.filter(payment_status="FAILED").count()
+
+        # 5. Charts: Daily Revenue & Volume (Last 14 Days)
+        daily_trend = []
+        for i in range(13, -1, -1):
+            d = today - datetime.timedelta(days=i)
+            day_bookings = all_bookings.filter(service_date=d)
+            day_rev = day_bookings.filter(payment_status="PAID").aggregate(total=models.Sum("final_amount"))["total"] or Decimal("0.00")
+            daily_trend.append({
+                "date": d.isoformat(),
+                "label": d.strftime("%d %b"),
+                "revenue": float(day_rev),
+                "bookings": day_bookings.count(),
+            })
+
+        # Charts: Weekly Revenue & Volume (Last 8 Weeks)
+        weekly_trend = []
+        for i in range(7, -1, -1):
+            w_start = today - datetime.timedelta(days=(i * 7) + 6)
+            w_end = today - datetime.timedelta(days=i * 7)
+            w_bookings = all_bookings.filter(service_date__gte=w_start, service_date__lte=w_end)
+            w_rev = w_bookings.filter(payment_status="PAID").aggregate(total=models.Sum("final_amount"))["total"] or Decimal("0.00")
+            weekly_trend.append({
+                "label": f"{w_start.strftime('%d %b')}",
+                "revenue": float(w_rev),
+                "bookings": w_bookings.count(),
+            })
+
+        # Charts: Monthly Revenue & Volume (Last 6 Months)
+        monthly_trend = []
+        for i in range(5, -1, -1):
+            # approximate month offset
+            m_date = (today.replace(day=1) - datetime.timedelta(days=i * 30)).replace(day=1)
+            # end of month
+            next_m = (m_date.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+            m_bookings = all_bookings.filter(service_date__gte=m_date, service_date__lt=next_m)
+            m_rev = m_bookings.filter(payment_status="PAID").aggregate(total=models.Sum("final_amount"))["total"] or Decimal("0.00")
+            monthly_trend.append({
+                "label": m_date.strftime("%b %Y"),
+                "revenue": float(m_rev),
+                "bookings": m_bookings.count(),
+            })
+
+        # 6. Status Distributions
+        status_distribution = [
+            {"name": "Completed", "count": completed_bookings, "color": "#10b981"},
+            {"name": "In Progress", "count": in_progress_bookings, "color": "#06b6d4"},
+            {"name": "Confirmed", "count": confirmed_bookings, "color": "#3b82f6"},
+            {"name": "Pending", "count": pending_bookings, "color": "#f59e0b"},
+            {"name": "Cancelled", "count": cancelled_bookings, "color": "#f43f5e"},
+        ]
+
+        payment_status_distribution = [
+            {"name": "Paid Online / Completed", "count": successful_payments, "color": "#10b981"},
+            {"name": "Pending Settlement", "count": pending_payments, "color": "#f59e0b"},
+            {"name": "Failed / Declined", "count": failed_payments, "color": "#f43f5e"},
+        ]
+
+        # 7. Popular Services & Vehicle Breakdown
+        service_counts = (
+            all_bookings.values("service_package__name")
+            .annotate(
+                count=models.Count("id"),
+                revenue=models.Sum("final_amount")
+            )
+            .order_by("-count")[:5]
+        )
+        popular_services = [
+            {
+                "name": s["service_package__name"] or "Standard Package",
+                "count": s["count"],
+                "revenue": float(s["revenue"] or 0),
+            }
+            for s in service_counts
+        ]
+
+        vehicle_counts = (
+            all_bookings.values("vehicle_type__name")
+            .annotate(count=models.Count("id"))
+            .order_by("-count")[:5]
+        )
+        popular_vehicles = [
+            {"name": v["vehicle_type__name"] or "Standard Car", "count": v["count"]}
+            for v in vehicle_counts
+        ]
+
+        # 8. Recent Activity Feeds
+        recent_bookings = BookingDetailSerializer(all_bookings[:6], many=True).data
+        recent_users = [
+            {
+                "id": p.id,
+                "user_id": p.carspa_user_id,
+                "full_name": p.full_name,
+                "email": p.user.email,
+                "phone": p.phone,
+                "created_at": p.created_at,
+            }
+            for p in all_profiles.order_by("-created_at")[:6]
+        ]
+        recent_payments = [
+            {
+                "id": pay.id,
+                "payment_id": pay.payment_id or f"PAY-{pay.id}",
+                "order_id": pay.order_id,
+                "booking_reference": pay.booking.booking_reference if pay.booking else None,
+                "customer_name": pay.booking.customer_name if pay.booking else "Customer",
+                "amount": str(pay.amount),
+                "status": pay.status,
+                "created_at": pay.created_at,
+            }
+            for pay in Payment.objects.select_related("booking").order_by("-created_at")[:6]
+        ]
 
         # Leads stats
         total_leads = Lead.objects.count()
         new_leads = Lead.objects.filter(status="NEW").count()
         converted_leads = Lead.objects.filter(status="CONVERTED").count()
-        conversion_rate = 0.0
-        if total_leads > 0:
-            conversion_rate = round((converted_leads / total_leads) * 100, 1)
+        conversion_rate = round((converted_leads / total_leads) * 100, 1) if total_leads > 0 else 0.0
 
         # Upcoming appointments
         upcoming = all_bookings.filter(
             service_date__gte=today,
-            status__in=["CONFIRMED", "ASSIGNED", "IN_PROGRESS", "PENDING"]
+            status__in=["CONFIRMED", "ASSIGNED", "IN_PROGRESS", "PENDING"],
         ).order_by("service_date", "slot_start_time")[:8]
 
         return Response({
             "metrics": {
-                "total_bookings": all_bookings.count(),
-                "today_bookings_count": today_bookings.count(),
-                "pending_confirmations": pending_count,
-                "confirmed_bookings": confirmed_count,
-                "completed_jobs": completed_count,
-                "cancelled_bookings": cancelled_count,
+                "total_users": total_registered_users,
+                "new_users_today": new_users_today,
+                "new_users_this_week": new_users_this_week,
+                "new_users_this_month": new_users_this_month,
+                "total_bookings": total_bookings,
+                "today_bookings_count": today_bookings,
+                "pending_confirmations": pending_bookings,
+                "confirmed_bookings": confirmed_bookings,
+                "in_progress_bookings": in_progress_bookings,
+                "completed_jobs": completed_bookings,
+                "cancelled_bookings": cancelled_bookings,
                 "total_revenue": str(total_revenue),
+                "revenue_today": str(revenue_today),
+                "revenue_this_week": str(revenue_this_week),
+                "revenue_this_month": str(revenue_this_month),
+                "average_booking_value": avg_booking_value,
+                "successful_payments": successful_payments,
+                "pending_payments": pending_payments,
+                "failed_payments": failed_payments,
                 "total_leads": total_leads,
                 "new_leads": new_leads,
                 "conversion_rate": f"{conversion_rate}%",
             },
-            "upcoming_appointments": BookingDetailSerializer(upcoming, many=True).data
+            "charts": {
+                "daily": daily_trend,
+                "weekly": weekly_trend,
+                "monthly": monthly_trend,
+                "status_distribution": status_distribution,
+                "payment_status_distribution": payment_status_distribution,
+                "popular_services": popular_services,
+                "popular_vehicles": popular_vehicles,
+            },
+            "recent_activity": {
+                "recent_bookings": recent_bookings,
+                "recent_users": recent_users,
+                "recent_payments": recent_payments,
+            },
+            "upcoming_appointments": BookingDetailSerializer(upcoming, many=True).data,
         })

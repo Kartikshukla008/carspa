@@ -6,15 +6,20 @@ function getCsrfToken(): string | null {
   return match ? match[1] : null;
 }
 
-function getAuthToken(): string | null {
+function getAuthToken(path: string): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("carspa_auth_token");
+  const adminToken = localStorage.getItem("carspa_admin_token");
+  const customerToken = localStorage.getItem("carspa_auth_token");
+  if (path.startsWith("/api/admin/") && adminToken) {
+    return adminToken;
+  }
+  return adminToken || customerToken;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
   const csrfToken = getCsrfToken();
-  const token = getAuthToken();
+  const token = getAuthToken(path);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -129,17 +134,30 @@ export const api = {
     }),
 
   // Admin
-  adminLogin: (credentials: { username: string; password: string }) =>
-    request<{ message: string; user: any }>("/api/admin/login/", {
+  adminLogin: async (credentials: { username: string; password: string }) => {
+    const res = await request<{ message: string; user: any; token?: string }>("/api/admin/login/", {
       method: "POST",
       body: JSON.stringify(credentials),
-    }),
-  adminLogout: () => request<{ message: string }>("/api/admin/logout/", { method: "POST" }),
+    });
+    if (res.token && typeof window !== "undefined") {
+      localStorage.setItem("carspa_admin_token", res.token);
+    }
+    return res;
+  },
+  adminLogout: async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("carspa_admin_token");
+    }
+    return request<{ message: string }>("/api/admin/logout/", { method: "POST" });
+  },
   adminMe: () => request<any>("/api/admin/me/"),
   getAdminDashboard: () =>
-    request<{ metrics: import("../types").DashboardMetrics; upcoming_appointments: import("../types").BookingResponse[] }>(
-      "/api/admin/dashboard/"
-    ),
+    request<{
+      metrics: any;
+      charts?: any;
+      recent_activity?: any;
+      upcoming_appointments: import("../types").BookingResponse[];
+    }>("/api/admin/dashboard/"),
   getAdminBookings: (params: Record<string, string> = {}) => {
     const query = new URLSearchParams(params).toString();
     return request<any>(`/api/admin/bookings/?${query}`);
@@ -296,5 +314,56 @@ export const api = {
     request<any>(`/api/admin/customers/${id}/toggle-status/`, {
       method: "POST",
       body: JSON.stringify({ status }),
+    }),
+  adminUpdateCustomer: (id: number, data: any) =>
+    request<any>(`/api/admin/customers/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  // Admin Bookings Extra Actions
+  adminCreateBooking: (data: any) =>
+    request<any>("/api/admin/bookings/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  adminTransitionBookingStatus: (id: number, status: string, notes?: string, force: boolean = false) =>
+    request<any>(`/api/admin/bookings/${id}/transition-status/`, {
+      method: "POST",
+      body: JSON.stringify({ status, notes, force }),
+    }),
+  adminGetBookingHistory: (id: number) =>
+    request<any[]>(`/api/admin/bookings/${id}/history/`),
+
+  // Admin Payments (Razorpay)
+  adminGetPayments: (params: Record<string, string> = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request<any>(`/api/admin/payments/?${query}`);
+  },
+  adminRefundPayment: (id: number, reason: string) =>
+    request<any>(`/api/admin/payments/${id}/mark-refunded/`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+
+  // Admin Audit Logs & Team
+  adminGetAuditLogs: (params: Record<string, string> = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request<any>(`/api/admin/audit-logs/?${query}`);
+  },
+  adminGetTeam: () => request<any[]>("/api/admin/team/"),
+  adminCreateTeamMember: (data: any) =>
+    request<any>("/api/admin/team/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  adminToggleTeamMember: (id: number) =>
+    request<any>(`/api/admin/team/${id}/toggle-active/`, {
+      method: "POST",
+    }),
+  adminUpdateTeamRole: (id: number, role: string) =>
+    request<any>(`/api/admin/team/${id}/update-role/`, {
+      method: "POST",
+      body: JSON.stringify({ role }),
     }),
 };

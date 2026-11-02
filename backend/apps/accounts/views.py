@@ -1,10 +1,13 @@
+import csv
 from django.db.models import Sum, Count, Q
 from django.contrib.auth import login, logout, get_user_model
+from django.http import HttpResponse
 from rest_framework import views, viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 
+from apps.core.models import AdminAuditLog
 from apps.accounts.models import (
     UserProfile,
     CustomerAddress,
@@ -349,7 +352,7 @@ class CustomerPaymentListView(views.APIView):
 # Admin Customer Management Endpoints
 # -----------------------------------------------------------------------------
 
-class AdminCustomerViewSet(viewsets.ReadOnlyModelViewSet):
+class AdminCustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAdminUser]
     serializer_class = UserProfileSerializer
 
@@ -372,6 +375,43 @@ class AdminCustomerViewSet(viewsets.ReadOnlyModelViewSet):
 
         return qs
 
+    def update(self, request, *args, **kwargs):
+        profile = self.get_object()
+        full_name = request.data.get("full_name", "").strip()
+        phone = request.data.get("phone", "").strip()
+        email = request.data.get("email", "").strip().lower()
+
+        if full_name:
+            profile.full_name = full_name
+            profile.user.first_name = full_name.split()[0]
+            profile.user.last_name = " ".join(full_name.split()[1:]) if len(full_name.split()) > 1 else ""
+
+        if phone:
+            clean_phone = clean_phone_number(phone)
+            # check uniqueness if changing
+            if UserProfile.objects.filter(phone=clean_phone).exclude(id=profile.id).exists():
+                return Response({"error": "Another customer already has this mobile number."}, status=status.HTTP_400_BAD_REQUEST)
+            profile.phone = clean_phone
+
+        if email:
+            if get_user_model().objects.filter(email__iexact=email).exclude(id=profile.user.id).exists():
+                return Response({"error": "Another user already has this email address."}, status=status.HTTP_400_BAD_REQUEST)
+            profile.user.email = email
+
+        profile.save()
+        profile.user.save()
+
+        AdminAuditLog.objects.create(
+            user=request.user,
+            action="UPDATE_CUSTOMER_PROFILE",
+            resource_type="CUSTOMER",
+            resource_id=profile.carspa_user_id,
+            details={"full_name": profile.full_name, "email": profile.user.email, "phone": profile.phone},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+
+        return Response(UserProfileSerializer(profile).data)
+
     def retrieve(self, request, *args, **kwargs):
         profile = self.get_object()
         user = profile.user
@@ -386,8 +426,21 @@ class AdminCustomerViewSet(viewsets.ReadOnlyModelViewSet):
         addresses = CustomerAddress.objects.filter(user=user)
         vehicles = CustomerVehicle.objects.filter(user=user).select_related("vehicle_type")
 
+        # Calculate lifetime value (sum of paid bookings)
+        ltv = Booking.objects.filter(
+            Q(user=user) | Q(customer_phone=profile.phone),
+            payment_status="PAID"
+        ).aggregate(total=Sum("final_amount"))["total"] or Decimal("0.00")
+
         return Response({
             "profile": UserProfileSerializer(profile).data,
+            "metrics": {
+                "total_bookings": Booking.objects.filter(Q(user=user) | Q(customer_phone=profile.phone)).count(),
+                "completed_bookings": Booking.objects.filter(Q(user=user) | Q(customer_phone=profile.phone), status="COMPLETED").count(),
+                "lifetime_value": str(ltv),
+                "saved_addresses_count": addresses.count(),
+                "saved_vehicles_count": vehicles.count(),
+            },
             "bookings": BookingDetailSerializer(bookings, many=True).data,
             "payments": [
                 {
@@ -413,9 +466,18 @@ class AdminCustomerViewSet(viewsets.ReadOnlyModelViewSet):
         if new_status in ["ACTIVE", "SUSPENDED", "INACTIVE"]:
             profile.account_status = new_status
             profile.save()
-            # Also toggle user.is_active
             profile.user.is_active = (new_status == "ACTIVE")
             profile.user.save()
+
+            AdminAuditLog.objects.create(
+                user=request.user,
+                action="TOGGLE_CUSTOMER_STATUS",
+                resource_type="CUSTOMER",
+                resource_id=profile.carspa_user_id,
+                details={"account_status": new_status, "is_active": profile.user.is_active},
+                ip_address=request.META.get("REMOTE_ADDR"),
+            )
+
             return Response({
                 "message": f"Account status updated to {new_status}.",
                 "profile": UserProfileSerializer(profile).data
@@ -424,3 +486,29 @@ class AdminCustomerViewSet(viewsets.ReadOnlyModelViewSet):
             {"error": "Invalid status. Must be ACTIVE, SUSPENDED, or INACTIVE."},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    @action(detail=False, methods=["get"], url_path="export-csv")
+    def export_csv(self, request):
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="customers_export.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            "User ID", "Full Name", "Email", "Phone", "Status", "Role",
+            "Total Bookings", "Date Joined", "Last Login"
+        ])
+
+        for p in self.get_queryset():
+            writer.writerow([
+                p.carspa_user_id,
+                p.full_name,
+                p.user.email,
+                p.phone,
+                p.account_status,
+                p.role,
+                getattr(p, "total_bookings_count", 0),
+                p.user.date_joined.strftime("%Y-%m-%d %H:%M") if p.user.date_joined else "—",
+                p.user.last_login.strftime("%Y-%m-%d %H:%M") if p.user.last_login else "Never",
+            ])
+
+        return response

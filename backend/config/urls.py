@@ -42,12 +42,16 @@ from apps.core.views import (
     AdminLogoutAPIView,
     AdminMeAPIView,
     AdminBusinessConfigAPIView,
+    AdminAuditLogViewSet,
+    AdminTeamViewSet,
 )
 from apps.accounts.views import AdminCustomerViewSet
+from apps.payments.views import AdminPaymentViewSet
 
 admin_router = DefaultRouter()
 admin_router.register(r"bookings", AdminBookingViewSet, basename="admin-bookings")
 admin_router.register(r"customers", AdminCustomerViewSet, basename="admin-customers")
+admin_router.register(r"payments", AdminPaymentViewSet, basename="admin-payments")
 admin_router.register(r"leads", AdminLeadViewSet, basename="admin-leads")
 admin_router.register(r"staff", AdminStaffViewSet, basename="admin-staff")
 admin_router.register(r"blockouts", AdminSlotBlockoutViewSet, basename="admin-blockouts")
@@ -55,6 +59,8 @@ admin_router.register(r"services", AdminServicePackageViewSet, basename="admin-s
 admin_router.register(r"vehicle-types", AdminVehicleTypeViewSet, basename="admin-vehicle-types")
 admin_router.register(r"service-areas", AdminServiceAreaViewSet, basename="admin-service-areas")
 admin_router.register(r"prices", AdminPackagePriceViewSet, basename="admin-prices")
+admin_router.register(r"audit-logs", AdminAuditLogViewSet, basename="admin-audit-logs")
+admin_router.register(r"team", AdminTeamViewSet, basename="admin-team")
 
 urlpatterns = [
     path("", root_api_view, name="api-root"),

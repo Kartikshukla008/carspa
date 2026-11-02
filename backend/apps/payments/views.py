@@ -199,3 +199,93 @@ class RazorpayWebhookAPIView(APIView):
             logger.error(f"Error processing webhook event {event}: {str(e)}")
 
         return Response({"status": "received"}, status=status.HTTP_200_OK)
+
+
+from rest_framework import viewsets, serializers
+from rest_framework.decorators import action
+from apps.payments.models import Payment
+from apps.core.permissions import IsAdminOrManager
+from apps.core.models import AdminAuditLog
+
+class AdminPaymentSerializer(serializers.ModelSerializer):
+    booking_reference = serializers.CharField(source="booking.booking_reference", read_only=True)
+    customer_name = serializers.CharField(source="booking.customer_name", read_only=True)
+    customer_phone = serializers.CharField(source="booking.customer_phone", read_only=True)
+    customer_user_id = serializers.SerializerMethodField()
+    service_package_name = serializers.CharField(source="booking.service_package.name", read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = [
+            "id",
+            "order_id",
+            "payment_id",
+            "booking_reference",
+            "customer_name",
+            "customer_phone",
+            "customer_user_id",
+            "service_package_name",
+            "amount",
+            "currency",
+            "provider",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_customer_user_id(self, obj):
+        if obj.user and hasattr(obj.user, "profile"):
+            return obj.user.profile.carspa_user_id
+        if obj.booking and obj.booking.user and hasattr(obj.booking.user, "profile"):
+            return obj.booking.user.profile.carspa_user_id
+        return None
+
+
+class AdminPaymentViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAdminOrManager]
+    serializer_class = AdminPaymentSerializer
+
+    def get_queryset(self):
+        qs = Payment.objects.select_related("booking", "booking__service_package", "booking__user", "user").all()
+        search = self.request.query_params.get("search", "").strip()
+        status_filter = self.request.query_params.get("status", "").strip().upper()
+
+        if status_filter and status_filter != "ALL":
+            qs = qs.filter(status=status_filter)
+
+        if search:
+            qs = qs.filter(
+                models.Q(order_id__icontains=search)
+                | models.Q(payment_id__icontains=search)
+                | models.Q(booking__booking_reference__icontains=search)
+                | models.Q(booking__customer_name__icontains=search)
+                | models.Q(booking__customer_phone__icontains=search)
+            )
+        return qs
+
+    @action(detail=True, methods=["post"], url_path="mark-refunded")
+    def mark_refunded(self, request, pk=None):
+        payment = self.get_object()
+        reason = request.data.get("reason", "Refund recorded by administrator.")
+        old_status = payment.status
+        payment.status = "REFUNDED"
+        payment.save(update_fields=["status", "updated_at"])
+
+        if payment.booking:
+            payment.booking.payment_status = "REFUNDED"
+            payment.booking.save(update_fields=["payment_status", "updated_at"])
+
+        AdminAuditLog.objects.create(
+            user=request.user,
+            action="REFUND_PAYMENT",
+            resource_type="PAYMENT",
+            resource_id=str(payment.id),
+            details={"booking": payment.booking.booking_reference if payment.booking else None, "amount": str(payment.amount), "reason": reason},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+
+        return Response({
+            "message": "Payment marked as refunded.",
+            "payment": AdminPaymentSerializer(payment).data
+        })
+

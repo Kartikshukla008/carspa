@@ -193,11 +193,63 @@ export interface UserProfile {
   email: string;
   phone: string;
   username: string;
+  role?: "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "STAFF" | "CUSTOMER";
   account_status: "ACTIVE" | "SUSPENDED" | "INACTIVE";
   is_phone_verified: boolean;
   is_email_verified: boolean;
   date_joined: string;
+  last_login?: string | null;
   is_staff: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminAuditLogItem {
+  id: number;
+  user: number | null;
+  user_name: string;
+  user_email: string;
+  user_username?: string;
+  user_role?: string;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  details: Record<string, any>;
+  description?: string;
+  ip_address: string | null;
+  created_at: string;
+  timestamp?: string;
+}
+
+export interface AdminTeamMember {
+  id: number;
+  user_id: string;
+  username: string;
+  email: string;
+  full_name: string;
+  phone: string;
+  role: "SUPER_ADMIN" | "ADMIN" | "MANAGER" | "STAFF";
+  role_display?: string;
+  is_active: boolean;
+  is_staff: boolean;
+  is_superuser: boolean;
+  last_login: string | null;
+  date_joined: string;
+}
+
+export interface AdminPaymentRecord {
+  id: number;
+  order_id: string;
+  payment_id: string;
+  booking_reference: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_user_id: string | null;
+  service_package_name: string;
+  amount: string;
+  currency: string;
+  provider: string;
+  status: string;
   created_at: string;
   updated_at: string;
 }

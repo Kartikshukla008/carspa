@@ -40,6 +40,14 @@ class UserProfile(TimeStampedModel):
         ("INACTIVE", "Inactive"),
     ]
 
+    ROLE_CHOICES = [
+        ("SUPER_ADMIN", "Super Admin"),
+        ("ADMIN", "Admin"),
+        ("MANAGER", "Manager"),
+        ("STAFF", "Staff/Service Executive"),
+        ("CUSTOMER", "Customer"),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     carspa_user_id = models.CharField(
         max_length=50,
@@ -51,6 +59,7 @@ class UserProfile(TimeStampedModel):
     phone = models.CharField(max_length=20, unique=True, db_index=True)
     full_name = models.CharField(max_length=150)
     account_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="ACTIVE")
+    role = models.CharField(max_length=30, choices=ROLE_CHOICES, default="CUSTOMER", db_index=True)
     is_phone_verified = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)
 

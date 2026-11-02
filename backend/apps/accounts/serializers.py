@@ -130,6 +130,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source="user.email", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     date_joined = serializers.DateTimeField(source="user.date_joined", read_only=True)
+    last_login = serializers.DateTimeField(source="user.last_login", read_only=True)
     is_staff = serializers.BooleanField(source="user.is_staff", read_only=True)
 
     class Meta:
@@ -140,15 +141,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "email",
             "phone",
             "username",
+            "role",
             "account_status",
             "is_phone_verified",
             "is_email_verified",
             "date_joined",
+            "last_login",
             "is_staff",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["user_id", "email", "username", "account_status", "date_joined", "is_staff", "created_at", "updated_at"]
+        read_only_fields = ["user_id", "email", "username", "role", "account_status", "date_joined", "last_login", "is_staff", "created_at", "updated_at"]
 
     def update(self, instance, validated_data):
         instance.full_name = validated_data.get("full_name", instance.full_name)
