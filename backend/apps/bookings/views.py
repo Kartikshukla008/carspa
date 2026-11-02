@@ -21,7 +21,7 @@ class PublicBookingCreateAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = BookingCreateSerializer(data=request.data)
+        serializer = BookingCreateSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             booking = serializer.save()
             data = BookingDetailSerializer(booking).data

@@ -1,6 +1,9 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 from apps.core.models import TimeStampedModel
 from apps.bookings.models import Booking
+
+User = get_user_model()
 
 class Payment(TimeStampedModel):
     PROVIDER_CHOICES = [
@@ -16,6 +19,7 @@ class Payment(TimeStampedModel):
         ("REFUNDED", "Refunded"),
     ]
 
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="payments")
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="payments")
     provider = models.CharField(max_length=30, choices=PROVIDER_CHOICES, default="PAY_ON_SERVICE")
     amount = models.DecimalField(max_digits=10, decimal_places=2)

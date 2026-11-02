@@ -6,13 +6,20 @@ function getCsrfToken(): string | null {
   return match ? match[1] : null;
 }
 
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("carspa_auth_token");
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
   const csrfToken = getCsrfToken();
+  const token = getAuthToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
     ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+    ...(token ? { Authorization: `Token ${token}` } : {}),
     ...(options.headers as any),
   };
 
@@ -191,5 +198,103 @@ export const api = {
     request<any>(`/api/admin/prices/${id}/`, {
       method: "PATCH",
       body: JSON.stringify(data),
+    }),
+
+  // Customer Authentication
+  register: (data: any) =>
+    request<{ message: string; token: string; user: import("../types").UserProfile }>("/api/auth/register/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  login: (data: { identifier: string; password: string; remember_me?: boolean }) =>
+    request<{ message: string; token: string; user: import("../types").UserProfile }>("/api/auth/login/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  logout: () =>
+    request<{ message: string }>("/api/auth/logout/", {
+      method: "POST",
+    }),
+  getProfile: () => request<import("../types").UserProfile>("/api/auth/profile/"),
+  updateProfile: (data: Partial<import("../types").UserProfile>) =>
+    request<import("../types").UserProfile>("/api/auth/profile/", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  changePassword: (data: { old_password: string; new_password: string; confirm_password: string }) =>
+    request<{ message: string; token?: string }>("/api/auth/profile/change-password/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  requestPasswordReset: (identifier: string) =>
+    request<{ message: string; reset_token?: string }>("/api/auth/password-reset/", {
+      method: "POST",
+      body: JSON.stringify({ identifier }),
+    }),
+  confirmPasswordReset: (data: { token: string; new_password: string; confirm_password: string }) =>
+    request<{ message: string }>("/api/auth/password-reset-confirm/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Customer Dashboard & Self-Service
+  getCustomerDashboard: () =>
+    request<import("../types").CustomerDashboardData>("/api/customer/dashboard/"),
+  getCustomerBookings: (status?: string) => {
+    const q = status ? `?status=${encodeURIComponent(status)}` : "";
+    return request<import("../types").BookingResponse[]>(`/api/customer/bookings/${q}`);
+  },
+  getCustomerBooking: (reference: string) =>
+    request<import("../types").BookingResponse>(`/api/customer/bookings/${encodeURIComponent(reference)}/`),
+  getCustomerPayments: () =>
+    request<import("../types").CustomerPaymentItem[]>("/api/customer/payments/"),
+
+  // Customer Saved Addresses
+  getCustomerAddresses: () =>
+    request<import("../types").CustomerAddress[]>("/api/customer/addresses/"),
+  createCustomerAddress: (data: Partial<import("../types").CustomerAddress>) =>
+    request<import("../types").CustomerAddress>("/api/customer/addresses/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateCustomerAddress: (id: number, data: Partial<import("../types").CustomerAddress>) =>
+    request<import("../types").CustomerAddress>(`/api/customer/addresses/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  deleteCustomerAddress: (id: number) =>
+    request<{ success: boolean }>(`/api/customer/addresses/${id}/`, {
+      method: "DELETE",
+    }),
+
+  // Customer Saved Vehicles
+  getCustomerVehicles: () =>
+    request<import("../types").CustomerVehicle[]>("/api/customer/vehicles/"),
+  createCustomerVehicle: (data: Partial<import("../types").CustomerVehicle>) =>
+    request<import("../types").CustomerVehicle>("/api/customer/vehicles/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateCustomerVehicle: (id: number, data: Partial<import("../types").CustomerVehicle>) =>
+    request<import("../types").CustomerVehicle>(`/api/customer/vehicles/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  deleteCustomerVehicle: (id: number) =>
+    request<{ success: boolean }>(`/api/customer/vehicles/${id}/`, {
+      method: "DELETE",
+    }),
+
+  // Admin Customer Management
+  getAdminCustomers: (params: Record<string, string> = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return request<any>(`/api/admin/customers/?${query}`);
+  },
+  getAdminCustomer: (id: number) =>
+    request<any>(`/api/admin/customers/${id}/`),
+  toggleAdminCustomerStatus: (id: number, status: string) =>
+    request<any>(`/api/admin/customers/${id}/toggle-status/`, {
+      method: "POST",
+      body: JSON.stringify({ status }),
     }),
 };

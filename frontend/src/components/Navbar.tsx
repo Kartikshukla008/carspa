@@ -13,10 +13,14 @@ import {
   Phone,
   MapPin,
   Sparkles,
+  User,
+  LogOut,
 } from "lucide-react";
 import CarSpaLogo from "./CarSpaLogo";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -111,6 +115,48 @@ export default function Navbar() {
 
             {/* Desktop CTAs */}
             <div className="hidden lg:flex items-center gap-2.5 shrink-0">
+              {isAuthenticated ? (
+                <div className="relative group">
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/30 text-cyan-300 text-xs font-semibold transition-all shadow-sm"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold">
+                      {user?.full_name ? user.full_name.charAt(0).toUpperCase() : "U"}
+                    </div>
+                    <span className="max-w-[100px] truncate">{user?.full_name?.split(" ")[0] || "Account"}</span>
+                  </Link>
+                  <div className="absolute right-0 top-full mt-2 w-48 py-2 bg-[#0B1220] border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="px-3.5 py-1.5 border-b border-white/5">
+                      <p className="text-[10px] text-slate-400 font-mono">ID: {user?.user_id}</p>
+                      <p className="text-xs font-bold text-white truncate">{user?.full_name}</p>
+                    </div>
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center gap-2 px-3.5 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>My Dashboard</span>
+                    </Link>
+                    <button
+                      onClick={() => logout()}
+                      className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-rose-400 hover:bg-rose-500/10 text-left transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Log Out</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-cyan-400 px-3 py-2 rounded-xl hover:bg-white/5 transition-all"
+                >
+                  <User className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Log In</span>
+                </Link>
+              )}
+
               <a
                 href="https://wa.me/917087811881?text=Hi%20CARSPA%2C%20I%20would%20like%20to%20book%20a%20doorstep%20car%20wash."
                 target="_blank"
@@ -236,6 +282,57 @@ export default function Navbar() {
                     <span>Admin Portal</span>
                     <ChevronRight className="w-4 h-4 text-slate-500" />
                   </Link>
+                </motion.div>
+
+                {/* Mobile Auth Button */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                >
+                  {isAuthenticated ? (
+                    <div className="p-3.5 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-white">{user?.full_name}</span>
+                        <span className="font-mono text-[10px] text-cyan-400 font-bold">{user?.user_id}</span>
+                      </div>
+                      <div className="flex items-center gap-2 pt-1">
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex-1 py-2 text-center text-xs font-semibold text-white bg-cyan-500/20 border border-cyan-500/30 rounded-xl hover:bg-cyan-500/30 transition-colors"
+                        >
+                          Customer Dashboard
+                        </Link>
+                        <button
+                          onClick={() => {
+                            logout();
+                            setMobileMenuOpen(false);
+                          }}
+                          className="px-3.5 py-2 text-xs font-semibold text-rose-400 bg-rose-500/10 rounded-xl hover:bg-rose-500/20 transition-colors"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link
+                        href="/login"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="py-2.5 text-center text-xs font-bold text-slate-200 bg-white/[0.04] border border-white/10 rounded-xl hover:bg-white/[0.08]"
+                      >
+                        Log In
+                      </Link>
+                      <Link
+                        href="/signup"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="py-2.5 text-center text-xs font-bold text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl shadow-md"
+                      >
+                        Sign Up
+                      </Link>
+                    </div>
+                  )}
                 </motion.div>
 
                 <motion.div

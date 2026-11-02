@@ -113,6 +113,9 @@ class BookingCreateSerializer(serializers.Serializer):
         final_amount = subtotal + tax_amount
 
         # Race-safe atomic validation and booking creation
+        request = self.context.get("request")
+        authenticated_user = request.user if (request and hasattr(request, "user") and request.user.is_authenticated) else None
+
         with transaction.atomic():
             # Run availability engine validation
             engine = AvailabilityEngine(config)
@@ -165,6 +168,7 @@ class BookingCreateSerializer(serializers.Serializer):
                 )
 
             booking = Booking.objects.create(
+                user=authenticated_user,
                 customer=customer,
                 lead=lead,
                 vehicle_type=vehicle_type,
@@ -221,6 +225,12 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     payment_method_display = serializers.CharField(source="get_payment_method_display", read_only=True)
     payment_details = serializers.SerializerMethodField()
+    user_id = serializers.SerializerMethodField()
+
+    def get_user_id(self, obj):
+        if obj.user and hasattr(obj.user, "profile"):
+            return obj.user.profile.carspa_user_id
+        return None
 
     def get_payment_details(self, obj):
         latest = obj.payments.order_by("-created_at").first()
@@ -241,6 +251,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         model = Booking
         fields = [
             "id",
+            "user_id",
             "booking_reference",
             "service_date",
             "slot_start_time",

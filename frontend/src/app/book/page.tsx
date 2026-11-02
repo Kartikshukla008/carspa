@@ -35,6 +35,7 @@ import {
   Printer,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { launchRazorpayCheckout } from "@/lib/razorpay";
 import { BookingInvoiceModal } from "@/components/BookingInvoiceModal";
 import {
@@ -214,6 +215,35 @@ function BookingFlow() {
     paymentMethod: "PAY_ON_SERVICE",
   });
 
+  // User Authentication Context
+  const { user, isAuthenticated } = useAuth();
+  const [savedVehicles, setSavedVehicles] = useState<import("@/types").CustomerVehicle[]>([]);
+  const [addresses, setAddresses] = useState<import("@/types").CustomerAddress[]>([]);
+  const [selectedSavedVehicleId, setSelectedSavedVehicleId] = useState<number | null>(null);
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<number | null>(null);
+
+  // Auto-populate customer fields and load saved garage/addresses if user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setFormData((prev) => ({
+        ...prev,
+        customerName: prev.customerName || user.full_name || "",
+        customerPhone: prev.customerPhone || user.phone || "",
+        customerEmail: prev.customerEmail || user.email || "",
+      }));
+
+      api.getCustomerVehicles().then((res) => {
+        const list = Array.isArray(res) ? res : (res as any)?.results || [];
+        setSavedVehicles(list);
+      }).catch(() => {});
+
+      api.getCustomerAddresses().then((res) => {
+        const list = Array.isArray(res) ? res : (res as any)?.results || [];
+        setAddresses(list);
+      }).catch(() => {});
+    }
+  }, [isAuthenticated, user]);
+
   const [leadCapturedId, setLeadCapturedId] = useState<string | null>(null);
   const [submittingBooking, setSubmittingBooking] = useState(false);
   const [retryingPayment, setRetryingPayment] = useState(false);
@@ -345,6 +375,27 @@ function BookingFlow() {
     if (meta && meta.popularModels.length > 0) {
       setSelectedCarModel(meta.popularModels[0].name);
     }
+  };
+
+  const handleSelectSavedVehicle = (sv: any) => {
+    setSelectedSavedVehicleId(sv.id);
+    const matched = vehicles.find((v) => v.id === sv.vehicle_type || v.slug === sv.vehicle_type_slug);
+    if (matched) {
+      handleSelectVehicle(matched);
+    }
+    const label = `${sv.brand} ${sv.model_name}${sv.license_plate ? ` (${sv.license_plate})` : ""}`;
+    setCustomCarModel(label);
+  };
+
+  const handleSelectSavedAddress = (addr: any) => {
+    setSelectedSavedAddressId(addr.id);
+    setFormData((prev) => ({
+      ...prev,
+      addressLine: addr.house_building + (addr.street_locality ? `, ${addr.street_locality}` : ""),
+      locality: addr.street_locality || addr.city || "",
+      landmark: addr.landmark || "",
+      pincode: addr.pincode || "",
+    }));
   };
 
   const toggleAddon = (addonId: string) => {
@@ -574,6 +625,58 @@ function BookingFlow() {
               Pricing and wash chemistry adjust according to vehicle surface area.
             </p>
           </div>
+
+          {/* Quick Select from Saved Vehicles (Garage) */}
+          {isAuthenticated && savedVehicles && savedVehicles.length > 0 && (
+            <div className="bg-[#0B1220]/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Car className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    Quick Select from Your Garage
+                  </span>
+                </div>
+                <Link
+                  href="/dashboard"
+                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-medium hover:underline flex items-center gap-1"
+                >
+                  Manage Garage &rarr;
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {savedVehicles.map((sv) => {
+                  const isSavedSelected = selectedSavedVehicleId === sv.id;
+                  return (
+                    <button
+                      key={sv.id}
+                      type="button"
+                      onClick={() => handleSelectSavedVehicle(sv)}
+                      className={`text-left p-3 rounded-xl border transition-all flex items-center justify-between ${
+                        isSavedSelected
+                          ? "bg-cyan-500/15 border-cyan-400 ring-1 ring-cyan-400 text-white shadow-md shadow-cyan-500/20"
+                          : "bg-slate-900/60 border-white/10 hover:border-cyan-500/40 text-slate-300 hover:text-white"
+                      }`}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <p className="text-xs font-bold truncate">
+                          {sv.brand} {sv.model_name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          {sv.license_plate || "No Plate"} • {sv.color || sv.vehicle_type_name}
+                        </p>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                        isSavedSelected ? "bg-cyan-400 text-black font-extrabold" : "bg-white/10 text-slate-400"
+                      }`}>
+                        {isSavedSelected ? "Selected" : "Use"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* 4 Category Selection Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1323,6 +1426,66 @@ function BookingFlow() {
             </p>
           </div>
 
+          {/* Quick Select from Saved Addresses */}
+          {isAuthenticated && addresses && addresses.length > 0 && (
+            <div className="bg-[#0B1220]/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    Select from Saved Addresses
+                  </span>
+                </div>
+                <Link
+                  href="/dashboard"
+                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-medium hover:underline flex items-center gap-1"
+                >
+                  Manage Addresses &rarr;
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {addresses.map((addr) => {
+                  const isAddrSelected = selectedSavedAddressId === addr.id;
+                  return (
+                    <button
+                      key={addr.id}
+                      type="button"
+                      onClick={() => handleSelectSavedAddress(addr)}
+                      className={`text-left p-3 rounded-xl border transition-all flex items-start justify-between ${
+                        isAddrSelected
+                          ? "bg-cyan-500/15 border-cyan-400 ring-1 ring-cyan-400 text-white shadow-md shadow-cyan-500/20"
+                          : "bg-slate-900/60 border-white/10 hover:border-cyan-500/40 text-slate-300 hover:text-white"
+                      }`}
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+                            {addr.address_type}
+                          </span>
+                          {addr.is_default && (
+                            <span className="text-[9px] font-semibold text-emerald-400">Default</span>
+                          )}
+                        </div>
+                        <p className="text-xs font-semibold text-white truncate">
+                          {addr.house_building}, {addr.street_locality}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          {addr.city}, {addr.pincode}
+                        </p>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                        isAddrSelected ? "bg-cyan-400 text-black font-extrabold" : "bg-white/10 text-slate-400"
+                      }`}>
+                        {isAddrSelected ? "Filled" : "Use"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -1772,6 +1935,14 @@ function BookingFlow() {
                 {confirmedBooking.booking_reference}
               </span>
             </div>
+            {(confirmedBooking.user_id || (isAuthenticated && user?.user_id)) && (
+              <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                <span className="text-xs text-slate-400">CARSPA Customer ID:</span>
+                <span className="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded">
+                  {confirmedBooking.user_id || user?.user_id}
+                </span>
+              </div>
+            )}
             <div className="space-y-1.5 text-xs text-slate-300">
               <div className="flex justify-between">
                 <span className="text-slate-400">Customer:</span>
@@ -1907,7 +2078,31 @@ function BookingFlow() {
               <MessageSquare className="w-4 h-4" />
               <span>WhatsApp</span>
             </a>
+
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="w-full sm:w-auto bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+              >
+                <Gauge className="w-4 h-4" />
+                <span>My Dashboard</span>
+              </Link>
+            ) : null}
           </div>
+
+          {!isAuthenticated && (
+            <div className="max-w-md mx-auto p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/20 text-center space-y-2">
+              <p className="text-xs text-slate-300">
+                Want to save your vehicle &amp; address for 1-click doorstep wash bookings?
+              </p>
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-bold underline"
+              >
+                <span>Create a free CARSPA account &rarr;</span>
+              </Link>
+            </div>
+          )}
 
           {/* Tax Invoice & Printable Receipt Modal */}
           {confirmedBooking && (

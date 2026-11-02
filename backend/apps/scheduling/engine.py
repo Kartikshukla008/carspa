@@ -99,6 +99,11 @@ class AvailabilityEngine:
         start_time = self.config.day_open_time
         close_time = self.config.day_close_time
 
+        if isinstance(start_time, str):
+            start_time = datetime.time.fromisoformat(start_time)
+        if isinstance(close_time, str):
+            close_time = datetime.time.fromisoformat(close_time)
+
         current_dt = datetime.datetime.combine(target_date, start_time)
         close_dt = datetime.datetime.combine(target_date, close_time)
 

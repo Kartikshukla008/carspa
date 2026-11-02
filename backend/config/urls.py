@@ -43,9 +43,11 @@ from apps.core.views import (
     AdminMeAPIView,
     AdminBusinessConfigAPIView,
 )
+from apps.accounts.views import AdminCustomerViewSet
 
 admin_router = DefaultRouter()
 admin_router.register(r"bookings", AdminBookingViewSet, basename="admin-bookings")
+admin_router.register(r"customers", AdminCustomerViewSet, basename="admin-customers")
 admin_router.register(r"leads", AdminLeadViewSet, basename="admin-leads")
 admin_router.register(r"staff", AdminStaffViewSet, basename="admin-staff")
 admin_router.register(r"blockouts", AdminSlotBlockoutViewSet, basename="admin-blockouts")
@@ -63,6 +65,7 @@ urlpatterns = [
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 
     # Public APIs
+    path("api/", include("apps.accounts.urls")),
     path("api/vehicle-types/", PublicVehicleTypeListView.as_view(), name="public-vehicle-types"),
     path("api/services/", PublicServicePackageListView.as_view(), name="public-services"),
     path("api/services/addons/", PublicAddonListView.as_view(), name="public-addons"),

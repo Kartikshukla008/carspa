@@ -69,6 +69,7 @@ class PaymentService:
 
         # Record payment transaction attempt in database
         payment = Payment.objects.create(
+            user=booking.user,
             booking=booking,
             provider="RAZORPAY",
             amount=booking.final_amount,

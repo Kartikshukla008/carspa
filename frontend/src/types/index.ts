@@ -65,6 +65,7 @@ export interface TimeSlot {
 
 export interface BookingResponse {
   id: number;
+  user_id?: string | null;
   booking_reference: string;
   service_date: string;
   slot_start_time: string;
@@ -184,4 +185,75 @@ export interface DashboardMetrics {
   total_leads: number;
   new_leads: number;
   conversion_rate: string;
+}
+
+export interface UserProfile {
+  user_id: string; // Permanent User ID e.g. CARSPA-USER-10001
+  full_name: string;
+  email: string;
+  phone: string;
+  username: string;
+  account_status: "ACTIVE" | "SUSPENDED" | "INACTIVE";
+  is_phone_verified: boolean;
+  is_email_verified: boolean;
+  date_joined: string;
+  is_staff: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerAddress {
+  id: number;
+  house_building: string;
+  street_locality: string;
+  city: string;
+  state: string;
+  pincode: string;
+  address_type: "HOME" | "WORK" | "OTHER";
+  landmark?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerVehicle {
+  id: number;
+  vehicle_type: number;
+  vehicle_type_name: string;
+  brand: string;
+  model_name: string;
+  license_plate: string;
+  color?: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerPaymentItem {
+  id: number;
+  amount: string;
+  currency: string;
+  provider: string;
+  status: string;
+  order_id: string;
+  payment_id: string;
+  created_at: string;
+  booking_reference: string;
+  service_package_name: string;
+  service_date: string | null;
+}
+
+export interface CustomerDashboardData {
+  profile: UserProfile;
+  metrics: {
+    total_bookings: number;
+    active_bookings: number;
+    completed_bookings: number;
+    total_spent: string;
+    saved_addresses_count: number;
+    saved_vehicles_count: number;
+  };
+  recent_bookings: BookingResponse[];
+  saved_addresses: CustomerAddress[];
+  saved_vehicles: CustomerVehicle[];
 }

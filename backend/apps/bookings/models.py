@@ -55,6 +55,9 @@ class Booking(TimeStampedModel):
     booking_reference = models.CharField(
         max_length=50, unique=True, default=generate_booking_reference, db_index=True
     )
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="bookings"
+    )
     customer = models.ForeignKey(
         Customer, on_delete=models.PROTECT, related_name="bookings"
     )
@@ -118,6 +121,7 @@ class Booking(TimeStampedModel):
         indexes = [
             models.Index(fields=["service_date", "status"]),
             models.Index(fields=["customer_phone", "status"]),
+            models.Index(fields=["user", "status"]),
         ]
 
     def __str__(self):
