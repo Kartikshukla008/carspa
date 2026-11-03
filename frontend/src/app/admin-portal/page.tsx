@@ -313,29 +313,30 @@ export default function AdminPortalPage() {
   } = useAdminWebSocket({
     enabled: isAuthenticated === true,
     onEvent: (evt) => {
-      if (evt.event === "booking_created") {
-        showToast("success", `⚡ Live: New Booking #${evt.payload.booking_reference} received from ${evt.payload.customer_name}!`);
+      const eventName = evt?.event || (evt as any)?.event_type || "";
+      if (eventName === "booking_created") {
+        showToast("success", `⚡ Live: New Booking #${evt.payload?.booking_reference || ""} received from ${evt.payload?.customer_name || "Customer"}!`);
         setBookingsList((prev) => {
           const arr = Array.isArray(prev) ? prev : [];
-          if (arr.some((b) => b.booking_reference === evt.payload.booking_reference)) return arr;
+          if (arr.some((b) => b.booking_reference === evt.payload?.booking_reference)) return arr;
           const newBooking: any = {
-            id: evt.payload.booking_id,
-            booking_reference: evt.payload.booking_reference,
-            customer_name: evt.payload.customer_name,
-            customer_phone: evt.payload.customer_phone,
+            id: evt.payload?.booking_id,
+            booking_reference: evt.payload?.booking_reference,
+            customer_name: evt.payload?.customer_name,
+            customer_phone: evt.payload?.customer_phone,
             customer_email: "",
-            service_package_name: evt.payload.package_name,
-            vehicle_type_name: evt.payload.vehicle_name,
-            service_date: evt.payload.service_date,
-            slot_start_time: evt.payload.slot?.split(" - ")[0] || "10:00",
-            slot_end_time: evt.payload.slot?.split(" - ")[1] || "11:00",
-            address_line: evt.payload.locality || "",
-            locality: evt.payload.locality || "",
+            service_package_name: evt.payload?.package_name,
+            vehicle_type_name: evt.payload?.vehicle_name,
+            service_date: evt.payload?.service_date,
+            slot_start_time: evt.payload?.slot?.split(" - ")[0] || "10:00",
+            slot_end_time: evt.payload?.slot?.split(" - ")[1] || "11:00",
+            address_line: evt.payload?.locality || "",
+            locality: evt.payload?.locality || "",
             landmark: "",
             pincode: "",
-            final_amount: evt.payload.final_amount,
-            status: evt.payload.status || "PENDING",
-            status_display: evt.payload.status || "Pending Confirmation",
+            final_amount: evt.payload?.final_amount,
+            status: evt.payload?.status || "PENDING",
+            status_display: evt.payload?.status || "Pending Confirmation",
             payment_status: "PENDING",
             payment_method: "PAY_ON_SERVICE",
             payment_method_display: "Pay on Arrival",
@@ -355,22 +356,22 @@ export default function AdminPortalPage() {
             pending_confirmations: (prev.pending_confirmations || 0) + 1,
           };
         });
-      } else if (evt.event === "booking_status_updated") {
-        showToast("success", `⚡ Status updated: #${evt.payload.booking_reference} is now ${evt.payload.new_status}`);
+      } else if (eventName === "booking_status_updated") {
+        showToast("success", `⚡ Status updated: #${evt.payload?.booking_reference} is now ${evt.payload?.new_status}`);
         setBookingsList((prev) => {
           const arr = Array.isArray(prev) ? prev : [];
           return arr.map((b) =>
-            b.booking_reference === evt.payload.booking_reference
-              ? { ...b, status: evt.payload.new_status, status_display: evt.payload.new_status }
+            b.booking_reference === evt.payload?.booking_reference
+              ? { ...b, status: evt.payload?.new_status, status_display: evt.payload?.new_status }
               : b
           );
         });
-      } else if (evt.event === "payment_received") {
-        showToast("success", `⚡ Payment Confirmed: #${evt.payload.booking_reference} marked as PAID`);
+      } else if (eventName === "payment_received") {
+        showToast("success", `⚡ Payment Confirmed: #${evt.payload?.booking_reference} marked as PAID`);
         setBookingsList((prev) => {
           const arr = Array.isArray(prev) ? prev : [];
           return arr.map((b) =>
-            b.booking_reference === evt.payload.booking_reference
+            b.booking_reference === evt.payload?.booking_reference
               ? { ...b, payment_status: "PAID" }
               : b
           );
@@ -1372,20 +1373,22 @@ export default function AdminPortalPage() {
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-cyan-300 text-[11px] uppercase tracking-wide">
-                            {evt.event.replace(/_/g, " ")}
+                            {String(evt?.event || (evt as any)?.event_type || "Live Update").replace(/_/g, " ")}
                           </span>
                           <span className="text-[10px] text-slate-400 font-mono">
-                            {evt.timestamp}
+                            {evt?.timestamp || ""}
                           </span>
                         </div>
                         <p className="text-slate-200 text-xs font-medium">
-                          {evt.event === "booking_created"
-                            ? `Ref: #${evt.payload.booking_reference} • ${evt.payload.customer_name} • ₹${evt.payload.final_amount}`
-                            : evt.event === "booking_status_updated"
-                            ? `Ref: #${evt.payload.booking_reference} ➔ ${evt.payload.new_status}`
-                            : evt.event === "payment_received"
-                            ? `Payment confirmed for #${evt.payload.booking_reference}`
-                            : JSON.stringify(evt.payload)}
+                          {(evt?.event === "booking_created" || (evt as any)?.event_type === "booking_created")
+                            ? `Ref: #${evt?.payload?.booking_reference || "—"} • ${evt?.payload?.customer_name || "Customer"} • ₹${evt?.payload?.final_amount || "0"}`
+                            : (evt?.event === "booking_status_updated" || (evt as any)?.event_type === "booking_status_updated")
+                            ? `Ref: #${evt?.payload?.booking_reference || "—"} ➔ ${evt?.payload?.new_status || "Updated"}`
+                            : (evt?.event === "payment_received" || (evt as any)?.event_type === "payment_received")
+                            ? `Payment confirmed for #${evt?.payload?.booking_reference || "—"}`
+                            : typeof evt?.payload === "string"
+                            ? evt.payload
+                            : JSON.stringify(evt?.payload || {})}
                         </p>
                       </div>
                     ))}

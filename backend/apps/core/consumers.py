@@ -54,9 +54,13 @@ class AdminDashboardConsumer(AsyncJsonWebsocketConsumer):
 
     async def dashboard_event(self, event):
         """Handler for events sent via channel_layer.group_send('admin_dashboard')"""
+        payload = event.get("payload", {})
+        event_name = payload.get("event") or payload.get("event_type", "operational_event")
         await self.send_json({
             "type": "dashboard_event",
-            **event["payload"],
+            "event": event_name,
+            "event_type": event_name,
+            **payload,
         })
 
     @database_sync_to_async

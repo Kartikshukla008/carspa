@@ -106,17 +106,18 @@ export function useAdminWebSocket(options: UseAdminWebSocketOptions = {}) {
           if (!isMounted) return;
           try {
             const data = JSON.parse(event.data);
-            if (data.type === "dashboard_event") {
+            if (data.type === "dashboard_event" || data.event || data.event_type) {
+              const eventName = String(data.event || data.event_type || data.action || "operational_update");
               const evt: DashboardEvent = {
                 type: "dashboard_event",
-                event: data.event,
-                payload: data.payload || data,
+                event: eventName,
+                payload: data.payload || data.data || data,
                 timestamp: new Date().toLocaleTimeString(),
               };
 
               setLastEvent(evt);
               setUnreadCount((c) => c + 1);
-              setRecentEvents((prev) => [evt, ...prev.slice(0, 24)]);
+              setRecentEvents((prev) => [evt, ...(Array.isArray(prev) ? prev.slice(0, 24) : [])]);
 
               if (onEventRef.current) {
                 onEventRef.current(evt);
