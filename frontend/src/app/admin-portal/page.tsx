@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Calendar,
   Clock,
@@ -57,6 +57,7 @@ import {
   Bell,
   Radio,
   Zap,
+  Trash2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAdminWebSocket, DashboardEvent } from "@/hooks/useAdminWebSocket";
@@ -302,6 +303,7 @@ export default function AdminPortalPage() {
 
   // Real-time WebSocket connection for live Admin Operations
   const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
   const {
     status: wsStatus,
     isConnected: isWsLive,
@@ -309,6 +311,7 @@ export default function AdminPortalPage() {
     recentEvents,
     unreadCount,
     clearUnread,
+    clearEvents,
     manualReconnect,
   } = useAdminWebSocket({
     enabled: isAuthenticated === true,
@@ -379,6 +382,24 @@ export default function AdminPortalPage() {
       }
     },
   });
+
+  // Close notifications dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+    }
+    if (showNotifications) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showNotifications]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard?.writeText(text);
@@ -1219,7 +1240,7 @@ export default function AdminPortalPage() {
       )}
 
       {/* Top Header with Role & Quick Refresh */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-4 relative z-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-4 relative z-40">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest">
@@ -1300,14 +1321,18 @@ export default function AdminPortalPage() {
           </button>
 
           {/* Real-time Notification Bell Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={notificationRef}>
             <button
               type="button"
               onClick={() => {
                 setShowNotifications((prev) => !prev);
                 clearUnread();
               }}
-              className="relative flex items-center justify-center p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
+              className={`relative flex items-center justify-center p-2 rounded-xl border transition-all cursor-pointer ${
+                showNotifications
+                  ? "bg-cyan-500/20 border-cyan-400/60 text-white shadow-md shadow-cyan-500/20"
+                  : "bg-white/[0.04] hover:bg-white/[0.08] border-white/10 text-slate-300 hover:text-white"
+              }`}
               title="Real-time Event Feed"
             >
               <Bell className="w-4 h-4 text-cyan-400" />
@@ -1320,31 +1345,52 @@ export default function AdminPortalPage() {
 
             {showNotifications && (
               <div
-                style={{ backgroundColor: "#0F172A", opacity: 1 }}
-                className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-cyan-500/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] p-4 z-[999] space-y-3"
+                style={{ backgroundColor: "#0B1324", opacity: 1 }}
+                className="absolute right-0 mt-3 w-80 sm:w-[420px] max-w-[calc(100vw-2rem)] rounded-2xl border border-cyan-500/40 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_30px_rgba(6,182,212,0.18)] z-50 overflow-hidden ring-1 ring-white/10"
               >
-                <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
-                      <Zap className="w-3.5 h-3.5" />
+                {/* Top Glowing Accent Line */}
+                <div className="h-1 w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-emerald-400" />
+
+                {/* Panel Header */}
+                <div className="p-3.5 sm:p-4 bg-slate-900/95 border-b border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-sm shadow-cyan-500/20">
+                      <Zap className="w-4 h-4 text-cyan-400" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-white uppercase tracking-wider block">
-                        Live Operations Stream
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-white uppercase tracking-wider block">
+                          Live Operations Feed
+                        </span>
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          LIVE
+                        </span>
+                      </div>
                       <span className="text-[10px] text-slate-400">
                         Real-time bookings, payments &amp; dispatches
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono font-bold">
-                      {recentEvents.length} events
-                    </span>
+
+                  <div className="flex items-center gap-1.5">
+                    {recentEvents.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearEvents();
+                        }}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 transition-all flex items-center gap-1 cursor-pointer"
+                        title="Clear all events"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Clear</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setShowNotifications(false)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                       title="Close panel"
                     >
                       <X className="w-4 h-4" />
@@ -1352,48 +1398,164 @@ export default function AdminPortalPage() {
                   </div>
                 </div>
 
+                {/* Events List or Empty State */}
                 {recentEvents.length === 0 ? (
-                  <div className="py-6 px-4 text-center rounded-xl bg-slate-900/60 border border-white/5 space-y-2">
-                    <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 mx-auto">
-                      <Radio className="w-4 h-4 animate-pulse" />
+                  <div className="py-10 px-6 text-center space-y-3 bg-[#0B1324]">
+                    <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mx-auto shadow-inner">
+                      <Radio className="w-6 h-6 animate-pulse" />
                     </div>
-                    <p className="text-xs font-semibold text-slate-200">
-                      Listening for Live Operations
-                    </p>
-                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
-                      New customer bookings, Razorpay settlement alerts, and van dispatches will appear here in real-time.
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-white">
+                        All Clear • Listening Live
+                      </p>
+                      <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+                        Incoming customer bookings, Razorpay settlement confirmations, and van dispatches will stream here instantly.
+                      </p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="max-h-72 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                    {recentEvents.map((evt, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3 rounded-xl bg-slate-900/90 border border-white/10 text-xs space-y-1 hover:border-cyan-500/30 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-cyan-300 text-[11px] uppercase tracking-wide">
-                            {String(evt?.event || (evt as any)?.event_type || "Live Update").replace(/_/g, " ")}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {evt?.timestamp || ""}
-                          </span>
+                  <div className="max-h-[380px] overflow-y-auto p-3 space-y-2.5 custom-scrollbar bg-[#0B1324]">
+                    {recentEvents.map((evt, idx) => {
+                      const eventType = String(evt?.event || (evt as any)?.event_type || "");
+                      const isBooking = eventType === "booking_created";
+                      const isPayment = eventType === "payment_received";
+                      const isStatus = eventType === "booking_status_updated";
+                      const bookingRef = evt?.payload?.booking_reference;
+
+                      return (
+                        <div
+                          key={idx}
+                          className="p-3.5 rounded-xl bg-[#111C33] hover:bg-[#15233F] border border-white/10 hover:border-cyan-500/40 transition-all space-y-2.5 shadow-md"
+                        >
+                          {/* Event Type Badge & Timestamp */}
+                          <div className="flex items-center justify-between gap-2">
+                            {isBooking ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                                <Sparkles className="w-3 h-3 text-emerald-400" />
+                                New Booking
+                              </span>
+                            ) : isPayment ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                                <CreditCard className="w-3 h-3 text-purple-400" />
+                                Payment Confirmed
+                              </span>
+                            ) : isStatus ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1">
+                                <Activity className="w-3 h-3 text-cyan-400" />
+                                Status Updated
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/40 flex items-center gap-1">
+                                <Zap className="w-3 h-3 text-blue-400" />
+                                {eventType.replace(/_/g, " ") || "Live Update"}
+                              </span>
+                            )}
+
+                            <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-500" />
+                              {evt?.timestamp || ""}
+                            </span>
+                          </div>
+
+                          {/* Event Details */}
+                          <div className="space-y-1">
+                            {isBooking ? (
+                              <div className="flex items-baseline justify-between gap-2">
+                                <div className="text-xs text-white font-semibold">
+                                  {evt?.payload?.customer_name || "Customer"}
+                                  {evt?.payload?.package_name && (
+                                    <span className="text-slate-400 font-normal ml-1">
+                                      • {evt?.payload?.package_name}
+                                    </span>
+                                  )}
+                                </div>
+                                {evt?.payload?.final_amount && (
+                                  <span className="text-xs font-black text-emerald-400">
+                                    ₹{evt?.payload?.final_amount}
+                                  </span>
+                                )}
+                              </div>
+                            ) : isPayment ? (
+                              <div className="flex items-baseline justify-between gap-2">
+                                <span className="text-xs text-slate-200 font-medium">
+                                  Razorpay payment settlement confirmed
+                                </span>
+                                {evt?.payload?.amount && (
+                                  <span className="text-xs font-black text-purple-300">
+                                    ₹{evt?.payload?.amount}
+                                  </span>
+                                )}
+                              </div>
+                            ) : isStatus ? (
+                              <div className="text-xs text-slate-200">
+                                Status changed to{" "}
+                                <span className="font-bold text-cyan-300">
+                                  {evt?.payload?.new_status || "Updated"}
+                                </span>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-300 leading-snug">
+                                {typeof evt?.payload === "string"
+                                  ? evt.payload
+                                  : JSON.stringify(evt?.payload || {})}
+                              </p>
+                            )}
+
+                            {/* Reference Badge & Quick Navigation */}
+                            {bookingRef && (
+                              <div className="pt-1.5 flex items-center justify-between border-t border-white/5 mt-1.5">
+                                <span className="font-mono text-[10px] text-cyan-300 font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/60">
+                                  #{bookingRef}
+                                </span>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isPayment) {
+                                      setActiveTab("payments");
+                                      setPaymentSearch(bookingRef);
+                                    } else {
+                                      setActiveTab("bookings");
+                                      setBookingSearch(bookingRef);
+                                    }
+                                    setShowNotifications(false);
+                                  }}
+                                  className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors cursor-pointer group-hover:underline"
+                                >
+                                  <span>{isPayment ? "View in Payments" : "View in Bookings"}</span>
+                                  <ArrowUpRight className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-slate-200 text-xs font-medium">
-                          {(evt?.event === "booking_created" || (evt as any)?.event_type === "booking_created")
-                            ? `Ref: #${evt?.payload?.booking_reference || "—"} • ${evt?.payload?.customer_name || "Customer"} • ₹${evt?.payload?.final_amount || "0"}`
-                            : (evt?.event === "booking_status_updated" || (evt as any)?.event_type === "booking_status_updated")
-                            ? `Ref: #${evt?.payload?.booking_reference || "—"} ➔ ${evt?.payload?.new_status || "Updated"}`
-                            : (evt?.event === "payment_received" || (evt as any)?.event_type === "payment_received")
-                            ? `Payment confirmed for #${evt?.payload?.booking_reference || "—"}`
-                            : typeof evt?.payload === "string"
-                            ? evt.payload
-                            : JSON.stringify(evt?.payload || {})}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
+
+                {/* Status Footer */}
+                <div className="px-4 py-2.5 bg-slate-900/95 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        wsStatus === "connected"
+                          ? "bg-emerald-400 animate-pulse"
+                          : wsStatus === "connecting"
+                          ? "bg-cyan-400 animate-pulse"
+                          : "bg-amber-400"
+                      }`}
+                    />
+                    <span className="font-medium text-slate-300">
+                      {wsStatus === "connected"
+                        ? "Django Channels + Redis Active"
+                        : "Stream Reconnecting..."}
+                    </span>
+                  </div>
+                  <span className="font-mono text-[10px] text-slate-400">
+                    {recentEvents.length} {recentEvents.length === 1 ? "event" : "events"}
+                  </span>
+                </div>
               </div>
             )}
           </div>

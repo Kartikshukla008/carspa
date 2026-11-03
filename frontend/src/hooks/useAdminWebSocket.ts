@@ -47,6 +47,11 @@ export function useAdminWebSocket(options: UseAdminWebSocketOptions = {}) {
     setUnreadCount(0);
   }, []);
 
+  const clearEvents = useCallback(() => {
+    setRecentEvents([]);
+    setUnreadCount(0);
+  }, []);
+
   const manualReconnect = useCallback(() => {
     if (socketRef.current) {
       try {
@@ -179,6 +184,7 @@ export function useAdminWebSocket(options: UseAdminWebSocketOptions = {}) {
     unreadCount,
     recentEvents,
     clearUnread,
+    clearEvents,
     manualReconnect,
   };
 }
