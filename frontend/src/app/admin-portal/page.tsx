@@ -316,7 +316,8 @@ export default function AdminPortalPage() {
       if (evt.event === "booking_created") {
         showToast("success", `⚡ Live: New Booking #${evt.payload.booking_reference} received from ${evt.payload.customer_name}!`);
         setBookingsList((prev) => {
-          if (prev.some((b) => b.booking_reference === evt.payload.booking_reference)) return prev;
+          const arr = Array.isArray(prev) ? prev : [];
+          if (arr.some((b) => b.booking_reference === evt.payload.booking_reference)) return arr;
           const newBooking: any = {
             id: evt.payload.booking_id,
             booking_reference: evt.payload.booking_reference,
@@ -342,7 +343,7 @@ export default function AdminPortalPage() {
             assigned_staff_name: null,
             created_at: new Date().toISOString(),
           };
-          return [newBooking, ...prev];
+          return [newBooking, ...arr];
         });
 
         // Live KPI update
@@ -350,44 +351,33 @@ export default function AdminPortalPage() {
           if (!prev) return prev;
           return {
             ...prev,
-            bookings: {
-              ...prev.bookings,
-              total: (prev.bookings?.total || 0) + 1,
-              pending: (prev.bookings?.pending || 0) + 1,
-            },
+            total_bookings: (prev.total_bookings || 0) + 1,
+            pending_confirmations: (prev.pending_confirmations || 0) + 1,
           };
         });
       } else if (evt.event === "booking_status_updated") {
         showToast("success", `⚡ Status updated: #${evt.payload.booking_reference} is now ${evt.payload.new_status}`);
-        setBookingsList((prev) =>
-          prev.map((b) =>
+        setBookingsList((prev) => {
+          const arr = Array.isArray(prev) ? prev : [];
+          return arr.map((b) =>
             b.booking_reference === evt.payload.booking_reference
               ? { ...b, status: evt.payload.new_status, status_display: evt.payload.new_status }
               : b
-          )
-        );
+          );
+        });
       } else if (evt.event === "payment_received") {
         showToast("success", `⚡ Payment Confirmed: #${evt.payload.booking_reference} marked as PAID`);
-        setBookingsList((prev) =>
-          prev.map((b) =>
+        setBookingsList((prev) => {
+          const arr = Array.isArray(prev) ? prev : [];
+          return arr.map((b) =>
             b.booking_reference === evt.payload.booking_reference
               ? { ...b, payment_status: "PAID" }
               : b
-          )
-        );
+          );
+        });
       }
     },
   });
-
-  // Background polling fallback if WebSocket is temporarily disconnected or offline
-  useEffect(() => {
-    if (!isAuthenticated || isWsLive) return;
-    const interval = setInterval(() => {
-      if (activeTab === "overview") fetchDashboardMetrics();
-      else if (activeTab === "bookings") fetchBookings();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, isWsLive, activeTab]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard?.writeText(text);
@@ -859,6 +849,19 @@ export default function AdminPortalPage() {
       setLoadingBookings(false);
     }
   };
+
+  // Fallback background polling when real-time WebSocket is not connected
+  useEffect(() => {
+    if (!isAuthenticated || isWsLive) return;
+    const interval = setInterval(() => {
+      if (activeTab === "overview") {
+        fetchDashboardMetrics();
+      } else if (activeTab === "bookings" || activeTab === "orders") {
+        fetchBookings();
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isWsLive, activeTab]);
 
   const handleResetFilters = () => {
     setBookingFilterStatus("");

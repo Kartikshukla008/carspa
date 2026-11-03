@@ -41,6 +41,7 @@ export function useAdminWebSocket(options: UseAdminWebSocketOptions = {}) {
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
+  const connectRef = useRef<() => void>(() => {});
 
   const clearUnread = useCallback(() => {
     setUnreadCount(0);
@@ -48,10 +49,16 @@ export function useAdminWebSocket(options: UseAdminWebSocketOptions = {}) {
 
   const manualReconnect = useCallback(() => {
     if (socketRef.current) {
-      socketRef.current.close();
+      try {
+        socketRef.current.close();
+      } catch {}
+      socketRef.current = null;
     }
     setReconnectCount(0);
     setStatus("connecting");
+    if (connectRef.current) {
+      connectRef.current();
+    }
   }, []);
 
   useEffect(() => {
@@ -104,7 +111,7 @@ export function useAdminWebSocket(options: UseAdminWebSocketOptions = {}) {
                 type: "dashboard_event",
                 event: data.event,
                 payload: data.payload || data,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                timestamp: new Date().toLocaleTimeString(),
               };
 
               setLastEvent(evt);
@@ -149,6 +156,7 @@ export function useAdminWebSocket(options: UseAdminWebSocketOptions = {}) {
       }
     }
 
+    connectRef.current = connect;
     connect();
 
     return () => {
