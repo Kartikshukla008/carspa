@@ -121,6 +121,22 @@ class RazorpayVerifyPaymentAPIView(APIView):
                 signature=signature,
                 raw_data=request.data,
             )
+
+            # Real-time WebSocket broadcast to Admin Dashboard and Customer Tracking
+            from apps.core.realtime import send_admin_dashboard_event, send_tracking_update
+            send_admin_dashboard_event("payment_received", {
+                "booking_reference": booking.booking_reference,
+                "amount": str(booking.final_amount),
+                "payment_id": payment_id,
+                "order_id": order_id,
+                "customer_name": booking.customer_name,
+            })
+            send_tracking_update(booking.booking_reference, "payment_confirmed", {
+                "booking_reference": booking.booking_reference,
+                "payment_status": "PAID",
+                "payment_id": payment_id,
+            })
+
             return Response({
                 "success": True,
                 "message": "Payment verified and booking confirmed successfully.",

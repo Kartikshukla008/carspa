@@ -38,6 +38,22 @@ class PublicBookingCreateAPIView(APIView):
                 except Exception as e:
                     data["razorpay_order_error"] = str(e)
 
+            # Real-time WebSocket broadcast to Admin Operations Dashboard
+            from apps.core.realtime import send_admin_dashboard_event
+            send_admin_dashboard_event("booking_created", {
+                "booking_id": booking.id,
+                "booking_reference": booking.booking_reference,
+                "customer_name": booking.customer_name,
+                "customer_phone": booking.customer_phone,
+                "package_name": booking.service_package.name if booking.service_package else "Wash",
+                "vehicle_name": booking.vehicle_type.name if booking.vehicle_type else "Vehicle",
+                "service_date": str(booking.service_date),
+                "slot": f"{str(booking.slot_start_time)[:5]} - {str(booking.slot_end_time)[:5]}",
+                "final_amount": str(booking.final_amount),
+                "payment_status": booking.payment_status,
+                "status": booking.status,
+            })
+
             return Response(
                 data,
                 status=status.HTTP_201_CREATED
@@ -166,6 +182,26 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
         )
 
         NotificationService.send_staff_assigned(booking, staff)
+
+        # Broadcast real-time assignment to Admin Dashboard and Customer Live Tracking
+        from apps.core.realtime import send_admin_dashboard_event, send_tracking_update
+        send_admin_dashboard_event("technician_assigned", {
+            "booking_id": booking.id,
+            "booking_reference": booking.booking_reference,
+            "technician_name": staff.name,
+            "technician_phone": staff.phone,
+            "status": booking.status,
+        })
+        send_tracking_update(booking.booking_reference, "technician_dispatched", {
+            "booking_reference": booking.booking_reference,
+            "technician": {
+                "name": staff.name,
+                "phone": staff.phone,
+            },
+            "status": booking.status,
+            "status_display": booking.get_status_display(),
+        })
+
         return Response(BookingDetailSerializer(booking).data)
 
     @action(detail=True, methods=["post"], url_path="reschedule")
@@ -256,6 +292,20 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
         except Exception:
             pass
 
+        from apps.core.realtime import send_admin_dashboard_event, send_tracking_update
+        send_admin_dashboard_event("booking_status_updated", {
+            "booking_id": booking.id,
+            "booking_reference": booking.booking_reference,
+            "old_status": old_status,
+            "new_status": "COMPLETED",
+            "notes": "Booking completed",
+        })
+        send_tracking_update(booking.booking_reference, "status_updated", {
+            "status": "COMPLETED",
+            "old_status": old_status,
+            "notes": "Booking completed",
+        })
+
         return Response(BookingDetailSerializer(booking).data)
 
     @action(detail=True, methods=["post"], url_path="update-payment")
@@ -273,6 +323,15 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
                 changed_by=request.user,
                 notes=f"Payment status updated from {old_p_status} to {new_status}."
             )
+            from apps.core.realtime import send_admin_dashboard_event, send_tracking_update
+            send_admin_dashboard_event("payment_received" if new_status == "PAID" else "booking_status_updated", {
+                "booking_id": booking.id,
+                "booking_reference": booking.booking_reference,
+                "payment_status": new_status,
+            })
+            send_tracking_update(booking.booking_reference, "payment_updated", {
+                "payment_status": new_status,
+            })
             return Response(BookingDetailSerializer(booking).data)
         return Response(
             {"error": "Invalid payment status. Allowed: PENDING, PAID, FAILED, REFUNDED"},
@@ -313,6 +372,19 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
             details={"reason": reason},
             ip_address=request.META.get("REMOTE_ADDR"),
         )
+        from apps.core.realtime import send_admin_dashboard_event, send_tracking_update
+        send_admin_dashboard_event("booking_status_updated", {
+            "booking_id": booking.id,
+            "booking_reference": booking.booking_reference,
+            "old_status": old_status,
+            "new_status": "CANCELLED",
+            "notes": reason,
+        })
+        send_tracking_update(booking.booking_reference, "status_updated", {
+            "status": "CANCELLED",
+            "old_status": old_status,
+            "notes": reason,
+        })
         return Response(BookingDetailSerializer(booking).data)
 
     def create(self, request, *args, **kwargs):
@@ -330,6 +402,20 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
                 details={"customer": booking.customer_name, "amount": str(booking.final_amount)},
                 ip_address=request.META.get("REMOTE_ADDR"),
             )
+            from apps.core.realtime import send_admin_dashboard_event
+            send_admin_dashboard_event("booking_created", {
+                "booking_id": booking.id,
+                "booking_reference": booking.booking_reference,
+                "customer_name": booking.customer_name,
+                "customer_phone": booking.customer_phone,
+                "package_name": booking.service_package.name if booking.service_package else "Wash",
+                "vehicle_name": booking.vehicle_type.name if booking.vehicle_type else "Vehicle",
+                "service_date": str(booking.service_date),
+                "slot": f"{booking.slot_start_time.strftime('%I:%M %p')} - {booking.slot_end_time.strftime('%I:%M %p')}",
+                "final_amount": str(booking.final_amount),
+                "status": booking.status,
+                "locality": booking.locality,
+            })
             return Response(BookingDetailSerializer(booking).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -381,6 +467,20 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
             details={"old_status": old_status, "new_status": new_status, "notes": notes},
             ip_address=request.META.get("REMOTE_ADDR"),
         )
+
+        from apps.core.realtime import send_admin_dashboard_event, send_tracking_update
+        send_admin_dashboard_event("booking_status_updated", {
+            "booking_id": booking.id,
+            "booking_reference": booking.booking_reference,
+            "old_status": old_status,
+            "new_status": new_status,
+            "notes": notes,
+        })
+        send_tracking_update(booking.booking_reference, "status_updated", {
+            "status": new_status,
+            "old_status": old_status,
+            "notes": notes,
+        })
 
         return Response(BookingDetailSerializer(booking).data)
 

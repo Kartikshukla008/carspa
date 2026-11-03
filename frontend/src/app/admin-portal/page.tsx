@@ -54,8 +54,12 @@ import {
   ArrowUpRight,
   Briefcase,
   EyeOff,
+  Bell,
+  Radio,
+  Zap,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useAdminWebSocket, DashboardEvent } from "@/hooks/useAdminWebSocket";
 import {
   DashboardMetrics,
   BookingResponse,
@@ -295,6 +299,82 @@ export default function AdminPortalPage() {
     setToastMessage({ type, text });
     setTimeout(() => setToastMessage(null), 4000);
   };
+
+  // Real-time WebSocket connection for live Admin Operations
+  const [showNotifications, setShowNotifications] = useState(false);
+  const {
+    isConnected: isWsLive,
+    recentEvents,
+    unreadCount,
+    clearUnread,
+  } = useAdminWebSocket({
+    enabled: isAuthenticated === true,
+    onEvent: (evt) => {
+      if (evt.event === "booking_created") {
+        showToast("success", `⚡ Live: New Booking #${evt.payload.booking_reference} received from ${evt.payload.customer_name}!`);
+        setBookingsList((prev) => {
+          if (prev.some((b) => b.booking_reference === evt.payload.booking_reference)) return prev;
+          const newBooking: any = {
+            id: evt.payload.booking_id,
+            booking_reference: evt.payload.booking_reference,
+            customer_name: evt.payload.customer_name,
+            customer_phone: evt.payload.customer_phone,
+            customer_email: "",
+            service_package_name: evt.payload.package_name,
+            vehicle_type_name: evt.payload.vehicle_name,
+            service_date: evt.payload.service_date,
+            slot_start_time: evt.payload.slot?.split(" - ")[0] || "10:00",
+            slot_end_time: evt.payload.slot?.split(" - ")[1] || "11:00",
+            address_line: evt.payload.locality || "",
+            locality: evt.payload.locality || "",
+            landmark: "",
+            pincode: "",
+            final_amount: evt.payload.final_amount,
+            status: evt.payload.status || "PENDING",
+            status_display: evt.payload.status || "Pending Confirmation",
+            payment_status: "PENDING",
+            payment_method: "PAY_ON_SERVICE",
+            payment_method_display: "Pay on Arrival",
+            estimated_duration_minutes: 60,
+            assigned_staff_name: null,
+            created_at: new Date().toISOString(),
+          };
+          return [newBooking, ...prev];
+        });
+
+        // Live KPI update
+        setMetrics((prev: any) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            bookings: {
+              ...prev.bookings,
+              total: (prev.bookings?.total || 0) + 1,
+              pending: (prev.bookings?.pending || 0) + 1,
+            },
+          };
+        });
+      } else if (evt.event === "booking_status_updated") {
+        showToast("success", `⚡ Status updated: #${evt.payload.booking_reference} is now ${evt.payload.new_status}`);
+        setBookingsList((prev) =>
+          prev.map((b) =>
+            b.booking_reference === evt.payload.booking_reference
+              ? { ...b, status: evt.payload.new_status, status_display: evt.payload.new_status }
+              : b
+          )
+        );
+      } else if (evt.event === "payment_received") {
+        showToast("success", `⚡ Payment Confirmed: #${evt.payload.booking_reference} marked as PAID`);
+        setBookingsList((prev) =>
+          prev.map((b) =>
+            b.booking_reference === evt.payload.booking_reference
+              ? { ...b, payment_status: "PAID" }
+              : b
+          )
+        );
+      }
+    },
+  });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard?.writeText(text);
@@ -1156,6 +1236,90 @@ export default function AdminPortalPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Authenticated Session
             </span>
+          </div>
+
+          {/* Live WebSocket Operations Stream Indicator */}
+          <div
+            className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold ${
+              isWsLive
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                : "bg-slate-800/40 border-slate-700 text-slate-400"
+            }`}
+            title={isWsLive ? "Connected to Django Channels WebSocket" : "Connecting to Real-time Stream..."}
+          >
+            <span className="relative flex h-2 w-2">
+              {isWsLive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${isWsLive ? "bg-emerald-400" : "bg-slate-500"}`} />
+            </span>
+            <span>{isWsLive ? "Live Stream Active" : "Connecting..."}</span>
+          </div>
+
+          {/* Real-time Notification Bell Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setShowNotifications((prev) => !prev);
+                clearUnread();
+              }}
+              className="relative flex items-center justify-center p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white transition-all cursor-pointer"
+              title="Real-time Event Feed"
+            >
+              <Bell className="w-4 h-4 text-cyan-400" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-cyan-500 text-[#060B13] font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center animate-bounce shadow-md shadow-cyan-500/50">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-[#0B1220]/95 border border-cyan-500/30 rounded-2xl shadow-2xl p-4 z-50 backdrop-blur-xl space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <div className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                      Live Operations Stream
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-cyan-400 font-mono">
+                    {recentEvents.length} events
+                  </span>
+                </div>
+                {recentEvents.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-3 text-center">
+                    Listening for incoming bookings, payments, and driver dispatches...
+                  </p>
+                ) : (
+                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                    {recentEvents.map((evt, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-cyan-300 text-[11px] uppercase">
+                            {evt.event.replace(/_/g, " ")}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {evt.timestamp}
+                          </span>
+                        </div>
+                        <p className="text-slate-300 text-[11px]">
+                          {evt.event === "booking_created"
+                            ? `Ref: #${evt.payload.booking_reference} • ${evt.payload.customer_name} • ₹${evt.payload.final_amount}`
+                            : evt.event === "booking_status_updated"
+                            ? `Ref: #${evt.payload.booking_reference} ➔ ${evt.payload.new_status}`
+                            : evt.event === "payment_received"
+                            ? `Payment confirmed for #${evt.payload.booking_reference}`
+                            : JSON.stringify(evt.payload)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <button

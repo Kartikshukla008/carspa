@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Search,
   CheckCircle2,
@@ -20,11 +21,23 @@ import {
   Printer,
   Download,
   RefreshCw,
+  Radio,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { launchRazorpayCheckout } from "@/lib/razorpay";
 import { BookingResponse } from "@/types";
 import { BookingInvoiceModal } from "@/components/BookingInvoiceModal";
+import { useLiveTrackingWebSocket } from "@/hooks/useLiveTrackingWebSocket";
+
+const LiveVanMap = dynamic(() => import("@/components/LiveVanMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[380px] w-full rounded-3xl bg-[#0B1220] border border-cyan-500/20 flex flex-col items-center justify-center gap-3">
+      <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+      <span className="text-xs text-slate-400 font-medium">Initializing Real-Time Detailing Map...</span>
+    </div>
+  ),
+});
 
 function TrackFlow() {
   const searchParams = useSearchParams();
@@ -37,6 +50,35 @@ function TrackFlow() {
   const [payingOnline, setPayingOnline] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
+  // Real-time Live Van GPS Tracking WebSocket
+  const {
+    isConnected: isWsConnected,
+    vanLocation,
+    route,
+    isSimulating,
+    startSimulation,
+    lastEvent,
+  } = useLiveTrackingWebSocket(booking ? booking.booking_reference : null);
+
+  useEffect(() => {
+    if (!lastEvent) return;
+    setBooking((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev };
+      if (lastEvent.status) {
+        updated.status = lastEvent.status;
+        updated.status_display = lastEvent.status_display || lastEvent.status;
+      }
+      if (lastEvent.technician) {
+        updated.assigned_staff_name = lastEvent.technician.name;
+      }
+      if (lastEvent.payment_status) {
+        updated.payment_status = lastEvent.payment_status;
+      }
+      return updated;
+    });
+  }, [lastEvent]);
 
   const handlePayOnline = async () => {
     if (!booking) return;
@@ -210,6 +252,27 @@ function TrackFlow() {
                   <span>{booking.status_display}</span>
                 </div>
               </div>
+            </div>
+
+            {/* Interactive Real-Time Technician & Detailing Van Map */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                  <Radio className="w-3.5 h-3.5 animate-pulse text-cyan-400" />
+                  <span>Live Van Telemetry &amp; Route Tracking</span>
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  {booking.locality ? `Heading to ${booking.locality}` : "Tricity Coverage"}
+                </span>
+              </div>
+              <LiveVanMap
+                route={route}
+                vanLocation={vanLocation}
+                isConnected={isWsConnected}
+                isSimulating={isSimulating}
+                onStartSimulation={startSimulation}
+                bookingReference={booking.booking_reference}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
