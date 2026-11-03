@@ -66,6 +66,7 @@ MIDDLEWARE.extend([
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.core.middleware.RateLimitMiddleware",
 ])
 
 ROOT_URLCONF = "config.urls"
@@ -177,6 +178,15 @@ from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-csrftoken",
     "authorization",
+    "idempotency-key",
+    "x-idempotency-key",
+]
+
+CORS_EXPOSE_HEADERS = [
+    "idempotent-replayed",
+    "retry-after",
+    "x-ratelimit-limit",
+    "x-ratelimit-remaining",
 ]
 
 SESSION_COOKIE_SAMESITE = "None"

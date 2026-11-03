@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -252,6 +252,13 @@ function BookingFlow() {
   const [razorpayConfig, setRazorpayConfig] = useState<RazorpayConfig | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
+  // Client-side idempotency key generation to prevent double booking on lag/double-clicks
+  const idempotencyKeyRef = useRef<string>(
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `cs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+  );
+
   // 1. Initial Data Fetch
   useEffect(() => {
     async function init() {
@@ -473,8 +480,13 @@ function BookingFlow() {
         lead_id: leadCapturedId || "",
       };
 
-      const result = await api.createBooking(bookingPayload);
+      const result = await api.createBooking(bookingPayload, idempotencyKeyRef.current);
       setConfirmedBooking(result);
+
+      // Rotate idempotency key for any future new booking
+      idempotencyKeyRef.current = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `cs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
       // If customer chose online payment with Razorpay and server returned order
       if (formData.paymentMethod === "RAZORPAY" && result.razorpay_order) {

@@ -117,7 +117,24 @@ class BookingCreateSerializer(serializers.Serializer):
         authenticated_user = request.user if (request and hasattr(request, "user") and request.user.is_authenticated) else None
 
         with transaction.atomic():
-            # Run availability engine validation
+            # 1. Pessimistic Slot Locking (SELECT FOR UPDATE):
+            # Serialize concurrent booking requests for the exact same date, slot, and service area.
+            # Guarantees zero double-bookings under heavy concurrent traffic.
+            from apps.scheduling.models import SlotCapacityLock
+            try:
+                parsed_slot_time = datetime.datetime.strptime(slot_time_str, "%H:%M").time()
+            except ValueError:
+                raise serializers.ValidationError({"slot_time": "Invalid slot time format. Use HH:MM."})
+
+            slot_lock, _ = SlotCapacityLock.objects.get_or_create(
+                service_date=service_date,
+                slot_start_time=parsed_slot_time,
+                service_area=service_area,
+            )
+            # Acquire exclusive row-level lock on the slot row
+            SlotCapacityLock.objects.select_for_update().get(id=slot_lock.id)
+
+            # 2. Re-run availability engine validation under the exclusive lock
             engine = AvailabilityEngine(config)
             is_valid, err_msg, slot_start, slot_end = engine.validate_and_reserve_slot(
                 target_date=service_date,
@@ -128,7 +145,7 @@ class BookingCreateSerializer(serializers.Serializer):
             )
 
             if not is_valid:
-                raise serializers.ValidationError({"slot_time": err_msg})
+                raise serializers.ValidationError({"slot_time": err_msg or "This slot was just claimed by another customer. Please choose another time."})
 
             # Create or update Customer profile
             phone = validated_data["customer_phone"]

@@ -134,8 +134,9 @@ export const api = {
     method: "POST",
     body: JSON.stringify(data),
   }),
-  createBooking: (data: any) => request<import("../types").BookingResponse>("/api/bookings/", {
+  createBooking: (data: any, idempotencyKey?: string) => request<import("../types").BookingResponse>("/api/bookings/", {
     method: "POST",
+    headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
     body: JSON.stringify(data),
   }),
   lookupBooking: (reference: string) =>

@@ -165,6 +165,27 @@ class NotificationService:
 
     @classmethod
     def _dispatch(cls, booking, recipient, channel, event_type, message, subject="Doorstep Car Wash Notification"):
+        # Rate Limiting: Prevent SMS / WhatsApp spam and runaway provider bills
+        if channel in ("WHATSAPP", "SMS"):
+            from apps.core.ratelimit import RateLimiter
+            is_allowed, remaining, retry_after = RateLimiter.is_allowed(
+                key=f"msg_dispatch:{recipient}",
+                limit=10,
+                window_seconds=300
+            )
+            if not is_allowed:
+                logger.warning("Notification rate limit exceeded for %s (%s). Throttling dispatch.", recipient, channel)
+                NotificationLog.objects.create(
+                    booking=booking,
+                    recipient=recipient,
+                    channel=channel,
+                    event_type=event_type,
+                    status="RATE_LIMITED",
+                    payload={"message": message, "subject": subject},
+                    error_message=f"Rate limit exceeded. Exceeded 10 dispatches in 5 minutes. Cooldown: {retry_after}s."
+                )
+                return
+
         token = getattr(settings, "WHATSAPP_API_TOKEN", "")
         phone_id = getattr(settings, "WHATSAPP_PHONE_NUMBER_ID", "")
         

@@ -25,40 +25,79 @@ class PublicBookingCreateAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = BookingCreateSerializer(data=request.data, context={"request": request})
-        if serializer.is_valid():
-            booking = serializer.save()
-            data = BookingDetailSerializer(booking).data
+        # Extract Idempotency-Key from headers or body
+        idempotency_key = (
+            request.headers.get("Idempotency-Key")
+            or request.headers.get("X-Idempotency-Key")
+            or request.META.get("HTTP_IDEMPOTENCY_KEY")
+            or request.data.get("idempotency_key")
+        )
 
-            # If customer chose online payment, generate Razorpay order securely
-            if booking.payment_method == "RAZORPAY" and PaymentService.is_razorpay_enabled():
-                try:
-                    order_data = PaymentService.create_order(booking)
-                    data["razorpay_order"] = order_data
-                except Exception as e:
-                    data["razorpay_order_error"] = str(e)
+        from apps.core.idempotency import IdempotencyService
+        state, record, response_data, status_code = IdempotencyService.check_or_claim(
+            idempotency_key, request
+        )
 
-            # Real-time WebSocket broadcast to Admin Operations Dashboard
-            from apps.core.realtime import send_admin_dashboard_event
-            send_admin_dashboard_event("booking_created", {
-                "booking_id": booking.id,
-                "booking_reference": booking.booking_reference,
-                "customer_name": booking.customer_name,
-                "customer_phone": booking.customer_phone,
-                "package_name": booking.service_package.name if booking.service_package else "Wash",
-                "vehicle_name": booking.vehicle_type.name if booking.vehicle_type else "Vehicle",
-                "service_date": str(booking.service_date),
-                "slot": f"{str(booking.slot_start_time)[:5]} - {str(booking.slot_end_time)[:5]}",
-                "final_amount": str(booking.final_amount),
-                "payment_status": booking.payment_status,
-                "status": booking.status,
-            })
+        if state == "REPLAYED":
+            # Idempotent replay: return exact previously generated booking & Razorpay order
+            resp = Response(response_data, status=status_code or status.HTTP_201_CREATED)
+            resp["Idempotent-Replayed"] = "true"
+            resp["Idempotency-Key"] = str(idempotency_key)
+            return resp
 
-            return Response(
-                data,
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if state in ("MISMATCH", "PROCESSING"):
+            resp = Response(response_data, status=status_code)
+            resp["Idempotency-Key"] = str(idempotency_key)
+            return resp
+
+        try:
+            serializer = BookingCreateSerializer(data=request.data, context={"request": request})
+            if serializer.is_valid():
+                booking = serializer.save()
+                data = BookingDetailSerializer(booking).data
+
+                # If customer chose online payment, generate Razorpay order securely
+                if booking.payment_method == "RAZORPAY" and PaymentService.is_razorpay_enabled():
+                    try:
+                        order_data = PaymentService.create_order(booking)
+                        data["razorpay_order"] = order_data
+                    except Exception as e:
+                        data["razorpay_order_error"] = str(e)
+
+                # Real-time WebSocket broadcast to Admin Operations Dashboard
+                from apps.core.realtime import send_admin_dashboard_event
+                send_admin_dashboard_event("booking_created", {
+                    "booking_id": booking.id,
+                    "booking_reference": booking.booking_reference,
+                    "customer_name": booking.customer_name,
+                    "customer_phone": booking.customer_phone,
+                    "package_name": booking.service_package.name if booking.service_package else "Wash",
+                    "vehicle_name": booking.vehicle_type.name if booking.vehicle_type else "Vehicle",
+                    "service_date": str(booking.service_date),
+                    "slot": f"{str(booking.slot_start_time)[:5]} - {str(booking.slot_end_time)[:5]}",
+                    "final_amount": str(booking.final_amount),
+                    "payment_status": booking.payment_status,
+                    "status": booking.status,
+                })
+
+                # Persist completed response for idempotency
+                if idempotency_key:
+                    IdempotencyService.record_completion(idempotency_key, status.HTTP_201_CREATED, data)
+
+                resp = Response(data, status=status.HTTP_201_CREATED)
+                if idempotency_key:
+                    resp["Idempotency-Key"] = str(idempotency_key)
+                return resp
+
+            # If validation failed, record 400 for idempotency
+            if idempotency_key:
+                IdempotencyService.record_completion(idempotency_key, status.HTTP_400_BAD_REQUEST, serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            if idempotency_key:
+                IdempotencyService.record_failure(idempotency_key)
+            raise e
 
 class PublicBookingLookupAPIView(APIView):
     permission_classes = [permissions.AllowAny]

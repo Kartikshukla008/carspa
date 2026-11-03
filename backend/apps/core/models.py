@@ -58,3 +58,30 @@ class AdminAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} on {self.resource_type}:{self.resource_id} by {self.user}"
+
+
+class IdempotencyRecord(models.Model):
+    """
+    Enterprise idempotency ledger for booking creation and financial checkouts.
+    Prevents duplicate bookings and double Razorpay charge creations when customers
+    double-click or have unstable network connections.
+    """
+    idempotency_key = models.CharField(max_length=255, unique=True, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    request_path = models.CharField(max_length=255)
+    request_method = models.CharField(max_length=16, default="POST")
+    payload_hash = models.CharField(max_length=64, db_index=True)
+    status_code = models.IntegerField(null=True, blank=True)
+    response_data = models.JSONField(null=True, blank=True)
+    is_processing = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    expires_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Idempotency Record"
+        verbose_name_plural = "Idempotency Records"
+
+    def __str__(self):
+        return f"IdempotencyKey({self.idempotency_key[:16]}..., status={self.status_code}, in_progress={self.is_processing})"
+
