@@ -228,6 +228,15 @@ WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
 ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "admin@carwashdoorstep.com")
 ADMIN_NOTIFICATION_PHONE = os.getenv("ADMIN_NOTIFICATION_PHONE", "+917087811881")
 
+# Twilio Configuration (Real SMS & WhatsApp Gateway)
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")
+TWILIO_WHATSAPP_NUMBER = os.getenv("TWILIO_WHATSAPP_NUMBER", "+14155238886")
+
+# Fast2SMS Configuration (Instant Indian SMS OTP Gateway)
+FAST2SMS_API_KEY = os.getenv("FAST2SMS_API_KEY", "")
+
 # Payment Providers (Razorpay Gateway)
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")

@@ -186,36 +186,129 @@ class NotificationService:
                 )
                 return
 
-        token = getattr(settings, "WHATSAPP_API_TOKEN", "")
-        phone_id = getattr(settings, "WHATSAPP_PHONE_NUMBER_ID", "")
-        
+        meta_token = getattr(settings, "WHATSAPP_API_TOKEN", "")
+        meta_phone_id = getattr(settings, "WHATSAPP_PHONE_NUMBER_ID", "")
+        twilio_sid = getattr(settings, "TWILIO_ACCOUNT_SID", "")
+        twilio_auth = getattr(settings, "TWILIO_AUTH_TOKEN", "")
+        twilio_phone = getattr(settings, "TWILIO_PHONE_NUMBER", "")
+        twilio_wa = getattr(settings, "TWILIO_WHATSAPP_NUMBER", "+14155238886")
+        fast2sms_key = getattr(settings, "FAST2SMS_API_KEY", "")
+
         status = "SIMULATED"
         error_msg = ""
+        clean_recipient = recipient.replace(" ", "").replace("-", "")
+        # Format E.164: standard +91 for 10-digit Indian numbers
+        e164_recipient = clean_recipient
+        if not e164_recipient.startswith("+"):
+            if len(e164_recipient) == 10:
+                e164_recipient = f"+91{e164_recipient}"
+            else:
+                e164_recipient = f"+{e164_recipient}"
 
-        # WhatsApp official API dispatch if credentials supplied
-        if channel == "WHATSAPP" and token and phone_id:
-            try:
-                import requests
-                url = f"https://graph.facebook.com/v18.0/{phone_id}/messages"
-                headers = {
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type": "application/json"
-                }
-                data = {
-                    "messaging_product": "whatsapp",
-                    "to": recipient.replace("+", "").replace(" ", "").replace("-", ""),
-                    "type": "text",
-                    "text": {"body": message}
-                }
-                resp = requests.post(url, json=data, headers=headers, timeout=5)
-                if resp.status_code in [200, 201]:
-                    status = "SENT"
-                else:
+        import requests
+
+        if channel == "WHATSAPP":
+            # Priority 1: Official Meta WhatsApp Cloud API
+            if meta_token and meta_phone_id:
+                try:
+                    url = f"https://graph.facebook.com/v18.0/{meta_phone_id}/messages"
+                    headers = {
+                        "Authorization": f"Bearer {meta_token}",
+                        "Content-Type": "application/json"
+                    }
+                    data = {
+                        "messaging_product": "whatsapp",
+                        "to": e164_recipient.replace("+", ""),
+                        "type": "text",
+                        "text": {"body": message}
+                    }
+                    resp = requests.post(url, json=data, headers=headers, timeout=8)
+                    if resp.status_code in [200, 201]:
+                        status = "SENT"
+                    else:
+                        status = "FAILED"
+                        error_msg = resp.text
+                except Exception as e:
                     status = "FAILED"
-                    error_msg = resp.text
-            except Exception as e:
-                status = "FAILED"
-                error_msg = str(e)
+                    error_msg = str(e)
+            # Priority 2: Twilio WhatsApp Gateway
+            elif twilio_sid and twilio_auth:
+                try:
+                    twilio_url = f"https://api.twilio.com/2010-04-01/Accounts/{twilio_sid}/Messages.json"
+                    from_number = twilio_wa if twilio_wa.startswith("whatsapp:") else f"whatsapp:{twilio_wa}"
+                    to_number = f"whatsapp:{e164_recipient}"
+                    resp = requests.post(
+                        twilio_url,
+                        auth=(twilio_sid, twilio_auth),
+                        data={
+                            "From": from_number,
+                            "To": to_number,
+                            "Body": message,
+                        },
+                        timeout=8
+                    )
+                    if resp.status_code in [200, 201]:
+                        status = "SENT"
+                    else:
+                        status = "FAILED"
+                        error_msg = resp.text
+                except Exception as e:
+                    status = "FAILED"
+                    error_msg = str(e)
+            else:
+                status = "SIMULATED"
+                logger.info("[WHATSAPP] Simulated send to %s: %s...", recipient, message[:60])
+
+        elif channel == "SMS":
+            # Priority 1: Fast2SMS (Indian OTP route)
+            if fast2sms_key:
+                try:
+                    import re
+                    otp_match = re.search(r"\b\d{6}\b", message)
+                    otp_digits = otp_match.group(0) if otp_match else "123456"
+
+                    f2s_url = "https://www.fast2sms.com/dev/bulkV2"
+                    headers = {"authorization": fast2sms_key}
+                    params = {
+                        "variables_values": otp_digits,
+                        "route": "otp",
+                        "numbers": clean_recipient[-10:],
+                    }
+                    resp = requests.get(f2s_url, headers=headers, params=params, timeout=8)
+                    if resp.status_code in [200, 201]:
+                        status = "SENT"
+                    else:
+                        status = "FAILED"
+                        error_msg = resp.text
+                except Exception as e:
+                    status = "FAILED"
+                    error_msg = str(e)
+            # Priority 2: Twilio SMS Gateway
+            elif twilio_sid and twilio_auth and twilio_phone:
+                try:
+                    twilio_url = f"https://api.twilio.com/2010-04-01/Accounts/{twilio_sid}/Messages.json"
+                    resp = requests.post(
+                        twilio_url,
+                        auth=(twilio_sid, twilio_auth),
+                        data={
+                            "From": twilio_phone,
+                            "To": e164_recipient,
+                            "Body": message,
+                        },
+                        timeout=8
+                    )
+                    if resp.status_code in [200, 201]:
+                        status = "SENT"
+                    else:
+                        status = "FAILED"
+                        error_msg = resp.text
+                except Exception as e:
+                    status = "FAILED"
+                    error_msg = str(e)
+            else:
+                status = "SIMULATED"
+                logger.info("[SMS] Simulated send to %s: %s...", recipient, message[:60])
+
         elif channel == "EMAIL" and getattr(settings, "EMAIL_HOST_USER", None):
             try:
                 send_mail(
@@ -229,10 +322,6 @@ class NotificationService:
             except Exception as e:
                 status = "FAILED"
                 error_msg = str(e)
-        else:
-            # Simulated delivery recorded for transparency and testing
-            status = "SIMULATED"
-            logger.info(f"[{channel}] Simulated send to {recipient}: {message[:60]}...")
 
         NotificationLog.objects.create(
             booking=booking,

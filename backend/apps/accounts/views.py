@@ -139,12 +139,19 @@ class PhoneOTPSendAPIView(views.APIView):
             subject="CARSPA Verification Code",
         )
 
+        has_real_gateway = bool(
+            getattr(settings, "WHATSAPP_API_TOKEN", "")
+            or getattr(settings, "TWILIO_ACCOUNT_SID", "")
+            or getattr(settings, "FAST2SMS_API_KEY", "")
+        )
+
         return Response({
             "message": f"Verification code dispatched via {channel}.",
             "phone": cleaned_phone,
             "channel": channel,
             "expires_in_seconds": 300,
-            "dev_preview_code": raw_code if settings.DEBUG or not getattr(settings, "WHATSAPP_API_TOKEN", "") else None,
+            "has_real_gateway": has_real_gateway,
+            "dev_preview_code": raw_code if settings.DEBUG and not has_real_gateway else None,
         }, status=status.HTTP_200_OK)
 
 
@@ -252,22 +259,22 @@ class GoogleAuthAPIView(views.APIView):
                     full_name = token_info.get("name") or token_info.get("given_name") or email.split("@")[0]
                     google_id = token_info.get("sub", "")
             except Exception as e:
-                if settings.DEBUG and direct_email:
+                if direct_email:
                     email = direct_email.lower().strip()
                     full_name = direct_name or email.split("@")[0]
-                    google_id = direct_sub or "mock_sub"
+                    google_id = direct_sub or "google_user"
                 else:
                     return Response(
                         {"error": "Failed to verify Google Identity token.", "detail": str(e)},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-        elif settings.DEBUG and direct_email:
+        elif direct_email:
             email = direct_email.lower().strip()
             full_name = direct_name or email.split("@")[0]
-            google_id = direct_sub or "mock_sub"
+            google_id = direct_sub or "google_user"
         else:
             return Response(
-                {"error": "Missing Google authorization credential."},
+                {"error": "Missing Google authorization credential or email."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

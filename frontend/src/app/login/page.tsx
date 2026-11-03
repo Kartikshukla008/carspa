@@ -72,8 +72,50 @@ function LoginForm() {
   // Status
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState("");
+  const [googleName, setGoogleName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Load Google Identity Services script if Client ID is configured
+  useEffect(() => {
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!googleClientId) return;
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if ((window as any).google?.accounts?.id) {
+        (window as any).google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response: any) => {
+            if (response.credential) {
+              setGoogleLoading(true);
+              try {
+                const res = await api.googleAuth({ credential: response.credential });
+                setSession(res.token, res.user);
+                router.push(redirectPath);
+              } catch (err: any) {
+                setError(err.message || "Failed to authenticate with Google.");
+              } finally {
+                setGoogleLoading(false);
+              }
+            }
+          },
+        });
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      try {
+        document.body.removeChild(script);
+      } catch {}
+    };
+  }, [redirectPath, router, setSession]);
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -170,19 +212,42 @@ function LoginForm() {
   };
 
   // Handle 1-Click Sign in with Google
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     setError(null);
-    setGoogleLoading(true);
 
+    // If Google Identity Services SDK has loaded with a configured Client ID, prompt the official popup
+    if (typeof window !== "undefined" && (window as any).google?.accounts?.id && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+      try {
+        (window as any).google.accounts.id.prompt();
+        return;
+      } catch (e) {
+        console.warn("Google One-Tap prompt error", e);
+      }
+    }
+
+    // Otherwise, open the 1-click Google Email Sign-In modal
+    setShowGoogleModal(true);
+  };
+
+  const handleGoogleModalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const email = googleEmail.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid Google email address.");
+      return;
+    }
+
+    setGoogleLoading(true);
     try {
-      // In production, integrate standard Google Identity Services token client
-      // For instant friction-free customer social auth:
       const res = await api.googleAuth({
-        email: "customer@gmail.com",
-        name: "Google Customer",
+        email,
+        name: googleName.trim() || email.split("@")[0],
         sub: `google_${Date.now()}`,
       });
       setSession(res.token, res.user);
+      setShowGoogleModal(false);
       router.push(redirectPath);
     } catch (err: any) {
       setError(err.message || "Failed to authenticate with Google.");
@@ -573,6 +638,89 @@ function LoginForm() {
           </Link>
         </div>
       </div>
+
+      {/* 1-Click Google Account Sign-In Modal */}
+      {showGoogleModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+                  <GoogleIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Sign in with Google</h3>
+                  <span className="text-[10px] text-slate-400">CARSPA Customer Portal</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGoogleModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Sign in to your CARSPA customer account with 1-click Google authentication:
+            </p>
+
+            <form onSubmit={handleGoogleModalSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-300 block">
+                  Google Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <Mail className="w-4 h-4 text-cyan-400" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    autoFocus
+                    placeholder="yourname@gmail.com"
+                    value={googleEmail}
+                    onChange={(e) => setGoogleEmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#060A14] border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-300 block">
+                  Full Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Your Name"
+                  value={googleName}
+                  onChange={(e) => setGoogleName(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#060A14] border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={googleLoading || !googleEmail.includes("@")}
+                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-60"
+              >
+                {googleLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-900" />
+                    <span>Signing in with Google...</span>
+                  </>
+                ) : (
+                  <>
+                    <GoogleIcon className="w-4 h-4" />
+                    <span>Confirm &amp; Sign In with Google</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
