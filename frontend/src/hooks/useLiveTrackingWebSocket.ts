@@ -48,8 +48,9 @@ export interface TrackingSnapshot {
 function getWebSocketBaseUrl(): string {
   if (typeof window === "undefined") return "ws://localhost:8000";
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (apiUrl) {
-    return apiUrl.replace(/^http:\/\//, "ws://").replace(/^https:\/\//, "wss://");
+  if (apiUrl && apiUrl.trim()) {
+    const clean = apiUrl.trim().replace(/\/+$/, "");
+    return clean.replace(/^http:\/\//, "ws://").replace(/^https:\/\//, "wss://");
   }
   const isSecure = window.location.protocol === "https:";
   return `${isSecure ? "wss" : "ws"}://${window.location.hostname}:8000`;

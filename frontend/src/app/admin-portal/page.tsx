@@ -303,10 +303,13 @@ export default function AdminPortalPage() {
   // Real-time WebSocket connection for live Admin Operations
   const [showNotifications, setShowNotifications] = useState(false);
   const {
+    status: wsStatus,
     isConnected: isWsLive,
+    reconnectCount: wsReconnectCount,
     recentEvents,
     unreadCount,
     clearUnread,
+    manualReconnect,
   } = useAdminWebSocket({
     enabled: isAuthenticated === true,
     onEvent: (evt) => {
@@ -375,6 +378,16 @@ export default function AdminPortalPage() {
       }
     },
   });
+
+  // Background polling fallback if WebSocket is temporarily disconnected or offline
+  useEffect(() => {
+    if (!isAuthenticated || isWsLive) return;
+    const interval = setInterval(() => {
+      if (activeTab === "overview") fetchDashboardMetrics();
+      else if (activeTab === "bookings") fetchBookings();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, isWsLive, activeTab]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard?.writeText(text);
@@ -1239,20 +1252,48 @@ export default function AdminPortalPage() {
           </div>
 
           {/* Live WebSocket Operations Stream Indicator */}
-          <div
-            className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold ${
-              isWsLive
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                : "bg-slate-800/40 border-slate-700 text-slate-400"
+          <button
+            type="button"
+            onClick={() => {
+              if (wsStatus !== "connected") manualReconnect();
+            }}
+            className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer ${
+              wsStatus === "connected"
+                ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
+                : wsStatus === "connecting"
+                ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-300"
+                : "bg-slate-800/80 hover:bg-slate-800 border-slate-700 hover:border-cyan-500/50 text-slate-300"
             }`}
-            title={isWsLive ? "Connected to Django Channels WebSocket" : "Connecting to Real-time Stream..."}
+            title={
+              wsStatus === "connected"
+                ? "Real-time Operations Stream Active (Django Channels)"
+                : "Click to reconnect WebSocket stream"
+            }
           >
             <span className="relative flex h-2 w-2">
-              {isWsLive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${isWsLive ? "bg-emerald-400" : "bg-slate-500"}`} />
+              {wsStatus === "connected" && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              )}
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  wsStatus === "connected"
+                    ? "bg-emerald-400"
+                    : wsStatus === "connecting"
+                    ? "bg-cyan-400 animate-pulse"
+                    : "bg-amber-400"
+                }`}
+              />
             </span>
-            <span>{isWsLive ? "Live Stream Active" : "Connecting..."}</span>
-          </div>
+            <span>
+              {wsStatus === "connected"
+                ? "Live Stream Active"
+                : wsStatus === "connecting"
+                ? "Connecting Stream..."
+                : wsReconnectCount > 0
+                ? "Auto-Reconnecting..."
+                : "Stream Offline (Click to Retry)"}
+            </span>
+          </button>
 
           {/* Real-time Notification Bell Dropdown */}
           <div className="relative">
@@ -1274,38 +1315,67 @@ export default function AdminPortalPage() {
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-[#0B1220]/95 border border-cyan-500/30 rounded-2xl shadow-2xl p-4 z-50 backdrop-blur-xl space-y-3">
+              <div
+                style={{ backgroundColor: "#0F172A", opacity: 1 }}
+                className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-cyan-500/40 shadow-[0_20px_50px_rgba(0,0,0,0.85)] p-4 z-[999] space-y-3"
+              >
                 <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                  <div className="flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-cyan-400" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">
-                      Live Operations Stream
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                      <Zap className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white uppercase tracking-wider block">
+                        Live Operations Stream
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Real-time bookings, payments &amp; dispatches
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-cyan-400 font-mono">
-                    {recentEvents.length} events
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono font-bold">
+                      {recentEvents.length} events
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowNotifications(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Close panel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+
                 {recentEvents.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-3 text-center">
-                    Listening for incoming bookings, payments, and driver dispatches...
-                  </p>
+                  <div className="py-6 px-4 text-center rounded-xl bg-slate-900/60 border border-white/5 space-y-2">
+                    <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 mx-auto">
+                      <Radio className="w-4 h-4 animate-pulse" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-200">
+                      Listening for Live Operations
+                    </p>
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+                      New customer bookings, Razorpay settlement alerts, and van dispatches will appear here in real-time.
+                    </p>
+                  </div>
                 ) : (
-                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                  <div className="max-h-72 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                     {recentEvents.map((evt, idx) => (
                       <div
                         key={idx}
-                        className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs space-y-1"
+                        className="p-3 rounded-xl bg-slate-900/90 border border-white/10 text-xs space-y-1 hover:border-cyan-500/30 transition-colors"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-cyan-300 text-[11px] uppercase">
+                          <span className="font-bold text-cyan-300 text-[11px] uppercase tracking-wide">
                             {evt.event.replace(/_/g, " ")}
                           </span>
                           <span className="text-[10px] text-slate-400 font-mono">
                             {evt.timestamp}
                           </span>
                         </div>
-                        <p className="text-slate-300 text-[11px]">
+                        <p className="text-slate-200 text-xs font-medium">
                           {evt.event === "booking_created"
                             ? `Ref: #${evt.payload.booking_reference} • ${evt.payload.customer_name} • ₹${evt.payload.final_amount}`
                             : evt.event === "booking_status_updated"
@@ -1449,9 +1519,9 @@ export default function AdminPortalPage() {
               <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
                 <span className="text-amber-400 font-semibold">{metrics?.pending_confirmations || 0} pending</span>
                 <span>•</span>
-                <span className="text-cyan-400">{metrics?.confirmed_count || 0} confirmed</span>
+                <span className="text-cyan-400">{metrics?.confirmed_bookings ?? metrics?.confirmed_count ?? 0} confirmed</span>
                 <span>•</span>
-                <span className="text-emerald-400">{metrics?.completed_count || 0} completed</span>
+                <span className="text-emerald-400">{metrics?.completed_jobs ?? metrics?.completed_count ?? 0} completed</span>
               </div>
             </div>
 
@@ -1466,7 +1536,7 @@ export default function AdminPortalPage() {
                 </div>
               </div>
               <p className="text-2xl sm:text-3xl font-black text-purple-300">
-                {metrics ? `${metrics.payments_paid} Paid` : "—"}
+                {metrics ? `${metrics.successful_payments ?? metrics.payments_paid ?? 0} Paid` : "—"}
               </p>
               <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-wrap">
                 <span className="text-amber-400">{metrics?.payments_pending || 0} pending</span>
