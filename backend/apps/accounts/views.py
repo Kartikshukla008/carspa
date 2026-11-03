@@ -1,5 +1,7 @@
 import csv
+import secrets
 from decimal import Decimal
+from django.conf import settings
 from django.db.models import Sum, Count, Q
 from django.contrib.auth import login, logout, get_user_model
 from django.http import HttpResponse
@@ -14,6 +16,7 @@ from apps.accounts.models import (
     CustomerAddress,
     CustomerVehicle,
     PasswordResetToken,
+    PhoneOTP,
 )
 from apps.accounts.serializers import (
     RegisterSerializer,
@@ -76,6 +79,254 @@ class LoginAPIView(views.APIView):
                 "user": UserProfileSerializer(profile).data,
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PhoneOTPSendAPIView(views.APIView):
+    """
+    Sends a cryptographically generated 6-digit OTP via WhatsApp or SMS for passwordless login.
+    Rate-limited to 3 requests per 5 minutes per phone.
+    """
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        raw_phone = request.data.get("phone", "").strip()
+        channel = request.data.get("channel", "WHATSAPP").upper()
+        if channel not in ("WHATSAPP", "SMS"):
+            channel = "WHATSAPP"
+
+        cleaned_phone = clean_phone_number(raw_phone)
+        if not cleaned_phone or len(cleaned_phone) < 10:
+            return Response(
+                {"error": "Please provide a valid 10-digit mobile number."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Rate Limit: max 3 requests / 300s per phone
+        from apps.core.ratelimit import RateLimiter
+        allowed, remaining, retry_after = RateLimiter.is_allowed(
+            key=f"otp_send:{cleaned_phone}",
+            limit=3,
+            window_seconds=300,
+        )
+        if not allowed:
+            return Response(
+                {
+                    "error": "Rate limit exceeded",
+                    "detail": f"Too many OTP requests. Please wait {retry_after} seconds before requesting another code.",
+                    "retry_after": retry_after,
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        raw_code, otp_record = PhoneOTP.generate_for_phone(
+            phone=cleaned_phone,
+            channel=channel,
+            valid_minutes=5,
+        )
+
+        from apps.notifications.service import NotificationService
+        otp_message = (
+            f"Your CARSPA doorstep detailing verification code is {raw_code}. "
+            f"Valid for 5 minutes. Please do not share this code with anyone."
+        )
+        NotificationService._dispatch(
+            booking=None,
+            recipient=cleaned_phone,
+            channel=channel,
+            event_type="LOGIN_OTP",
+            message=otp_message,
+            subject="CARSPA Verification Code",
+        )
+
+        return Response({
+            "message": f"Verification code dispatched via {channel}.",
+            "phone": cleaned_phone,
+            "channel": channel,
+            "expires_in_seconds": 300,
+            "dev_preview_code": raw_code if settings.DEBUG or not getattr(settings, "WHATSAPP_API_TOKEN", "") else None,
+        }, status=status.HTTP_200_OK)
+
+
+class PhoneOTPVerifyAPIView(views.APIView):
+    """
+    Verifies the 6-digit phone OTP and issues an authenticated session & token.
+    """
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        raw_phone = request.data.get("phone", "").strip()
+        raw_code = str(request.data.get("otp", "")).strip()
+
+        cleaned_phone = clean_phone_number(raw_phone)
+        if not cleaned_phone or len(cleaned_phone) < 10:
+            return Response(
+                {"error": "Please provide a valid 10-digit mobile number."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not raw_code or len(raw_code) != 6 or not raw_code.isdigit():
+            return Response(
+                {"error": "Please provide a valid 6-digit numeric verification code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        is_valid, msg = PhoneOTP.verify_for_phone(cleaned_phone, raw_code)
+        if not is_valid:
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get or create User
+        username = f"user_{cleaned_phone[-10:]}"
+        user = User.objects.filter(username=username).first()
+        if not user:
+            existing_profile = UserProfile.objects.filter(phone=cleaned_phone).first()
+            if existing_profile:
+                user = existing_profile.user
+            else:
+                user = User.objects.create_user(
+                    username=username,
+                    email=f"{cleaned_phone[-10:]}@customer.carspa.in",
+                    password=secrets.token_urlsafe(16),
+                )
+
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "phone": cleaned_phone,
+                "full_name": user.get_full_name() or f"Member {cleaned_phone[-4:]}",
+                "role": "CUSTOMER",
+                "is_phone_verified": True,
+            },
+        )
+        profile.is_phone_verified = True
+        profile.save(update_fields=["is_phone_verified"])
+
+        token, _ = Token.objects.get_or_create(user=user)
+        login(request, user)
+
+        from apps.core.audit import record_audit_log
+        record_audit_log(
+            user=user,
+            action="OTP_LOGIN",
+            resource_type="AUTH",
+            resource_id=str(user.id),
+            details={"phone": cleaned_phone, "method": "PHONE_OTP"},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+
+        return Response({
+            "message": "Authentication successful! Welcome to CARSPA.",
+            "token": token.key,
+            "user": UserProfileSerializer(profile).data,
+        }, status=status.HTTP_200_OK)
+
+
+class GoogleAuthAPIView(views.APIView):
+    """
+    Google OAuth2.0 / OpenID Connect 1-click customer login & registration.
+    Verifies cryptographic Google ID token or dev payload.
+    """
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        credential = request.data.get("credential", "").strip()
+        direct_email = request.data.get("email", "").strip()
+        direct_name = request.data.get("name", "").strip()
+        direct_sub = request.data.get("sub", "").strip()
+
+        email = ""
+        full_name = ""
+        google_id = ""
+
+        # 1. If Google ID Token (credential) is passed, verify cryptographic JWT
+        if credential:
+            try:
+                import urllib.request
+                import json
+                verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
+                req = urllib.request.Request(verify_url, headers={"User-Agent": "CARSPA-Backend"})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    token_info = json.loads(response.read().decode("utf-8"))
+                    email = token_info.get("email", "").lower().strip()
+                    full_name = token_info.get("name") or token_info.get("given_name") or email.split("@")[0]
+                    google_id = token_info.get("sub", "")
+            except Exception as e:
+                if settings.DEBUG and direct_email:
+                    email = direct_email.lower().strip()
+                    full_name = direct_name or email.split("@")[0]
+                    google_id = direct_sub or "mock_sub"
+                else:
+                    return Response(
+                        {"error": "Failed to verify Google Identity token.", "detail": str(e)},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+        elif settings.DEBUG and direct_email:
+            email = direct_email.lower().strip()
+            full_name = direct_name or email.split("@")[0]
+            google_id = direct_sub or "mock_sub"
+        else:
+            return Response(
+                {"error": "Missing Google authorization credential."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not email or "@" not in email:
+            return Response(
+                {"error": "Google token did not contain a valid email address."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(email__iexact=email).first()
+        is_new_user = False
+        if not user:
+            is_new_user = True
+            base_username = email.split("@")[0].replace(".", "_")[:20]
+            candidate_username = base_username
+            suffix = 1
+            while User.objects.filter(username=candidate_username).exists():
+                candidate_username = f"{base_username}_{suffix}"
+                suffix += 1
+
+            user = User.objects.create_user(
+                username=candidate_username,
+                email=email,
+                first_name=full_name.split()[0] if full_name else "",
+                last_name=" ".join(full_name.split()[1:]) if " " in full_name else "",
+                password=secrets.token_urlsafe(16),
+            )
+
+        profile, _ = UserProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "full_name": full_name or user.username,
+                "phone": clean_phone_number(user.username[-10:] if len(user.username) >= 10 else f"9{secrets.randbelow(900000000)+100000000}"),
+                "role": "CUSTOMER",
+                "is_email_verified": True,
+            },
+        )
+        profile.is_email_verified = True
+        profile.save(update_fields=["is_email_verified"])
+
+        token, _ = Token.objects.get_or_create(user=user)
+        login(request, user)
+
+        from apps.core.audit import record_audit_log
+        record_audit_log(
+            user=user,
+            action="GOOGLE_OAUTH_LOGIN",
+            resource_type="AUTH",
+            resource_id=str(user.id),
+            details={"email": email, "google_sub": google_id, "is_new_user": is_new_user},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+
+        return Response({
+            "message": "Signed in with Google successfully!",
+            "token": token.key,
+            "user": UserProfileSerializer(profile).data,
+            "is_new_user": is_new_user,
+        }, status=status.HTTP_200_OK)
 
 
 class LogoutAPIView(views.APIView):

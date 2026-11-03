@@ -11,6 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: { identifier: string; password: string; remember_me?: boolean }) => Promise<UserProfile>;
   register: (data: any) => Promise<UserProfile>;
+  setSession: (token: string, user: UserProfile) => void;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -93,6 +94,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const setSession = useCallback((newToken: string, newUser: UserProfile) => {
+    setToken(newToken);
+    setUser(newUser);
+    localStorage.setItem("carspa_auth_token", newToken);
+    localStorage.setItem("carspa_user_data", JSON.stringify(newUser));
+  }, []);
+
   const logout = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -127,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         register,
+        setSession,
         logout,
         refreshProfile,
       }}

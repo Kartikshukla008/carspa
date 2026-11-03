@@ -498,12 +498,15 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
             notes=notes or f"Status changed to {new_status} by admin.",
         )
 
-        AdminAuditLog.objects.create(
+        from apps.core.audit import record_audit_log
+        record_audit_log(
             user=request.user,
             action="CHANGE_BOOKING_STATUS",
             resource_type="BOOKING",
             resource_id=booking.booking_reference,
-            details={"old_status": old_status, "new_status": new_status, "notes": notes},
+            details={"notes": notes},
+            before={"status": old_status},
+            after={"status": new_status},
             ip_address=request.META.get("REMOTE_ADDR"),
         )
 

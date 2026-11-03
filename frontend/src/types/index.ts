@@ -215,6 +215,7 @@ export interface AdminAuditLogItem {
   resource_type: string;
   resource_id: string;
   details: Record<string, any>;
+  diff?: { changed_fields?: string[]; changes?: Record<string, { old: any; new: any }> } | null;
   description?: string;
   ip_address: string | null;
   created_at: string;

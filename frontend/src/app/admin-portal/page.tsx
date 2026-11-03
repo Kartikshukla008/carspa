@@ -5207,8 +5207,29 @@ export default function AdminPortalPage() {
                           <span className="font-semibold text-slate-200 block">{log.resource_type}</span>
                           <span className="font-mono text-[10px] text-slate-400">{log.resource_id || "—"}</span>
                         </td>
-                        <td className="p-3.5 max-w-xs text-slate-300 font-mono text-[11px]">
-                          {log.description || (log.details ? (typeof log.details === "object" ? JSON.stringify(log.details) : String(log.details)) : "—")}
+                        <td className="p-3.5 max-w-sm text-slate-300 text-[11px]">
+                          {(log.diff?.changes && Object.keys(log.diff.changes).length > 0) || ((log.details as any)?.diff?.changes && Object.keys((log.details as any).diff.changes).length > 0) ? (
+                            <div className="space-y-1">
+                              {Object.entries((log.diff?.changes || (log.details as any)?.diff?.changes) as Record<string, { old: any; new: any }>).map(([field, delta]: [string, any]) => (
+                                <div key={field} className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-mono text-[10px] text-cyan-300 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">
+                                    {field}
+                                  </span>
+                                  <span className="line-through text-rose-400 font-mono text-[10px] bg-rose-950/40 px-1 rounded">
+                                    {String(delta?.old ?? "none")}
+                                  </span>
+                                  <span className="text-slate-500 text-[10px]">➔</span>
+                                  <span className="text-emerald-400 font-bold font-mono text-[10px] bg-emerald-950/40 px-1 rounded">
+                                    {String(delta?.new ?? "none")}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="font-mono text-slate-400">
+                              {log.description || (log.details ? (typeof log.details === "object" ? JSON.stringify(log.details) : String(log.details)) : "—")}
+                            </span>
+                          )}
                         </td>
                         <td className="p-3.5 text-right font-mono text-[10px] text-slate-500">
                           {log.ip_address || "—"}

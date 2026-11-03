@@ -21,6 +21,11 @@ class RateLimitMiddleware:
 
         # Password Reset / OTP / SMS dispatch: 3 requests / 300s (5 mins)
         ("/api/auth/password-reset/", 3, 300, "pwd_reset"),
+        ("/api/auth/otp/send/", 3, 300, "otp_send"),
+        ("/api/auth/otp/verify/", 5, 60, "otp_verify"),
+
+        # Google Social Auth
+        ("/api/auth/google/", 10, 60, "google_auth"),
 
         # Public Booking Creation: 10 bookings / 60s
         ("/api/bookings/", 10, 60, "booking_create"),

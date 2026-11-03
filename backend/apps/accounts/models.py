@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 import uuid
 from datetime import timedelta
 from django.db import models, transaction
@@ -161,3 +163,76 @@ class PasswordResetToken(models.Model):
 
     def is_valid(self):
         return not self.is_used and timezone.now() <= self.expires_at
+
+
+class PhoneOTP(models.Model):
+    """
+    Cryptographic Phone OTP model for passwordless login via WhatsApp & SMS.
+    OTPs are hashed with SHA-256 before storage to protect user privacy and credentials.
+    """
+    CHANNEL_CHOICES = [
+        ("WHATSAPP", "WhatsApp"),
+        ("SMS", "SMS"),
+    ]
+
+    phone = models.CharField(max_length=20, db_index=True)
+    otp_hash = models.CharField(max_length=128)
+    channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES, default="WHATSAPP")
+    attempts = models.PositiveIntegerField(default=0)
+    is_verified = models.BooleanField(default=False)
+    expires_at = models.DateTimeField(db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Phone OTP"
+        verbose_name_plural = "Phone OTPs"
+
+    @classmethod
+    def hash_otp(cls, raw_otp: str) -> str:
+        return hashlib.sha256(raw_otp.encode("utf-8")).hexdigest()
+
+    @classmethod
+    def generate_for_phone(cls, phone: str, channel: str = "WHATSAPP", valid_minutes: int = 5):
+        # Invalidate existing active OTPs for this phone
+        cls.objects.filter(phone=phone, is_verified=False).delete()
+
+        # Cryptographically secure 6-digit random code (100000 - 999999)
+        raw_code = f"{secrets.randbelow(900000) + 100000}"
+        otp_hash = cls.hash_otp(raw_code)
+        expires_at = timezone.now() + timedelta(minutes=valid_minutes)
+
+        otp_record = cls.objects.create(
+            phone=phone,
+            otp_hash=otp_hash,
+            channel=channel,
+            expires_at=expires_at,
+        )
+        return raw_code, otp_record
+
+    @classmethod
+    def verify_for_phone(cls, phone: str, raw_code: str) -> tuple[bool, str]:
+        record = cls.objects.filter(phone=phone, is_verified=False).order_by("-created_at").first()
+        if not record:
+            return False, "No active OTP request found. Please request a new verification code."
+
+        if timezone.now() > record.expires_at:
+            record.delete()
+            return False, "Verification code has expired. Please request a new one."
+
+        if record.attempts >= 3:
+            record.delete()
+            return False, "Too many failed attempts. Code invalidated for your security. Please request a new one."
+
+        record.attempts += 1
+        record.save(update_fields=["attempts"])
+
+        expected_hash = cls.hash_otp(raw_code.strip())
+        if secrets.compare_digest(record.otp_hash, expected_hash):
+            record.is_verified = True
+            record.save(update_fields=["is_verified"])
+            return True, "Verification successful."
+
+        remaining = 3 - record.attempts
+        return False, f"Incorrect verification code. {remaining} attempt(s) remaining."
+

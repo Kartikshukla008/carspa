@@ -273,6 +273,21 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  sendPhoneOtp: (phone: string, channel: "WHATSAPP" | "SMS" = "WHATSAPP") =>
+    request<{ message: string; phone: string; channel: string; expires_in_seconds: number; dev_preview_code?: string }>("/api/auth/otp/send/", {
+      method: "POST",
+      body: JSON.stringify({ phone, channel }),
+    }),
+  verifyPhoneOtp: (phone: string, otp: string) =>
+    request<{ message: string; token: string; user: import("../types").UserProfile }>("/api/auth/otp/verify/", {
+      method: "POST",
+      body: JSON.stringify({ phone, otp }),
+    }),
+  googleAuth: (data: { credential?: string; email?: string; name?: string; sub?: string }) =>
+    request<{ message: string; token: string; user: import("../types").UserProfile; is_new_user: boolean }>("/api/auth/google/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   logout: () =>
     request<{ message: string }>("/api/auth/logout/", {
       method: "POST",

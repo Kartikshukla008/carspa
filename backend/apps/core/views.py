@@ -40,6 +40,7 @@ class AdminAuditLogSerializer(serializers.ModelSerializer):
             "resource_type",
             "resource_id",
             "details",
+            "diff",
             "ip_address",
             "created_at",
         ]
@@ -248,15 +249,21 @@ class AdminBusinessConfigAPIView(APIView):
 
     def patch(self, request):
         config = BusinessConfig.get_config()
+        before_state = {k: getattr(config, k, None) for k in request.data.keys() if hasattr(config, k)}
         serializer = BusinessConfigSerializer(config, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
-            AdminAuditLog.objects.create(
+            updated_config = serializer.save()
+            after_state = {k: getattr(updated_config, k, None) for k in request.data.keys() if hasattr(updated_config, k)}
+
+            from apps.core.audit import record_audit_log
+            record_audit_log(
                 user=request.user,
                 action="UPDATE_CONFIG",
                 resource_type="BUSINESS_CONFIG",
                 resource_id=str(config.id),
                 details=request.data,
+                before=before_state,
+                after=after_state,
                 ip_address=request.META.get("REMOTE_ADDR"),
             )
             return Response(serializer.data)

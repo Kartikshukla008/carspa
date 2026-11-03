@@ -50,6 +50,7 @@ class AdminAuditLog(models.Model):
     resource_type = models.CharField(max_length=100)
     resource_id = models.CharField(max_length=100, blank=True)
     details = models.JSONField(default=dict, blank=True)
+    diff = models.JSONField(default=dict, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
