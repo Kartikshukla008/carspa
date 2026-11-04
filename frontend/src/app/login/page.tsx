@@ -48,9 +48,16 @@ function GoogleIcon({ className = "w-4 h-4" }: { className?: string }) {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/dashboard";
+  const redirectPath = searchParams.get("redirect") || "/";
 
-  const { login, setSession } = useAuth();
+  const { login, setSession, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // If already authenticated, redirect to home page immediately
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      window.location.href = "/";
+    }
+  }, [authLoading, isAuthenticated]);
 
   // Auth Mode: "password" vs "otp"
   const [authMode, setAuthMode] = useState<"password" | "otp">("password");
@@ -98,8 +105,7 @@ function LoginForm() {
                 sub: userInfo.sub,
               });
               setSession(res.token, res.user);
-              const target = redirectPath && !redirectPath.startsWith("/login") ? redirectPath : "/dashboard";
-              window.location.href = target;
+              window.location.href = "/";
             }
           })
           .catch((err: any) => {
@@ -133,8 +139,7 @@ function LoginForm() {
               try {
                 const res = await api.googleAuth({ credential: response.credential });
                 setSession(res.token, res.user);
-                const target = redirectPath && !redirectPath.startsWith("/login") ? redirectPath : "/dashboard";
-                window.location.href = target;
+                window.location.href = "/";
               } catch (err: any) {
                 setError(err.message || "Failed to authenticate with Google.");
               } finally {
@@ -171,8 +176,7 @@ function LoginForm() {
                   sub: userInfo.sub,
                 });
                 setSession(res.token, res.user);
-                const target = redirectPath && !redirectPath.startsWith("/login") ? redirectPath : "/dashboard";
-                window.location.href = target;
+                window.location.href = "/";
               } catch (err: any) {
                 setError(err.message || "Failed to complete Google authentication.");
               } finally {
@@ -341,8 +345,7 @@ function LoginForm() {
                   sub: userInfo.sub,
                 });
                 setSession(res.token, res.user);
-                const target = redirectPath && !redirectPath.startsWith("/login") ? redirectPath : "/dashboard";
-                window.location.href = target;
+                window.location.href = "/";
               } catch (err: any) {
                 setError(err.message || "Failed to complete Google authentication.");
               } finally {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -24,7 +24,14 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect") || "/dashboard";
 
-  const { register } = useAuth();
+  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // If already authenticated, redirect to home page immediately
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      window.location.href = "/";
+    }
+  }, [authLoading, isAuthenticated]);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
