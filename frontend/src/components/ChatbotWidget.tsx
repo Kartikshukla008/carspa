@@ -228,6 +228,45 @@ export default function ChatbotWidget() {
       window.open("https://wa.me/917087811881", "_blank");
       return;
     }
+
+    // Direct redirection for Live Tracker quick replies
+    const isTrackAction =
+      qr.action === "track" ||
+      qr.action.startsWith("track_") ||
+      qr.label.toLowerCase().includes("live tracker");
+
+    if (isTrackAction) {
+      let targetRef = "";
+      if (qr.action.startsWith("track_")) {
+        targetRef = qr.action.replace("track_", "").trim();
+      }
+      if (!targetRef) {
+        // Find most recent booking reference in conversation history
+        for (let i = messages.length - 1; i >= 0; i--) {
+          const msg = messages[i];
+          if (msg.action?.payload?.reference) {
+            targetRef = msg.action.payload.reference;
+            break;
+          }
+          if (msg.action?.payload?.booking_reference) {
+            targetRef = msg.action.payload.booking_reference;
+            break;
+          }
+          const match = msg.text.match(/CW-[A-Z0-9-]+/i);
+          if (match) {
+            targetRef = match[0];
+            break;
+          }
+        }
+      }
+
+      if (targetRef) {
+        setIsOpen(false);
+        window.location.href = `/track?ref=${encodeURIComponent(targetRef)}`;
+        return;
+      }
+    }
+
     // Clean leading emoji symbols so the user's bubble shows a natural, clean human reply
     const cleanLabel = qr.label.replace(/^[^\w\d(]+/, "").trim() || qr.label;
     handleSendMessage(cleanLabel, qr.action);
@@ -499,26 +538,35 @@ export default function ChatbotWidget() {
                       )}
 
                       {m.action.type === "BOOKING_CONFIRMED" && (
-                        <Link
-                          href={`/track?ref=${m.action.payload?.booking_reference || ""}`}
-                          onClick={() => setIsOpen(false)}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsOpen(false);
+                            const targetRef = m.action?.payload?.booking_reference || "";
+                            window.location.href = `/track${targetRef ? `?ref=${encodeURIComponent(targetRef)}` : ""}`;
+                          }}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-500/40 hover:bg-emerald-900/80 shadow-md transition-all cursor-pointer"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                           <span>Track Appointment Live</span>
                           <ArrowRight className="w-3 h-3 text-emerald-400" />
-                        </Link>
+                        </button>
                       )}
 
                       {m.action.type === "NAVIGATE_TRACK" && (
-                        <Link
-                          href={`/track${m.action.payload?.reference ? `?ref=${m.action.payload.reference}` : ""}`}
-                          onClick={() => setIsOpen(false)}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsOpen(false);
+                            const targetRef =
+                              m.action?.payload?.reference || m.action?.payload?.booking_reference || "";
+                            window.location.href = `/track${targetRef ? `?ref=${encodeURIComponent(targetRef)}` : ""}`;
+                          }}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition-all cursor-pointer"
                         >
                           <span>Open Live Tracker</span>
                           <ExternalLink className="w-3 h-3 text-cyan-400" />
-                        </Link>
+                        </button>
                       )}
 
                       {m.action.type === "NAVIGATE_SERVICES" && (

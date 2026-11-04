@@ -128,9 +128,14 @@ function TrackFlow() {
   };
 
   useEffect(() => {
-    if (queryRef) {
-      setReference(queryRef);
-      handleLookup(queryRef);
+    let target = queryRef;
+    if (!target && typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      target = params.get("ref") || params.get("reference") || "";
+    }
+    if (target) {
+      setReference(target);
+      handleLookup(target);
     }
   }, [queryRef]);
 

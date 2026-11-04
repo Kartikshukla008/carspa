@@ -104,7 +104,11 @@ class PublicBookingLookupAPIView(APIView):
     authentication_classes = []
 
     def get(self, request):
-        reference = request.query_params.get("reference", "").strip().lstrip("#")
+        reference = (
+            request.query_params.get("reference")
+            or request.query_params.get("ref")
+            or ""
+        ).strip().lstrip("#")
         phone = request.query_params.get("phone", "").strip()
 
         if not reference:
