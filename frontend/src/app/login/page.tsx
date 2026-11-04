@@ -98,7 +98,8 @@ function LoginForm() {
                 sub: userInfo.sub,
               });
               setSession(res.token, res.user);
-              router.push(redirectPath);
+              const target = redirectPath && !redirectPath.startsWith("/login") ? redirectPath : "/dashboard";
+              window.location.href = target;
             }
           })
           .catch((err: any) => {
@@ -132,7 +133,8 @@ function LoginForm() {
               try {
                 const res = await api.googleAuth({ credential: response.credential });
                 setSession(res.token, res.user);
-                router.push(redirectPath);
+                const target = redirectPath && !redirectPath.startsWith("/login") ? redirectPath : "/dashboard";
+                window.location.href = target;
               } catch (err: any) {
                 setError(err.message || "Failed to authenticate with Google.");
               } finally {
@@ -169,7 +171,8 @@ function LoginForm() {
                   sub: userInfo.sub,
                 });
                 setSession(res.token, res.user);
-                router.push(redirectPath);
+                const target = redirectPath && !redirectPath.startsWith("/login") ? redirectPath : "/dashboard";
+                window.location.href = target;
               } catch (err: any) {
                 setError(err.message || "Failed to complete Google authentication.");
               } finally {
@@ -338,7 +341,8 @@ function LoginForm() {
                   sub: userInfo.sub,
                 });
                 setSession(res.token, res.user);
-                router.push(redirectPath);
+                const target = redirectPath && !redirectPath.startsWith("/login") ? redirectPath : "/dashboard";
+                window.location.href = target;
               } catch (err: any) {
                 setError(err.message || "Failed to complete Google authentication.");
               } finally {

@@ -303,30 +303,51 @@ class GoogleAuthAPIView(views.APIView):
                 password=secrets.token_urlsafe(16),
             )
 
-        profile, _ = UserProfile.objects.get_or_create(
-            user=user,
-            defaults={
-                "full_name": full_name or user.username,
-                "phone": clean_phone_number(user.username[-10:] if len(user.username) >= 10 else f"9{secrets.randbelow(900000000)+100000000}"),
-                "role": "CUSTOMER",
-                "is_email_verified": True,
-            },
-        )
-        profile.is_email_verified = True
-        profile.save(update_fields=["is_email_verified"])
+        # Retrieve or create profile with a guaranteed collision-free 10-digit phone
+        profile = getattr(user, "profile", None)
+        if not profile:
+            profile = UserProfile.objects.filter(user=user).first()
+
+        if not profile:
+            unique_phone = ""
+            while not unique_phone:
+                candidate_phone = f"9{secrets.randbelow(900000000) + 100000000}"
+                if not UserProfile.objects.filter(phone=candidate_phone).exists():
+                    unique_phone = candidate_phone
+
+            profile = UserProfile.objects.create(
+                user=user,
+                full_name=full_name or user.get_full_name() or user.username,
+                phone=unique_phone,
+                role="CUSTOMER",
+                is_email_verified=True,
+                is_phone_verified=False,
+            )
+        else:
+            profile.is_email_verified = True
+            if full_name and not profile.full_name:
+                profile.full_name = full_name
+            profile.save(update_fields=["is_email_verified", "full_name"])
 
         token, _ = Token.objects.get_or_create(user=user)
-        login(request, user)
 
-        from apps.core.audit import record_audit_log
-        record_audit_log(
-            user=user,
-            action="GOOGLE_OAUTH_LOGIN",
-            resource_type="AUTH",
-            resource_id=str(user.id),
-            details={"email": email, "google_sub": google_id, "is_new_user": is_new_user},
-            ip_address=request.META.get("REMOTE_ADDR"),
-        )
+        try:
+            login(request, user)
+        except Exception:
+            pass
+
+        try:
+            from apps.core.audit import record_audit_log
+            record_audit_log(
+                user=user,
+                action="GOOGLE_OAUTH_LOGIN",
+                resource_type="AUTH",
+                resource_id=str(user.id),
+                details={"email": email, "google_sub": google_id, "is_new_user": is_new_user},
+                ip_address=request.META.get("REMOTE_ADDR"),
+            )
+        except Exception:
+            pass
 
         return Response({
             "message": "Signed in with Google successfully!",
