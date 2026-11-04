@@ -236,11 +236,19 @@ class TestChatbotEngineAndAPIs:
         # Ensure booking NOT created yet (explicit confirmation required!)
         assert not Booking.objects.filter(customer_phone="9888877777").exists()
 
-        # 8. Customer confirms with Pay on Service
-        r8 = self.client.post("/api/chatbot/message/", {"message": "Pay on Service", "session_id": sid}, format="json")
+        # 8. Customer confirms with Pay on Service (Cash/UPI)
+        r8 = self.client.post(
+            "/api/chatbot/message/",
+            {"message": "Pay on Service (Cash/UPI)", "session_id": sid},
+            format="json",
+        )
         assert r8.status_code == 200
         assert "Booking Confirmed" in r8.data["reply"]
         assert "CW-" in r8.data["reply"]
+        # Ensure Razorpay is NOT launched!
+        action_type = (r8.data.get("action") or {}).get("type")
+        assert action_type != "LAUNCH_RAZORPAY"
+        assert action_type == "BOOKING_CONFIRMED"
 
         # Verify booking created in database!
         b = Booking.objects.get(customer_phone="9888877777")

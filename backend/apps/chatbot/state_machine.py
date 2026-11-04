@@ -712,14 +712,35 @@ class BookingStateMachine:
                 None,
             )
 
-        is_online = any(k in text for k in ["razorpay", "online", "card", "gpay", "phonepe", "upi", "pay online", "confirm_razorpay"])
-        is_pay_on_service = any(k in text for k in ["service", "cash", "pay later", "pay on service", "confirm_pay_on_service", "after"])
+        is_pay_on_service = (
+            "confirm_pay_on_service" in text
+            or "pay on service" in text
+            or "cash" in text
+            or "pay later" in text
+            or "after service" in text
+            or "on arrival" in text
+            or "cod" in text
+        )
+
+        is_online = (
+            not is_pay_on_service
+            and (
+                "confirm_razorpay" in text
+                or "pay online" in text
+                or "razorpay" in text
+                or "online" in text
+                or "card" in text
+                or "gpay" in text
+                or "phonepe" in text
+                or "upi" in text
+            )
+        )
 
         # Explicit confirmation required
         if not is_online and not is_pay_on_service:
             return cls._render_booking_summary(draft)
 
-        draft["payment_method"] = "RAZORPAY" if is_online else "PAY_ON_SERVICE"
+        draft["payment_method"] = "PAY_ON_SERVICE" if is_pay_on_service else "RAZORPAY"
 
         # Create booking via Tool 6
         result = create_booking(draft, user=user)
