@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.bookings",
     "apps.notifications",
     "apps.payments",
+    "apps.chatbot",
 ]
 
 try:

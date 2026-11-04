@@ -425,4 +425,30 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ role }),
     }),
+
+  // Chatbot & Customer Support
+  sendChatMessage: (data: { message: string; session_id?: string }) =>
+    request<{
+      session_id: string;
+      reply: string;
+      intent: string;
+      quick_replies: Array<{ label: string; action: string }>;
+      action?: { type: string; payload: any };
+    }>("/api/chatbot/message/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getChatServices: () => request<{ services: any[] }>("/api/chatbot/services/"),
+  getChatPricing: (vehicle?: string) =>
+    request<{ pricing: any[] }>(`/api/chatbot/pricing/${vehicle ? `?vehicle=${encodeURIComponent(vehicle)}` : ""}`),
+  getChatOffers: () => request<{ offers: any[] }>("/api/chatbot/offers/"),
+  getChatFaqs: (category?: string) =>
+    request<{ faqs: any[] }>(`/api/chatbot/faqs/${category ? `?category=${encodeURIComponent(category)}` : ""}`),
+  checkChatServiceArea: (location: string) =>
+    request<{ eligible: boolean; city?: string; message: string }>("/api/chatbot/check-service-area/", {
+      method: "POST",
+      body: JSON.stringify({ location }),
+    }),
+  getChatHistory: (sessionId: string) =>
+    request<{ session_id: string; messages: any[] }>(`/api/chatbot/history/?session_id=${encodeURIComponent(sessionId)}`),
 };

@@ -84,6 +84,9 @@ urlpatterns = [
     # Razorpay Payment Gateway APIs
     path("api/payments/razorpay/", include("apps.payments.urls")),
 
+    # Chatbot & Customer Support APIs
+    path("api/chatbot/", include("apps.chatbot.urls")),
+
     # Admin Auth & Core Endpoints
     path("api/admin/login/", AdminLoginAPIView.as_view(), name="admin-login"),
     path("api/admin/logout/", AdminLogoutAPIView.as_view(), name="admin-logout"),
