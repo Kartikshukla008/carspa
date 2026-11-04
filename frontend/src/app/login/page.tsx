@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -72,22 +72,57 @@ function LoginForm() {
   // Status
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [googleEmail, setGoogleEmail] = useState("");
-  const [googleName, setGoogleName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Load Google Identity Services script if Client ID is configured
+  const tokenClientRef = useRef<any>(null);
+
+  // Load Google Identity Services SDK or process OAuth redirect
   useEffect(() => {
-    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    // 1. Check if returning from Google OAuth redirect (hash token)
+    if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      if (accessToken) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        setGoogleLoading(true);
+        fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+          .then((r) => r.json())
+          .then(async (userInfo) => {
+            if (userInfo.email) {
+              const res = await api.googleAuth({
+                email: userInfo.email,
+                name: userInfo.name || `${userInfo.given_name || ""} ${userInfo.family_name || ""}`.trim(),
+                sub: userInfo.sub,
+              });
+              setSession(res.token, res.user);
+              router.push(redirectPath);
+            }
+          })
+          .catch((err: any) => {
+            setError(err.message || "Failed to process Google sign-in response.");
+          })
+          .finally(() => {
+            setGoogleLoading(false);
+          });
+      }
+    }
+
+    // 2. Load Google Identity Services SDK if Client ID is configured
+    const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "").trim();
     if (!googleClientId) return;
 
+    if (document.getElementById("google-gsi-client")) return;
+
     const script = document.createElement("script");
+    script.id = "google-gsi-client";
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
     script.onload = () => {
+      // 1. One-Tap / ID Token callback
       if ((window as any).google?.accounts?.id) {
         (window as any).google.accounts.id.initialize({
           client_id: googleClientId,
@@ -106,15 +141,61 @@ function LoginForm() {
             }
           },
         });
+
+        // Render official Google button into container if present
+        const btnContainer = document.getElementById("googleOfficialBtn");
+        if (btnContainer) {
+          (window as any).google.accounts.id.renderButton(btnContainer, {
+            theme: "filled_blue",
+            size: "large",
+            width: "360",
+            text: "continue_with",
+            shape: "pill",
+          });
+        }
+      }
+
+      // 2. OAuth2 Token Client (for custom button clicks / popup)
+      if ((window as any).google?.accounts?.oauth2) {
+        tokenClientRef.current = (window as any).google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: "openid email profile",
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse.error) {
+              setGoogleLoading(false);
+              if (tokenResponse.error !== "access_denied") {
+                setError(`Google Sign-In failed: ${tokenResponse.error}`);
+              }
+              return;
+            }
+            if (tokenResponse.access_token) {
+              setGoogleLoading(true);
+              try {
+                const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userInfo = await userInfoRes.json();
+                const res = await api.googleAuth({
+                  email: userInfo.email,
+                  name: userInfo.name || `${userInfo.given_name || ""} ${userInfo.family_name || ""}`.trim(),
+                  sub: userInfo.sub,
+                });
+                setSession(res.token, res.user);
+                router.push(redirectPath);
+              } catch (err: any) {
+                setError(err.message || "Failed to complete Google authentication.");
+              } finally {
+                setGoogleLoading(false);
+              }
+            }
+          },
+          error_callback: () => {
+            setGoogleLoading(false);
+          },
+        });
       }
     };
     document.body.appendChild(script);
-
-    return () => {
-      try {
-        document.body.removeChild(script);
-      } catch {}
-    };
   }, [redirectPath, router, setSession]);
 
   // Countdown timer for OTP
@@ -211,48 +292,93 @@ function LoginForm() {
     }
   };
 
-  // Handle 1-Click Sign in with Google
+  // Handle 1-Click Sign in with Google (triggers official Google Account Chooser popup or redirect)
   const handleGoogleSignIn = () => {
     setError(null);
 
-    // If Google Identity Services SDK has loaded with a configured Client ID, prompt the official popup
-    if (typeof window !== "undefined" && (window as any).google?.accounts?.id && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
-      try {
-        (window as any).google.accounts.id.prompt();
-        return;
-      } catch (e) {
-        console.warn("Google One-Tap prompt error", e);
-      }
-    }
+    const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "").trim();
 
-    // Otherwise, open the 1-click Google Email Sign-In modal
-    setShowGoogleModal(true);
-  };
-
-  const handleGoogleModalSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    const email = googleEmail.trim().toLowerCase();
-    if (!email || !email.includes("@")) {
-      setError("Please enter a valid Google email address.");
+    if (!googleClientId) {
+      setError(
+        "Google Sign-In is not active in this deployment yet. If you recently added NEXT_PUBLIC_GOOGLE_CLIENT_ID in Vercel, please click 'Redeploy' on your deployment in Vercel to apply it."
+      );
       return;
     }
 
     setGoogleLoading(true);
-    try {
-      const res = await api.googleAuth({
-        email,
-        name: googleName.trim() || email.split("@")[0],
-        sub: `google_${Date.now()}`,
-      });
-      setSession(res.token, res.user);
-      setShowGoogleModal(false);
-      router.push(redirectPath);
-    } catch (err: any) {
-      setError(err.message || "Failed to authenticate with Google.");
-    } finally {
-      setGoogleLoading(false);
+
+    // Timeout safety: if user closes popup without selecting account, reset loading state
+    const resetLoadingOnFocus = () => {
+      setTimeout(() => setGoogleLoading(false), 2000);
+      window.removeEventListener("focus", resetLoadingOnFocus);
+    };
+    window.addEventListener("focus", resetLoadingOnFocus);
+
+    // 1. If OAuth2 token client is initialized, launch the official Google Account Chooser popup
+    if (tokenClientRef.current) {
+      try {
+        tokenClientRef.current.requestAccessToken({ prompt: "select_account" });
+        return;
+      } catch (e) {
+        console.warn("Failed to requestAccessToken with initialized client:", e);
+      }
+    }
+
+    // 2. If SDK loaded dynamically, initialize token client on-demand
+    if (typeof window !== "undefined" && (window as any).google?.accounts?.oauth2) {
+      try {
+        const client = (window as any).google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: "openid email profile",
+          callback: async (tokenResponse: any) => {
+            if (tokenResponse.error) {
+              setGoogleLoading(false);
+              if (tokenResponse.error !== "access_denied") {
+                setError(`Google Sign-In failed: ${tokenResponse.error}`);
+              }
+              return;
+            }
+            if (tokenResponse.access_token) {
+              try {
+                const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userInfo = await userInfoRes.json();
+                const res = await api.googleAuth({
+                  email: userInfo.email,
+                  name: userInfo.name || `${userInfo.given_name || ""} ${userInfo.family_name || ""}`.trim(),
+                  sub: userInfo.sub,
+                });
+                setSession(res.token, res.user);
+                router.push(redirectPath);
+              } catch (err: any) {
+                setError(err.message || "Failed to complete Google authentication.");
+              } finally {
+                setGoogleLoading(false);
+              }
+            }
+          },
+          error_callback: () => {
+            setGoogleLoading(false);
+          },
+        });
+        tokenClientRef.current = client;
+        client.requestAccessToken({ prompt: "select_account" });
+        return;
+      } catch (e) {
+        console.warn("Dynamic initTokenClient failed:", e);
+      }
+    }
+
+    // 3. Fallback: Standard Google OAuth 2.0 Web Redirect (guaranteed to work even if SDK is blocked)
+    if (typeof window !== "undefined") {
+      const redirectUri = window.location.origin + window.location.pathname;
+      const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+        googleClientId
+      )}&redirect_uri=${encodeURIComponent(
+        redirectUri
+      )}&response_type=token&scope=openid%20email%20profile&prompt=select_account`;
+      window.location.href = oauthUrl;
     }
   };
 
@@ -279,7 +405,7 @@ function LoginForm() {
         {/* Login Form Container */}
         <div className="bg-[#0B1220]/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/50 space-y-6">
           {/* 1. Google 1-Click Social Sign-In */}
-          <div>
+          <div className="space-y-3">
             <button
               type="button"
               onClick={handleGoogleSignIn}
@@ -298,6 +424,7 @@ function LoginForm() {
                 </>
               )}
             </button>
+            <div id="googleOfficialBtn" className="flex justify-center empty:hidden" />
           </div>
 
           {/* Divider */}
@@ -638,89 +765,6 @@ function LoginForm() {
           </Link>
         </div>
       </div>
-
-      {/* 1-Click Google Account Sign-In Modal */}
-      {showGoogleModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-                  <GoogleIcon className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Sign in with Google</h3>
-                  <span className="text-[10px] text-slate-400">CARSPA Customer Portal</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGoogleModal(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Sign in to your CARSPA customer account with 1-click Google authentication:
-            </p>
-
-            <form onSubmit={handleGoogleModalSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Google Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                    <Mail className="w-4 h-4 text-cyan-400" />
-                  </div>
-                  <input
-                    type="email"
-                    required
-                    autoFocus
-                    placeholder="yourname@gmail.com"
-                    value={googleEmail}
-                    onChange={(e) => setGoogleEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#060A14] border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 block">
-                  Full Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Your Name"
-                  value={googleName}
-                  onChange={(e) => setGoogleName(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#060A14] border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={googleLoading || !googleEmail.includes("@")}
-                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-60"
-              >
-                {googleLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-slate-900" />
-                    <span>Signing in with Google...</span>
-                  </>
-                ) : (
-                  <>
-                    <GoogleIcon className="w-4 h-4" />
-                    <span>Confirm &amp; Sign In with Google</span>
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
