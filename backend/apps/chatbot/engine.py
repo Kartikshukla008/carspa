@@ -109,7 +109,9 @@ class ChatbotEngine:
 
         # 2. Determine intent and grounded answer
         cleaned = user_text.lower().strip()
-        reply, intent, quick_replies, action_type, action_payload = cls._generate_response(session, cleaned, user_text, user)
+        reply, intent, quick_replies, action_type, action_payload = cls._generate_response(
+            session, cleaned, user_text, user, action=action
+        )
 
         # 3. Record bot answer
         ChatMessage.objects.create(
@@ -215,7 +217,7 @@ class ChatbotEngine:
         }
 
     @classmethod
-    def _generate_response(cls, session, text: str, raw_text: str, user=None):
+    def _generate_response(cls, session, text: str, raw_text: str, user=None, action=None):
         """
         Determines intent and constructs accurate responses strictly derived from database state.
         Prioritizes active booking state machine.
@@ -227,7 +229,7 @@ class ChatbotEngine:
         # ---------------------------------------------------------
         active_state = BookingStateMachine.get_state(session)
         if active_state and active_state.get("step"):
-            return BookingStateMachine.handle_message(session, raw_text, user)
+            return BookingStateMachine.handle_message(session, raw_text, user, action=action)
 
         # ---------------------------------------------------------
         # Check Booking Trigger Intent
@@ -243,10 +245,11 @@ class ChatbotEngine:
             or any(t in text for t in ["i want to book", "want to book", "i want a premium", "i want a car wash", "book a car wash"])
             or text.startswith("select_service_")
             or text.startswith("select_vehicle_")
+            or (action and (action == "book" or action.startswith("select_")))
         )
 
         if is_booking_intent:
-            return BookingStateMachine.handle_message(session, raw_text, user)
+            return BookingStateMachine.handle_message(session, raw_text, user, action=action)
 
         # ---------------------------------------------------------
         # Intent 1: Booking Reference Lookup / Track Booking

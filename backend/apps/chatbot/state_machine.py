@@ -65,12 +65,15 @@ class BookingStateMachine:
         session.save(update_fields=["metadata"])
 
     @classmethod
-    def handle_message(cls, session, user_text: str, user=None):
+    def handle_message(cls, session, user_text: str, user=None, action=None):
         """
         Main handler for booking conversational messages.
+        Accepts user message and optional action identifier.
         Returns: (reply, intent, quick_replies, action_type, action_payload)
         """
         text = user_text.lower().strip()
+        if action:
+            text = f"{text} {str(action).lower().strip()}".strip()
         state = cls.get_state(session)
 
         # Allow user to cancel at any time

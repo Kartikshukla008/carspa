@@ -41,9 +41,9 @@ const LiveVanMap = dynamic(() => import("@/components/LiveVanMap"), {
 
 function TrackFlow() {
   const searchParams = useSearchParams();
-  const initialRef = searchParams.get("reference") || "";
+  const queryRef = searchParams.get("ref") || searchParams.get("reference") || "";
 
-  const [reference, setReference] = useState(initialRef);
+  const [reference, setReference] = useState(queryRef);
   const [booking, setBooking] = useState<BookingResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,10 +128,11 @@ function TrackFlow() {
   };
 
   useEffect(() => {
-    if (initialRef) {
-      handleLookup(initialRef);
+    if (queryRef) {
+      setReference(queryRef);
+      handleLookup(queryRef);
     }
-  }, [initialRef]);
+  }, [queryRef]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

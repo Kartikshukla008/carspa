@@ -228,9 +228,9 @@ export default function ChatbotWidget() {
       window.open("https://wa.me/917087811881", "_blank");
       return;
     }
-    // Prefer the explicit action identifier for precise state transitions
-    const msgToSend = qr.action || qr.label;
-    handleSendMessage(msgToSend);
+    // Clean leading emoji symbols so the user's bubble shows a natural, clean human reply
+    const cleanLabel = qr.label.replace(/^[^\w\d(]+/, "").trim() || qr.label;
+    handleSendMessage(cleanLabel, qr.action);
   };
 
   const handleResetChat = () => {
