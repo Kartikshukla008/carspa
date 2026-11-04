@@ -141,18 +141,6 @@ function LoginForm() {
             }
           },
         });
-
-        // Render official Google button into container if present
-        const btnContainer = document.getElementById("googleOfficialBtn");
-        if (btnContainer) {
-          (window as any).google.accounts.id.renderButton(btnContainer, {
-            theme: "filled_blue",
-            size: "large",
-            width: "360",
-            text: "continue_with",
-            shape: "pill",
-          });
-        }
       }
 
       // 2. OAuth2 Token Client (for custom button clicks / popup)
@@ -405,7 +393,7 @@ function LoginForm() {
         {/* Login Form Container */}
         <div className="bg-[#0B1220]/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/50 space-y-6">
           {/* 1. Google 1-Click Social Sign-In */}
-          <div className="space-y-3">
+          <div>
             <button
               type="button"
               onClick={handleGoogleSignIn}
@@ -424,7 +412,6 @@ function LoginForm() {
                 </>
               )}
             </button>
-            <div id="googleOfficialBtn" className="flex justify-center empty:hidden" />
           </div>
 
           {/* Divider */}
