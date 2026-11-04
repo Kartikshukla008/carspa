@@ -25,8 +25,8 @@ function getAuthToken(path: string): string | null {
     return localStorage.getItem("carspa_auth_token");
   }
 
-  // For booking creation, attach customer token if customer is logged in
-  if (path === "/api/bookings/") {
+  // Attach customer token if logged in for bookings & chatbot sessions
+  if (path === "/api/bookings/" || path.startsWith("/api/chatbot/")) {
     return localStorage.getItem("carspa_auth_token");
   }
 
@@ -427,7 +427,12 @@ export const api = {
     }),
 
   // Chatbot & Customer Support
-  sendChatMessage: (data: { message: string; session_id?: string }) =>
+  sendChatMessage: (data: {
+    message: string;
+    session_id?: string;
+    action?: string;
+    payment_data?: any;
+  }) =>
     request<{
       session_id: string;
       reply: string;
@@ -435,6 +440,18 @@ export const api = {
       quick_replies: Array<{ label: string; action: string }>;
       action?: { type: string; payload: any };
     }>("/api/chatbot/message/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getChatProfile: () => request<any>("/api/chatbot/profile/"),
+  getChatSlots: (date: string, serviceId: number, vehicleId?: number, areaId?: number) =>
+    request<any>(
+      `/api/chatbot/slots/?date=${date}&service_id=${serviceId}${
+        vehicleId ? `&vehicle_id=${vehicleId}` : ""
+      }${areaId ? `&area_id=${areaId}` : ""}`
+    ),
+  verifyChatPayment: (data: any) =>
+    request<any>("/api/chatbot/verify-payment/", {
       method: "POST",
       body: JSON.stringify(data),
     }),

@@ -9,15 +9,20 @@ import {
   Sparkles,
   RotateCcw,
   ExternalLink,
-  ChevronDown,
   Bot,
   User,
   ArrowRight,
   ShieldCheck,
   Phone,
+  CreditCard,
+  CheckCircle2,
+  Calendar,
+  Clock,
+  Car,
+  MapPin,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import CarSpaLogo from "./CarSpaLogo";
+import { launchRazorpayCheckout } from "@/lib/razorpay";
 
 interface Message {
   id: string;
@@ -48,13 +53,15 @@ export default function ChatbotWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
   const [sessionId, setSessionId] = useState<string>("");
   const [hasUnread, setHasUnread] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize or restore session and message history from localStorage
+  // Initialize or restore session and message history
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -64,6 +71,13 @@ export default function ChatbotWidget() {
       localStorage.setItem("carspa_chat_session_id", savedSessionId);
     }
     setSessionId(savedSessionId);
+
+    // Fetch user profile if logged in
+    api.getChatProfile()
+      .then((data) => {
+        if (data?.authenticated) setUserProfile(data);
+      })
+      .catch(() => {});
 
     const savedHistory = localStorage.getItem("carspa_chat_history");
     if (savedHistory) {
@@ -111,26 +125,35 @@ export default function ChatbotWidget() {
     }
   }, [isOpen]);
 
-  const handleSendMessage = async (textToSend?: string) => {
-    const text = (textToSend || input).trim();
-    if (!text || isTyping) return;
+  const handleSendMessage = async (
+    textToSend?: string,
+    actionName?: string,
+    paymentData?: any
+  ) => {
+    const text = (textToSend !== undefined ? textToSend : input).trim();
+    if (!text && !actionName) return;
+    if (isTyping) return;
 
     setInput("");
 
-    const userMessage: Message = {
-      id: `u_${Date.now()}`,
-      sender: "USER",
-      text,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
+    if (text) {
+      const userMessage: Message = {
+        id: `u_${Date.now()}`,
+        sender: "USER",
+        text,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, userMessage]);
+    }
 
-    setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
     try {
       const res = await api.sendChatMessage({
         message: text,
         session_id: sessionId,
+        action: actionName,
+        payment_data: paymentData,
       });
 
       const botMessage: Message = {
@@ -145,6 +168,11 @@ export default function ChatbotWidget() {
 
       setMessages((prev) => [...prev, botMessage]);
       if (!isOpen) setHasUnread(true);
+
+      // Auto-launch Razorpay Checkout if action requires it
+      if (res.action?.type === "LAUNCH_RAZORPAY" && res.action.payload) {
+        handleTriggerRazorpay(res.action.payload);
+      }
     } catch (err: any) {
       const errorMsg: Message = {
         id: `err_${Date.now()}`,
@@ -162,12 +190,47 @@ export default function ChatbotWidget() {
     }
   };
 
+  const handleTriggerRazorpay = async (orderData: any) => {
+    if (!orderData || !orderData.order_id) return;
+    setIsPaying(true);
+
+    try {
+      await launchRazorpayCheckout({
+        orderData,
+        onSuccess: async (verifiedBooking, paymentRecord) => {
+          await handleSendMessage("", "PAYMENT_SUCCESS", {
+            razorpay_order_id: orderData.order_id,
+            razorpay_payment_id: paymentRecord?.payment_id || paymentRecord?.id || "pay_success",
+            razorpay_signature: paymentRecord?.signature || "sig_verified",
+            booking_reference: orderData.booking_reference,
+            amount: orderData.amount,
+          });
+        },
+        onFailure: async (error) => {
+          await handleSendMessage("", "PAYMENT_FAILED", {
+            booking_reference: orderData.booking_reference,
+            error: error?.description || "Payment failed",
+          });
+        },
+        onDismiss: () => {
+          // Closed by user without paying
+        },
+      });
+    } catch (err) {
+      console.error("Razorpay launcher error:", err);
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
   const handleQuickReply = (qr: { label: string; action: string }) => {
     if (qr.action === "whatsapp") {
       window.open("https://wa.me/917087811881", "_blank");
       return;
     }
-    handleSendMessage(qr.label);
+    // Prefer the explicit action identifier for precise state transitions
+    const msgToSend = qr.action || qr.label;
+    handleSendMessage(msgToSend);
   };
 
   const handleResetChat = () => {
@@ -186,10 +249,79 @@ export default function ChatbotWidget() {
     localStorage.setItem("carspa_chat_history", JSON.stringify([welcomeMsg]));
   };
 
-  // Helper to render bold text, bullet points, and clean paragraphs
+  // Helper to render Markdown tables, bold text, bullet points, and headers
   const renderFormattedText = (rawText: string) => {
     const lines = rawText.split("\n");
-    return lines.map((line, i) => {
+    const elements: JSX.Element[] = [];
+    let tableRows: string[] = [];
+
+    const flushTable = (keyIndex: number) => {
+      if (tableRows.length === 0) return;
+      const parsedRows = tableRows.map((r) =>
+        r
+          .split("|")
+          .map((c) => c.trim())
+          .filter((c, idx, arr) => idx > 0 && idx < arr.length - 1)
+      );
+
+      // Filter out divider lines (like :--- | :---)
+      const dataRows = parsedRows.filter(
+        (r) => !r.every((c) => c.startsWith(":") || c.startsWith("-"))
+      );
+
+      if (dataRows.length > 0) {
+        const headerRow = dataRows[0];
+        const bodyRows = dataRows.slice(1);
+
+        elements.push(
+          <div key={`table_${keyIndex}`} className="my-2.5 overflow-hidden rounded-xl border border-white/10 bg-[#0B1220]/80 shadow-md">
+            <table className="w-full text-[11px] text-left border-collapse">
+              <thead>
+                <tr className="bg-cyan-950/50 border-b border-white/10 text-cyan-300 font-bold">
+                  {headerRow.map((h, hIdx) => (
+                    <th key={hIdx} className="px-3 py-1.5">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {bodyRows.map((row, rIdx) => (
+                  <tr key={rIdx} className="hover:bg-white/[0.02] transition-colors">
+                    {row.map((cell, cIdx) => (
+                      <td key={cIdx} className={`px-3 py-1.5 ${cIdx === 0 ? "font-semibold text-slate-300" : "text-white"}`}>
+                        {cell.replace(/\*\*/g, "")}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+      tableRows = [];
+    };
+
+    lines.forEach((line, i) => {
+      // Check if line is part of a markdown table
+      if (line.trim().startsWith("|") && line.trim().endsWith("|")) {
+        tableRows.push(line.trim());
+        return;
+      } else {
+        flushTable(i);
+      }
+
+      // Check for headings (### )
+      if (line.trim().startsWith("### ")) {
+        elements.push(
+          <h4 key={i} className="text-xs font-bold text-cyan-300 mt-2 mb-1 flex items-center gap-1.5">
+            {line.replace("### ", "")}
+          </h4>
+        );
+        return;
+      }
+
       // Bold rendering regex (**word**)
       const parts = line.split(/(\*\*[^*]+\*\*)/g);
       const renderedLine = parts.map((part, pIdx) => {
@@ -204,32 +336,36 @@ export default function ChatbotWidget() {
       });
 
       if (line.trim().startsWith("•") || line.trim().startsWith("-") || line.trim().startsWith("✓")) {
-        return (
+        elements.push(
           <div key={i} className="flex items-start gap-1.5 my-0.5 text-xs text-slate-200">
             <span className="text-cyan-400 font-bold shrink-0">•</span>
             <span>{renderedLine}</span>
           </div>
         );
+        return;
       }
 
       if (!line.trim()) {
-        return <div key={i} className="h-1.5" />;
+        elements.push(<div key={i} className="h-1.5" />);
+        return;
       }
 
-      return (
+      elements.push(
         <p key={i} className="text-xs text-slate-200 leading-relaxed">
           {renderedLine}
         </p>
       );
     });
+
+    flushTable(lines.length);
+    return elements;
   };
 
   return (
     <div className="fixed bottom-5 right-5 z-50 font-sans select-none">
-      {/* 1. Floating Chat Toggle Button (when window is closed) */}
+      {/* 1. Floating Chat Toggle Button */}
       {!isOpen && (
         <div className="relative group">
-          {/* Subtle pulsating outer aura */}
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur-md opacity-70 group-hover:opacity-100 transition duration-300 animate-pulse" />
 
           <button
@@ -264,7 +400,7 @@ export default function ChatbotWidget() {
 
       {/* 2. Expandable Chat Window */}
       {isOpen && (
-        <div className="w-[92vw] sm:w-[410px] h-[580px] max-h-[85vh] flex flex-col bg-[#0B1220]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/80 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-[92vw] sm:w-[410px] h-[590px] max-h-[85vh] flex flex-col bg-[#0B1220]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-black/80 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-[#060A14] to-[#0F1B30] border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -282,7 +418,11 @@ export default function ChatbotWidget() {
                     Online
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400">Doorstep Car Care • Chandigarh Tricity</p>
+                <p className="text-[10px] text-slate-400">
+                  {userProfile?.authenticated
+                    ? `Logged in as ${userProfile.full_name || "Customer"}`
+                    : "Doorstep Detailing • Chandigarh Tricity"}
+                </p>
               </div>
             </div>
 
@@ -319,7 +459,7 @@ export default function ChatbotWidget() {
                   </div>
                 )}
 
-                <div className={`max-w-[85%] space-y-2 ${m.sender === "USER" ? "items-end" : "items-start"}`}>
+                <div className={`max-w-[88%] space-y-2 ${m.sender === "USER" ? "items-end" : "items-start"}`}>
                   <div
                     className={`p-3.5 rounded-2xl text-xs ${
                       m.sender === "USER"
@@ -341,28 +481,32 @@ export default function ChatbotWidget() {
                     </span>
                   </div>
 
-                  {/* Optional Action Card */}
+                  {/* Dynamic Action Trigger / Cards */}
                   {m.action && (
-                    <div className="pt-1">
-                      {m.action.type === "NAVIGATE_BOOK" && (
-                        <Link
-                          href={`/book${m.action.payload?.vehicle ? `?vehicle=${m.action.payload.vehicle}` : ""}`}
-                          onClick={() => setIsOpen(false)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-blue-400 hover:brightness-110 shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
+                    <div className="pt-1 flex flex-wrap gap-2">
+                      {m.action.type === "LAUNCH_RAZORPAY" && m.action.payload && (
+                        <button
+                          type="button"
+                          onClick={() => handleTriggerRazorpay(m.action?.payload)}
+                          disabled={isPaying}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-900 bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400 hover:brightness-110 shadow-lg shadow-cyan-500/25 transition-all cursor-pointer disabled:opacity-50"
                         >
-                          <span>Proceed to Book Wash</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>
+                            {isPaying ? "Launching Razorpay..." : `Pay ₹${(m.action.payload.amount / 100).toFixed(0)} via Razorpay`}
+                          </span>
+                        </button>
                       )}
 
-                      {m.action.type === "NAVIGATE_SERVICES" && (
+                      {m.action.type === "BOOKING_CONFIRMED" && (
                         <Link
-                          href="/services"
+                          href={`/track?ref=${m.action.payload?.booking_reference || ""}`}
                           onClick={() => setIsOpen(false)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-950/60 border border-emerald-500/40 hover:bg-emerald-900/80 shadow-md transition-all cursor-pointer"
                         >
-                          <span>View Full Services Catalog</span>
-                          <ExternalLink className="w-3 h-3 text-cyan-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Track Appointment Live</span>
+                          <ArrowRight className="w-3 h-3 text-emerald-400" />
                         </Link>
                       )}
 
@@ -377,7 +521,18 @@ export default function ChatbotWidget() {
                         </Link>
                       )}
 
-                      {m.action.type === "WHATSAPP_SUPPORT" && (
+                      {m.action.type === "NAVIGATE_SERVICES" && (
+                        <Link
+                          href="/services"
+                          onClick={() => setIsOpen(false)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 transition-all cursor-pointer"
+                        >
+                          <span>View Full Services Catalog</span>
+                          <ExternalLink className="w-3 h-3 text-cyan-400" />
+                        </Link>
+                      )}
+
+                      {m.action.type === "OPEN_SUPPORT" && (
                         <a
                           href="https://wa.me/917087811881"
                           target="_blank"
@@ -441,7 +596,7 @@ export default function ChatbotWidget() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about sedan price, offers, areas..."
+                placeholder="Ask prices, book wash, track van..."
                 disabled={isTyping}
                 className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#0B1220] border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all disabled:opacity-50"
               />
@@ -456,7 +611,7 @@ export default function ChatbotWidget() {
             </form>
             <div className="mt-1.5 text-center">
               <span className="text-[10px] text-slate-500">
-                Live prices &amp; availability verified by CARSPA Knowledge Engine
+                Doorstep Booking Engine • 100% Self-Powered Vans
               </span>
             </div>
           </div>

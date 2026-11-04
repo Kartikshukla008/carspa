@@ -12,23 +12,27 @@ from apps.chatbot.serializers import (
     ChatFAQSerializer,
 )
 from apps.chatbot.engine import ChatbotEngine
+from apps.chatbot.tools import get_customer_profile, get_available_slots
+from apps.payments.service import PaymentService
 
 
 class ChatMessageAPIView(views.APIView):
     """
     POST /api/chatbot/message/
     Processes customer natural-language query and returns database-grounded reply.
+    Supports authenticated users and guest sessions.
     """
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def post(self, request):
         user_message = request.data.get("message", "").strip()
         session_id = request.data.get("session_id", "").strip() or str(uuid.uuid4())
+        action = request.data.get("action")
+        payment_data = request.data.get("payment_data")
 
-        if not user_message:
+        if not user_message and not action:
             return Response(
-                {"error": "Please provide a message."},
+                {"error": "Please provide a message or action."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -38,10 +42,84 @@ class ChatMessageAPIView(views.APIView):
 
         result = ChatbotEngine.process_message(
             session_id=session_id,
-            user_text=user_message,
+            user_text=user_message or str(action),
             user=user,
+            action=action,
+            payment_data=payment_data,
         )
 
+        return Response(result, status=status.HTTP_200_OK)
+
+
+class ChatProfileAPIView(views.APIView):
+    """
+    GET /api/chatbot/profile/
+    Returns authenticated user's profile, saved vehicles, saved addresses, and recent bookings.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        user = getattr(request, "user", None)
+        profile_data = get_customer_profile(user)
+        return Response(profile_data, status=status.HTTP_200_OK)
+
+
+class ChatSlotsAPIView(views.APIView):
+    """
+    GET /api/chatbot/slots/?date=YYYY-MM-DD&service_id=1&vehicle_id=2&area_id=3
+    Returns available time slots for booking.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        date_str = request.query_params.get("date")
+        service_id = request.query_params.get("service_id")
+        vehicle_id = request.query_params.get("vehicle_id")
+        area_id = request.query_params.get("area_id")
+
+        if not date_str or not service_id:
+            return Response(
+                {"error": "date and service_id query parameters are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        slots_data = get_available_slots(
+            target_date=date_str,
+            service_package_id=int(service_id),
+            vehicle_type_id=int(vehicle_id) if vehicle_id else None,
+            service_area_id=int(area_id) if area_id else None,
+        )
+        return Response(slots_data, status=status.HTTP_200_OK)
+
+
+class ChatVerifyPaymentAPIView(views.APIView):
+    """
+    POST /api/chatbot/verify-payment/
+    Verifies Razorpay payment signature server-side and marks booking as PAID.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        order_id = request.data.get("razorpay_order_id")
+        payment_id = request.data.get("razorpay_payment_id")
+        signature = request.data.get("razorpay_signature")
+        session_id = request.data.get("session_id", "").strip() or str(uuid.uuid4())
+
+        if not order_id or not payment_id or not signature:
+            return Response(
+                {"error": "Missing razorpay_order_id, razorpay_payment_id, or razorpay_signature."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = getattr(request, "user", None)
+        if user and not user.is_authenticated:
+            user = None
+
+        result = ChatbotEngine._handle_payment_success(
+            session=ChatbotEngine.get_or_create_session(session_id, user),
+            payment_data=request.data,
+            user=user,
+        )
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -51,7 +129,6 @@ class ChatServicesAPIView(views.APIView):
     Returns active detailing packages with descriptions and features.
     """
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def get(self, request):
         packages = ServicePackage.objects.filter(is_active=True).order_by("sort_order")
@@ -78,47 +155,33 @@ class ChatPricingAPIView(views.APIView):
     Returns the real-time pricing matrix across all packages and vehicle types.
     """
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def get(self, request):
-        vehicle = request.query_params.get("vehicle", "").strip()
-        pricing_data = ChatbotEngine.get_pricing_data(vehicle_query=vehicle)
-        return Response({"pricing": pricing_data}, status=status.HTTP_200_OK)
+        pricing = ChatbotEngine.get_pricing_data()
+        return Response({"pricing": pricing}, status=status.HTTP_200_OK)
 
 
 class ChatOffersAPIView(views.APIView):
     """
     GET /api/chatbot/offers/
-    Returns strictly active, non-expired promotions and discounts.
+    Returns currently active, unexpired promo codes and discount offers.
     """
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def get(self, request):
-        now = timezone.now()
-        # Strictly exclude expired coupons
-        active_offers = ChatOffer.objects.filter(
-            is_active=True,
-            valid_from__lte=now,
-            valid_until__gte=now
-        ).order_by("-discount_value")
-        serializer = ChatOfferSerializer(active_offers, many=True)
-        return Response({"offers": serializer.data}, status=status.HTTP_200_OK)
+        offers = ChatbotEngine.get_active_offers_data()
+        return Response({"offers": offers}, status=status.HTTP_200_OK)
 
 
 class ChatFAQsAPIView(views.APIView):
     """
     GET /api/chatbot/faqs/
-    Returns verified FAQs categorized for customer self-service.
+    Returns curated CARSPA business FAQs and doorstep detailing policies.
     """
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def get(self, request):
-        category = request.query_params.get("category", "").strip()
         faqs = ChatFAQ.objects.filter(is_active=True)
-        if category:
-            faqs = faqs.filter(category__iexact=category)
         serializer = ChatFAQSerializer(faqs, many=True)
         return Response({"faqs": serializer.data}, status=status.HTTP_200_OK)
 
@@ -126,30 +189,28 @@ class ChatFAQsAPIView(views.APIView):
 class ChatServiceAreaCheckAPIView(views.APIView):
     """
     POST /api/chatbot/check-service-area/
-    Validates if customer address/pincode is eligible for doorstep wash.
+    Validates whether a given pincode or area name is eligible for doorstep detailing.
     """
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def post(self, request):
-        location_query = request.data.get("location", "").strip() or request.data.get("pincode", "").strip()
-        if not location_query:
+        query = request.data.get("query", "").strip()
+        if not query:
             return Response(
-                {"error": "Please provide a location, sector, or pincode to check."},
+                {"error": "Please provide a pincode or locality name."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        res = ChatbotEngine.check_location(location_query)
-        return Response(res, status=status.HTTP_200_OK)
+        result = ChatbotEngine.check_location(query)
+        return Response(result, status=status.HTTP_200_OK)
 
 
-class ChatHistoryAPIView(views.APIView):
+class ChatSessionHistoryAPIView(views.APIView):
     """
-    GET /api/chatbot/history/?session_id=...
-    Retrieves message history for the active session.
+    GET /api/chatbot/history/?session_id=<session_id>
+    Fetches prior conversation history for a given session.
     """
     permission_classes = [permissions.AllowAny]
-    authentication_classes = []
 
     def get(self, request):
         session_id = request.query_params.get("session_id", "").strip()
@@ -159,13 +220,11 @@ class ChatHistoryAPIView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        session = ChatSession.objects.filter(session_id=session_id).first()
-        if not session:
-            return Response({"session_id": session_id, "messages": []}, status=status.HTTP_200_OK)
+        try:
+            session = ChatSession.objects.get(session_id=session_id)
+        except ChatSession.DoesNotExist:
+            return Response({"messages": []}, status=status.HTTP_200_OK)
 
         messages = session.messages.all().order_by("created_at")
         serializer = ChatMessageSerializer(messages, many=True)
-        return Response({
-            "session_id": session.session_id,
-            "messages": serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response({"messages": serializer.data}, status=status.HTTP_200_OK)

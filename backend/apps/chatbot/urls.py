@@ -6,7 +6,10 @@ from apps.chatbot.views import (
     ChatOffersAPIView,
     ChatFAQsAPIView,
     ChatServiceAreaCheckAPIView,
-    ChatHistoryAPIView,
+    ChatSessionHistoryAPIView,
+    ChatProfileAPIView,
+    ChatSlotsAPIView,
+    ChatVerifyPaymentAPIView,
 )
 
 urlpatterns = [
@@ -16,5 +19,8 @@ urlpatterns = [
     path("offers/", ChatOffersAPIView.as_view(), name="chat_offers"),
     path("faqs/", ChatFAQsAPIView.as_view(), name="chat_faqs"),
     path("check-service-area/", ChatServiceAreaCheckAPIView.as_view(), name="chat_check_area"),
-    path("history/", ChatHistoryAPIView.as_view(), name="chat_history"),
+    path("history/", ChatSessionHistoryAPIView.as_view(), name="chat_history"),
+    path("profile/", ChatProfileAPIView.as_view(), name="chat_profile"),
+    path("slots/", ChatSlotsAPIView.as_view(), name="chat_slots"),
+    path("verify-payment/", ChatVerifyPaymentAPIView.as_view(), name="chat_verify_payment"),
 ]
