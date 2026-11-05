@@ -170,7 +170,7 @@ class AdminBookingViewSet(viewsets.ModelViewSet):
                 models.Q(service_package__name__icontains=search) |
                 models.Q(vehicle_type__name__icontains=search)
             )
-        return qs
+        return qs.order_by("-created_at", "-id")
 
     @action(detail=True, methods=["post"], url_path="confirm")
     def confirm_booking(self, request, pk=None):
@@ -700,8 +700,8 @@ class AdminDashboardMetricsAPIView(APIView):
             for v in vehicle_counts
         ]
 
-        # 8. Recent Activity Feeds
-        recent_bookings = BookingDetailSerializer(all_bookings[:6], many=True).data
+        # 8. Recent Activity Feeds (Strictly newest created bookings first)
+        recent_bookings = BookingDetailSerializer(all_bookings.order_by("-created_at", "-id")[:6], many=True).data
         recent_users = [
             {
                 "id": p.id,

@@ -140,6 +140,18 @@ function formatWhatsAppPreview(text: string) {
   });
 }
 
+// Helper to ensure all booking lists strictly sort newest created first with ID secondary
+const sortBookingsByNewest = <T extends { created_at?: string | null; id?: number | null }>(items: T[]): T[] => {
+  return [...items].sort((a, b) => {
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    if (timeB !== timeA) {
+      return timeB - timeA;
+    }
+    return (Number(b.id) || 0) - (Number(a.id) || 0);
+  });
+};
+
 export default function AdminPortalPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -383,7 +395,7 @@ export default function AdminPortalPage() {
             assigned_staff_name: null,
             created_at: new Date().toISOString(),
           };
-          return [newBooking, ...arr];
+          return sortBookingsByNewest([newBooking, ...arr]);
         });
 
         // Live KPI update
@@ -895,11 +907,12 @@ export default function AdminPortalPage() {
       if (bookingSearch.trim()) params.search = bookingSearch.trim();
       const data = await api.getAdminBookings(params);
       const list: BookingResponse[] = data.results || data || [];
-      setBookingsList(list);
+      const sorted = sortBookingsByNewest(list);
+      setBookingsList(sorted);
 
       // Keep active detailed modal updated with newest data if open
       if (selectedBooking) {
-        const updated = list.find((b) => b.id === selectedBooking.id);
+        const updated = sorted.find((b) => b.id === selectedBooking.id);
         if (updated) setSelectedBooking(updated);
       }
     } catch (err: any) {
@@ -1976,7 +1989,7 @@ export default function AdminPortalPage() {
                 {(recentActivity?.recent_bookings || []).length === 0 ? (
                   <p className="text-xs text-slate-500 p-2">No bookings recorded yet.</p>
                 ) : (
-                  recentActivity.recent_bookings.map((b: any) => (
+                  sortBookingsByNewest(recentActivity.recent_bookings).map((b: any) => (
                     <div key={b.id} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs space-y-1">
                       <div className="flex justify-between items-center">
                         <span className="font-mono text-cyan-400 font-bold">{b.reference}</span>
@@ -3815,7 +3828,7 @@ export default function AdminPortalPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                          {selectedCustomerDetail.bookings.map((b: any) => (
+                          {sortBookingsByNewest(selectedCustomerDetail.bookings).map((b: any) => (
                             <tr key={b.id} className="hover:bg-white/[0.02]">
                               <td className="py-2.5 px-3 font-mono font-bold text-cyan-300">
                                 {b.booking_reference}

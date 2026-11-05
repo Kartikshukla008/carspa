@@ -43,6 +43,18 @@ import {
 } from "@/types";
 import { BookingInvoiceModal } from "@/components/BookingInvoiceModal";
 
+// Helper to ensure all booking lists strictly sort newest created first with ID secondary
+const sortBookingsByNewest = <T extends { created_at?: string | null; id?: number | null }>(items: T[]): T[] => {
+  return [...items].sort((a, b) => {
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    if (timeB !== timeA) {
+      return timeB - timeA;
+    }
+    return (Number(b.id) || 0) - (Number(a.id) || 0);
+  });
+};
+
 export default function CustomerDashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, logout, refreshProfile } = useAuth();
@@ -131,7 +143,7 @@ export default function CustomerDashboardPage() {
         api.getVehicleTypes().catch(() => []),
       ]);
       setDashboardData(dash);
-      setBookingsList(dash.recent_bookings || []);
+      setBookingsList(sortBookingsByNewest(dash.recent_bookings || []));
       setVehicleTypes(vTypes);
       if (dash.profile) {
         setProfileForm({
@@ -155,7 +167,7 @@ export default function CustomerDashboardPage() {
   // Fetch full bookings list when switching to bookings tab
   useEffect(() => {
     if (activeTab === "bookings" && isAuthenticated) {
-      api.getCustomerBookings().then(setBookingsList).catch(() => {});
+      api.getCustomerBookings().then((res) => setBookingsList(sortBookingsByNewest(res || []))).catch(() => {});
     } else if (activeTab === "payments" && isAuthenticated) {
       api.getCustomerPayments().then(setPaymentsList).catch(() => {});
     }
@@ -281,8 +293,8 @@ export default function CustomerDashboardPage() {
 
   const profile = dashboardData?.profile || user;
 
-  // Filtered Bookings
-  const filteredBookings = bookingsList.filter((b) => {
+  // Filtered Bookings (strictly newest created first)
+  const filteredBookings = sortBookingsByNewest(bookingsList).filter((b) => {
     if (bookingFilter === "ALL") return true;
     if (bookingFilter === "UPCOMING") return ["PENDING", "CONFIRMED", "ASSIGNED", "IN_PROGRESS"].includes(b.status);
     if (bookingFilter === "COMPLETED") return b.status === "COMPLETED";

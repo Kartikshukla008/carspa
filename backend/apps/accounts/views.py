@@ -512,7 +512,7 @@ class CustomerDashboardAPIView(views.APIView):
 
         recent_bookings = user_bookings.select_related(
             "vehicle_type", "service_package", "service_area", "assigned_staff"
-        )[:5]
+        ).order_by("-created_at", "-id")[:5]
 
         saved_addresses = CustomerAddress.objects.filter(user=user)
         saved_vehicles = CustomerVehicle.objects.filter(user=user).select_related("vehicle_type")
@@ -547,7 +547,7 @@ class CustomerBookingListView(views.APIView):
             Q(user=user) | (Q(customer_phone=phone) if phone else Q())
         ).select_related(
             "vehicle_type", "service_package", "service_area", "assigned_staff"
-        ).distinct()
+        ).distinct().order_by("-created_at", "-id")
 
         if status_filter:
             bookings = bookings.filter(status=status_filter.upper())
@@ -701,7 +701,7 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
         user = profile.user
         bookings = Booking.objects.filter(
             Q(user=user) | Q(customer_phone=profile.phone)
-        ).select_related("vehicle_type", "service_package")[:20]
+        ).select_related("vehicle_type", "service_package").order_by("-created_at", "-id")[:20]
 
         payments = Payment.objects.filter(
             Q(user=user) | Q(booking__user=user)

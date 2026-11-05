@@ -117,8 +117,9 @@ class Booking(TimeStampedModel):
     admin_notes = models.TextField(blank=True)
 
     class Meta:
-        ordering = ["-service_date", "-slot_start_time", "-created_at"]
+        ordering = ["-created_at", "-id"]
         indexes = [
+            models.Index(fields=["-created_at", "-id"]),
             models.Index(fields=["service_date", "status"]),
             models.Index(fields=["customer_phone", "status"]),
             models.Index(fields=["user", "status"]),

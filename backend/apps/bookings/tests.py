@@ -257,3 +257,74 @@ class BookingPlatformTests(TestCase):
         dash_res = self.client.get("/api/admin/dashboard/")
         self.assertEqual(dash_res.status_code, 200)
         self.assertIn("metrics", dash_res.data)
+
+    def test_booking_ordering_newest_first_by_created_at_desc(self):
+        """
+        Verify all booking queries return newest bookings first (created_at DESC, id DESC),
+        regardless of the scheduled service_date.
+        """
+        self.client.force_authenticate(user=self.admin_user)
+        cust = Customer.objects.create(name="Sort Test Customer", phone="9888877771")
+
+        # Create older booking with later service date
+        booking_old = Booking.objects.create(
+            vehicle_type=self.vehicle,
+            service_package=self.package,
+            customer=cust,
+            service_date=datetime.date.today() + datetime.timedelta(days=10),
+            slot_start_time=datetime.time(10, 0),
+            slot_end_time=datetime.time(11, 0),
+            status="CONFIRMED",
+            customer_name="Booking Old",
+            customer_phone="9888877771",
+            address_line="Sector 1",
+            locality="Chandigarh",
+            price_snapshot=Decimal("500.00"),
+            final_amount=Decimal("500.00"),
+        )
+        # Explicitly backdate created_at for booking_old
+        Booking.objects.filter(id=booking_old.id).update(
+            created_at=timezone.now() - datetime.timedelta(days=2)
+        )
+
+        # Create newer booking with earlier service date
+        booking_new = Booking.objects.create(
+            vehicle_type=self.vehicle,
+            service_package=self.package,
+            customer=cust,
+            service_date=datetime.date.today() + datetime.timedelta(days=1),
+            slot_start_time=datetime.time(10, 0),
+            slot_end_time=datetime.time(11, 0),
+            status="CONFIRMED",
+            customer_name="Booking New",
+            customer_phone="9888877771",
+            address_line="Sector 2",
+            locality="Chandigarh",
+            price_snapshot=Decimal("500.00"),
+            final_amount=Decimal("500.00"),
+        )
+
+        # 1. Test Admin API ordering
+        res = self.client.get("/api/admin/bookings/")
+        self.assertEqual(res.status_code, 200)
+        results = res.data.get("results", res.data)
+        ids = [b["id"] for b in results]
+        idx_new = ids.index(booking_new.id)
+        idx_old = ids.index(booking_old.id)
+        self.assertLess(idx_new, idx_old, "Newer booking must appear before older booking in admin API")
+
+        # 2. Test Model default queryset ordering
+        model_ids = list(Booking.objects.values_list("id", flat=True))
+        self.assertLess(
+            model_ids.index(booking_new.id),
+            model_ids.index(booking_old.id),
+            "Booking default queryset must order by created_at DESC, id DESC"
+        )
+
+        # 3. Test Dashboard recent_bookings ordering
+        dash_res = self.client.get("/api/admin/dashboard/")
+        self.assertEqual(dash_res.status_code, 200)
+        recent_ids = [b["id"] for b in dash_res.data.get("recent_bookings", [])]
+        if booking_new.id in recent_ids and booking_old.id in recent_ids:
+            self.assertLess(recent_ids.index(booking_new.id), recent_ids.index(booking_old.id))
+

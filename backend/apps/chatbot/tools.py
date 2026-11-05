@@ -196,7 +196,7 @@ def get_customer_profile(user):
             "payment_status": b.payment_status,
             "payment_method": b.payment_method,
         }
-        for b in Booking.objects.filter(user=user).order_by("-created_at")[:5]
+        for b in Booking.objects.filter(user=user).order_by("-created_at", "-id")[:5]
     ]
 
     return {
@@ -435,12 +435,12 @@ def get_booking_status(query_str=None, user=None):
             if phone_match:
                 booking = Booking.objects.filter(
                     customer_phone=phone_match.group(0)
-                ).select_related("service_package", "vehicle_type", "assigned_staff").order_by("-created_at").first()
+                ).select_related("service_package", "vehicle_type", "assigned_staff").order_by("-created_at", "-id").first()
 
     if not booking and user and user.is_authenticated:
         booking = Booking.objects.filter(user=user).select_related(
             "service_package", "vehicle_type", "assigned_staff"
-        ).order_by("-created_at").first()
+        ).order_by("-created_at", "-id").first()
 
     if not booking:
         return {"found": False, "message": "No booking found matching your query."}
@@ -501,7 +501,7 @@ def get_personalized_recommendation(user):
 
     # Fetch customer's own previous bookings strictly filtered by user
     previous_bookings = list(
-        Booking.objects.filter(user=user).select_related("service_package", "vehicle_type").order_by("-created_at")
+        Booking.objects.filter(user=user).select_related("service_package", "vehicle_type").order_by("-created_at", "-id")
     )
     saved_vehicles = list(CustomerVehicle.objects.filter(user=user).select_related("vehicle_type"))
 
