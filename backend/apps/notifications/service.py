@@ -257,7 +257,8 @@ class NotificationService:
                     error_msg = str(e)
             else:
                 status = "SIMULATED"
-                logger.info("[WHATSAPP] Simulated send to %s: %s...", recipient, message[:60])
+                clean_msg = " ".join(message.split())
+                logger.info("[WHATSAPP] [%s] Simulated send to %s: %s", event_type, recipient, clean_msg)
 
         elif channel == "SMS":
             # Priority 1: Fast2SMS (Indian OTP route)
@@ -307,7 +308,8 @@ class NotificationService:
                     error_msg = str(e)
             else:
                 status = "SIMULATED"
-                logger.info("[SMS] Simulated send to %s: %s...", recipient, message[:60])
+                clean_msg = " ".join(message.split())
+                logger.info("[SMS] [%s] Simulated send to %s: %s", event_type, recipient, clean_msg)
 
         elif channel == "EMAIL" and getattr(settings, "EMAIL_HOST_USER", None):
             try:
