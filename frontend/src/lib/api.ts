@@ -468,4 +468,8 @@ export const api = {
     }),
   getChatHistory: (sessionId: string) =>
     request<{ session_id: string; messages: any[] }>(`/api/chatbot/history/?session_id=${encodeURIComponent(sessionId)}`),
+  getAdminChatbotAnalytics: () => request<any>("/api/chatbot/admin/analytics/"),
+  getAdminChatbotConversations: () => request<{ conversations: any[] }>("/api/chatbot/admin/conversations/"),
+  getAdminChatbotSessionDetail: (sessionId: string) =>
+    request<any>(`/api/chatbot/admin/conversations/${encodeURIComponent(sessionId)}/`),
 };

@@ -10,6 +10,7 @@ class ChatSession(TimeStampedModel):
     """
     Stores customer chatbot conversation sessions.
     Linked to authenticated user if logged in, or anonymous session ID.
+    Tracks conversion and booking analytics.
     """
     session_id = models.CharField(max_length=100, unique=True, db_index=True)
     user = models.ForeignKey(
@@ -19,6 +20,9 @@ class ChatSession(TimeStampedModel):
         blank=True,
         related_name="chat_sessions"
     )
+    has_booking_intent = models.BooleanField(default=False, db_index=True)
+    has_completed_booking = models.BooleanField(default=False, db_index=True)
+    booking_reference = models.CharField(max_length=50, blank=True, default="", db_index=True)
     metadata = models.JSONField(default=dict, blank=True)
 
     class Meta:
@@ -121,3 +125,30 @@ class ChatFAQ(TimeStampedModel):
 
     def __str__(self):
         return self.question
+
+
+class ChatSupportHandoff(TimeStampedModel):
+    """
+    Records customer escalations to human support representatives.
+    """
+    STATUS_CHOICES = [
+        ("PENDING", "Pending Support"),
+        ("IN_PROGRESS", "In Progress"),
+        ("RESOLVED", "Resolved"),
+    ]
+
+    session = models.ForeignKey(ChatSession, on_delete=models.CASCADE, related_name="handoffs")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="chat_handoffs")
+    customer_name = models.CharField(max_length=150)
+    customer_phone = models.CharField(max_length=20)
+    issue_summary = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
+    resolution_notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Support Handoff"
+        verbose_name_plural = "Support Handoffs"
+
+    def __str__(self):
+        return f"Handoff for {self.customer_name} ({self.customer_phone}) - {self.status}"

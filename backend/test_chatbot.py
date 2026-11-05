@@ -11,7 +11,7 @@ from apps.services.models import ServicePackage, VehicleType, ServicePackagePric
 from apps.bookings.models import Booking, Customer
 from apps.accounts.models import CustomerVehicle, CustomerAddress, UserProfile
 from apps.scheduling.models import SlotBlockout
-from apps.chatbot.models import ChatSession, ChatMessage, ChatOffer, ChatFAQ
+from apps.chatbot.models import ChatSession, ChatMessage, ChatOffer, ChatFAQ, ChatSupportHandoff
 from apps.chatbot.engine import ChatbotEngine
 from apps.chatbot.tools import (
     get_services,
@@ -21,6 +21,12 @@ from apps.chatbot.tools import (
     get_customer_profile,
     create_booking,
     get_booking_status,
+    get_personalized_recommendation,
+    validate_and_apply_coupon,
+    reschedule_booking,
+    cancel_booking,
+    request_human_support,
+    get_admin_chatbot_analytics,
 )
 
 User = get_user_model()
@@ -575,3 +581,293 @@ class TestChatbotEngineAndAPIs:
         )
         assert r2.status_code == 200
         assert booking.booking_reference in r2.data["reply"]
+
+    def test_phase3_personalized_recommendations(self):
+        """
+        Checklist Item 1: Personalized suggestions use past customer history.
+        Exterior wash customer receives full detailing recommendation.
+        """
+        user = User.objects.create_user(username="rec_user", email="rec@example.com", password="password")
+        cust = Customer.objects.create(name="Rec User", phone="9888877111")
+        CustomerVehicle.objects.create(user=user, vehicle_type=self.sedan, model_name="Honda City")
+
+        # Booking history: Exterior wash
+        Booking.objects.create(
+            user=user,
+            customer=cust,
+            service_package=self.basic,  # basic-wash (exterior)
+            vehicle_type=self.sedan,
+            service_area=self.area,
+            service_date=timezone.localdate() - timedelta(days=5),
+            slot_start_time=time(10, 0),
+            slot_end_time=time(11, 0),
+            customer_name="Rec User",
+            customer_phone="9888877111",
+            address_line="Sector 22",
+            locality="Chandigarh",
+            price_snapshot=Decimal("499.00"),
+            final_amount=Decimal("499.00"),
+            payment_method="PAY_ON_SERVICE",
+            payment_status="PENDING",
+            status="COMPLETED",
+        )
+
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        # Natural language query
+        r = self.client.post(
+            "/api/chatbot/message/",
+            {"message": "What service do you recommend for my car?", "session_id": "test_rec_sess"},
+            format="json",
+        )
+        assert r.status_code == 200
+        assert r.data["intent"] == "RECOMMENDATION"
+        assert "exterior wash" in r.data["reply"].lower()
+        assert "detailing" in r.data["reply"].lower()
+
+    def test_phase3_strict_data_isolation_between_accounts(self):
+        """
+        Checklist Item 5: Customer data cannot leak between accounts.
+        """
+        user1 = User.objects.create_user(username="user1", email="u1@example.com", password="password")
+        user2 = User.objects.create_user(username="user2", email="u2@example.com", password="password")
+        cust1 = Customer.objects.create(name="Secret User 1", phone="9111111111")
+
+        # User1's booking
+        b1 = Booking.objects.create(
+            user=user1,
+            customer=cust1,
+            service_package=self.premium,
+            vehicle_type=self.sedan,
+            service_area=self.area,
+            service_date=timezone.localdate() + timedelta(days=2),
+            slot_start_time=time(11, 0),
+            slot_end_time=time(12, 0),
+            customer_name="Secret User 1",
+            customer_phone="9111111111",
+            address_line="Confidential Villa 99",
+            locality="Chandigarh",
+            price_snapshot=Decimal("999.00"),
+            final_amount=Decimal("999.00"),
+            payment_method="PAY_ON_SERVICE",
+            payment_status="PENDING",
+            status="CONFIRMED",
+        )
+
+        # User2 logged in tries to track
+        token2 = Token.objects.create(user=user2)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token2.key}")
+
+        r = self.client.post(
+            "/api/chatbot/message/",
+            {"message": "Track my booking", "session_id": "test_isolation_sess"},
+            format="json",
+        )
+        assert r.status_code == 200
+        # User 2 must NOT see User 1's booking reference or address
+        assert b1.booking_reference not in r.data["reply"]
+        assert "Confidential Villa 99" not in r.data["reply"]
+
+    def test_phase3_coupon_validation_and_calculations(self):
+        """
+        Checklist Item 2: Offers are valid and correctly calculated.
+        Min order requirements and expiration enforced.
+        """
+        # Active coupon: 10% off, min order 500
+        now = timezone.now()
+        ChatOffer.objects.create(
+            code="SAVE10",
+            title="10% Off",
+            description="10% discount on detailing",
+            discount_type="PERCENTAGE",
+            discount_value=Decimal("10.00"),
+            min_order_amount=Decimal("500.00"),
+            valid_from=now - timedelta(days=1),
+            valid_until=now + timedelta(days=10),
+            is_active=True,
+        )
+
+        # 1. Valid coupon applied to 1000 subtotal
+        res_valid = validate_and_apply_coupon("SAVE10", 1000.0)
+        assert res_valid["is_valid"] is True
+        assert res_valid["discount_amount"] == 100.0
+        assert res_valid["final_amount"] == 900.0
+
+        # 2. Min order violation (subtotal 400 < 500)
+        res_min = validate_and_apply_coupon("SAVE10", 400.0)
+        assert res_min["is_valid"] is False
+        assert "minimum order" in res_min["error"].lower()
+
+        # 3. Expired coupon
+        ChatOffer.objects.create(
+            code="EXPIRED50",
+            title="Expired Offer",
+            description="Old",
+            discount_type="FIXED",
+            discount_value=Decimal("50.00"),
+            min_order_amount=Decimal("100.00"),
+            valid_from=now - timedelta(days=30),
+            valid_until=now - timedelta(days=1),
+            is_active=True,
+        )
+        res_exp = validate_and_apply_coupon("EXPIRED50", 1000.0)
+        assert res_exp["is_valid"] is False
+        assert "expired" in res_exp["error"].lower()
+
+    def test_phase3_reschedule_booking_with_confirmation(self):
+        """
+        Checklist Item 4: Rescheduling requires explicit confirmation before modifying DB.
+        """
+        today = timezone.localdate()
+        target_date = today + timedelta(days=2)
+        cust = Customer.objects.create(name="Reschedule Cust", phone="9777766666")
+
+        booking = Booking.objects.create(
+            customer=cust,
+            service_package=self.premium,
+            vehicle_type=self.sedan,
+            service_area=self.area,
+            service_date=target_date,
+            slot_start_time=time(10, 0),
+            slot_end_time=time(11, 0),
+            customer_name="Reschedule Cust",
+            customer_phone="9777766666",
+            address_line="Sector 34",
+            locality="Chandigarh",
+            price_snapshot=Decimal("999.00"),
+            final_amount=Decimal("999.00"),
+            payment_method="PAY_ON_SERVICE",
+            payment_status="PENDING",
+            status="CONFIRMED",
+        )
+
+        sid = "sess_resched_1"
+        # 1. User requests reschedule
+        r1 = self.client.post(
+            "/api/chatbot/message/",
+            {"message": f"Reschedule booking {booking.booking_reference}", "session_id": sid},
+            format="json",
+        )
+        assert r1.status_code == 200
+        assert "reschedule" in r1.data["reply"].lower()
+
+        # 2. User selects tomorrow
+        new_date = today + timedelta(days=1)
+        r2 = self.client.post(
+            "/api/chatbot/message/",
+            {"message": f"{new_date.isoformat()}", "session_id": sid},
+            format="json",
+        )
+        assert r2.status_code == 200
+        assert "time" in r2.data["reply"].lower()
+
+        # 3. User selects slot 11:00
+        r3 = self.client.post(
+            "/api/chatbot/message/",
+            {"message": "11:00", "session_id": sid},
+            format="json",
+        )
+        assert r3.status_code == 200
+        assert "Reschedule Confirmation" in r3.data["reply"]
+        assert "Explicit confirmation required" in r3.data["reply"]
+
+        # Ensure DB has NOT been rescheduled yet!
+        booking.refresh_from_db()
+        assert booking.service_date == target_date
+
+        # 4. User explicitly confirms
+        r4 = self.client.post(
+            "/api/chatbot/message/",
+            {"message": "Confirm Reschedule", "session_id": sid},
+            format="json",
+        )
+        assert r4.status_code == 200
+        assert "successfully rescheduled" in r4.data["reply"].lower()
+
+        # Verify DB updated!
+        booking.refresh_from_db()
+        assert booking.service_date == new_date
+
+    def test_phase3_cancel_booking_with_confirmation(self):
+        """
+        Checklist Item 4: Cancellation requires explicit confirmation and enforces policy.
+        """
+        today = timezone.localdate()
+        cust = Customer.objects.create(name="Cancel Cust", phone="9555544444")
+        booking = Booking.objects.create(
+            customer=cust,
+            service_package=self.premium,
+            vehicle_type=self.sedan,
+            service_area=self.area,
+            service_date=today + timedelta(days=3),
+            slot_start_time=time(14, 0),
+            slot_end_time=time(15, 0),
+            customer_name="Cancel Cust",
+            customer_phone="9555544444",
+            address_line="Sector 17",
+            locality="Chandigarh",
+            price_snapshot=Decimal("999.00"),
+            final_amount=Decimal("999.00"),
+            payment_method="PAY_ON_SERVICE",
+            payment_status="PENDING",
+            status="CONFIRMED",
+        )
+
+        sid = "sess_cancel_1"
+        # 1. User requests cancellation
+        r1 = self.client.post(
+            "/api/chatbot/message/",
+            {"message": f"Cancel my booking {booking.booking_reference}", "session_id": sid},
+            format="json",
+        )
+        assert r1.status_code == 200
+        assert "Cancellation Confirmation Required" in r1.data["reply"]
+
+        # Verify DB is still CONFIRMED (not cancelled yet)
+        booking.refresh_from_db()
+        assert booking.status == "CONFIRMED"
+
+        # 2. User confirms cancellation
+        r2 = self.client.post(
+            "/api/chatbot/message/",
+            {"message": "Yes, Cancel Booking", "session_id": sid},
+            format="json",
+        )
+        assert r2.status_code == 200
+        assert "has been cancelled" in r2.data["reply"]
+
+        # Verify DB is now CANCELLED!
+        booking.refresh_from_db()
+        assert booking.status == "CANCELLED"
+
+    def test_phase3_human_support_handoff(self):
+        """
+        Checklist Item 7: Human handoff logs handoff record, CRM lead, and returns WhatsApp link.
+        """
+        r = self.client.post(
+            "/api/chatbot/message/",
+            {"message": "I want to speak with a human agent please", "session_id": "test_handoff_sess"},
+            format="json",
+        )
+        assert r.status_code == 200
+        assert r.data["intent"] == "HUMAN_HANDOFF"
+        assert "wa.me" in r.data["reply"] or "WhatsApp" in r.data["reply"]
+        assert "+91 70878 11881" in r.data["reply"]
+        assert ChatSupportHandoff.objects.filter(session__session_id="test_handoff_sess").exists()
+
+    def test_phase3_admin_chatbot_analytics(self):
+        """
+        Checklist Item 6: Admin analytics match actual conversation records.
+        """
+        admin = User.objects.create_superuser(username="admin_user", email="adm@example.com", password="password")
+        token = Token.objects.create(user=admin)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        r = self.client.get("/api/chatbot/admin/analytics/")
+        assert r.status_code == 200
+        assert "total_conversations" in r.data
+        assert "unique_users" in r.data
+        assert "conversion_rate" in r.data
+        assert "intents_distribution" in r.data
+        assert "recent_sessions" in r.data

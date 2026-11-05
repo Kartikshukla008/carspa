@@ -53,6 +53,7 @@ import {
   Activity,
   ArrowUpRight,
   Briefcase,
+  Bot,
   EyeOff,
   Bell,
   Radio,
@@ -299,6 +300,41 @@ export default function AdminPortalPage() {
   const showToast = (type: "success" | "error", text: string) => {
     setToastMessage({ type, text });
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // Chatbot Admin Analytics & Conversation Review
+  const [chatbotAnalytics, setChatbotAnalytics] = useState<any | null>(null);
+  const [chatbotConversations, setChatbotConversations] = useState<any[]>([]);
+  const [selectedChatSession, setSelectedChatSession] = useState<any | null>(null);
+  const [loadingChatbot, setLoadingChatbot] = useState(false);
+  const [loadingChatTranscript, setLoadingChatTranscript] = useState(false);
+
+  const fetchChatbotData = async () => {
+    setLoadingChatbot(true);
+    try {
+      const [analyticsData, convsData] = await Promise.all([
+        api.getAdminChatbotAnalytics(),
+        api.getAdminChatbotConversations(),
+      ]);
+      setChatbotAnalytics(analyticsData);
+      setChatbotConversations(convsData?.conversations || []);
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to load chatbot analytics");
+    } finally {
+      setLoadingChatbot(false);
+    }
+  };
+
+  const handleViewChatTranscript = async (sessionId: string) => {
+    setLoadingChatTranscript(true);
+    try {
+      const detail = await api.getAdminChatbotSessionDetail(sessionId);
+      setSelectedChatSession(detail);
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to load conversation transcript");
+    } finally {
+      setLoadingChatTranscript(false);
+    }
   };
 
   // Real-time WebSocket connection for live Admin Operations
@@ -603,6 +639,8 @@ export default function AdminPortalPage() {
       fetchTeam();
     } else if (activeTab === "audit") {
       fetchAuditLogs();
+    } else if (activeTab === "chatbot") {
+      fetchChatbotData();
     }
   }, [isAuthenticated, activeTab]);
 
@@ -1571,6 +1609,7 @@ export default function AdminPortalPage() {
               else if (activeTab === "settings") fetchConfig();
               else if (activeTab === "team") fetchTeam();
               else if (activeTab === "audit") fetchAuditLogs();
+              else if (activeTab === "chatbot") fetchChatbotData();
             }}
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 px-3 py-2 rounded-xl transition-all shadow-sm"
             title="Refresh current tab"
@@ -1598,6 +1637,7 @@ export default function AdminPortalPage() {
           { id: "payments", label: "Payments (Razorpay)", icon: CreditCard },
           { id: "customers", label: "Customers", icon: UserCheck },
           { id: "leads", label: "CRM Leads", icon: FileText },
+          { id: "chatbot", label: "Chatbot & AI", icon: Bot },
           { id: "staff", label: "Technicians & Staff", icon: Users },
           { id: "settings", label: "Capacity & Pricing", icon: Settings },
           { id: "team", label: "Admin Team & RBAC", icon: Shield },
@@ -5239,6 +5279,351 @@ export default function AdminPortalPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 11. CHATBOT AI & CONVERSATIONAL ANALYTICS TAB */}
+      {activeTab === "chatbot" && (
+        <div className="space-y-8">
+          {/* Section Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+            <div>
+              <span className="text-[11px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                <Bot className="w-3.5 h-3.5" />
+                <span>AI Sales & Support Intelligence</span>
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
+                Chatbot Conversational Analytics
+              </h2>
+              <p className="text-xs text-slate-400">
+                Live monitoring of natural-language inquiries, intent recognition, conversational bookings, and drop-off rates.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={fetchChatbotData}
+                disabled={loadingChatbot}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 transition-all cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loadingChatbot ? "animate-spin" : ""}`} />
+                <span>Refresh Data</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 7 KPI Metric Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-1.5">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Total Chats</span>
+              <div className="text-xl font-black text-white">
+                {chatbotAnalytics?.total_conversations ?? (loadingChatbot ? "..." : 0)}
+              </div>
+              <span className="text-[10px] text-cyan-400">All sessions logged</span>
+            </div>
+
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-1.5">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Unique Users</span>
+              <div className="text-xl font-black text-cyan-300">
+                {chatbotAnalytics?.unique_users ?? (loadingChatbot ? "..." : 0)}
+              </div>
+              <span className="text-[10px] text-slate-400">Identified accounts</span>
+            </div>
+
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-1.5">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Booking Intent</span>
+              <div className="text-xl font-black text-blue-400">
+                {chatbotAnalytics?.booking_conversations ?? (loadingChatbot ? "..." : 0)}
+              </div>
+              <span className="text-[10px] text-slate-400">Initiated booking flow</span>
+            </div>
+
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-1.5">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Completed Bookings</span>
+              <div className="text-xl font-black text-emerald-400">
+                {chatbotAnalytics?.completed_bookings ?? (loadingChatbot ? "..." : 0)}
+              </div>
+              <span className="text-[10px] text-emerald-300/80">Confirmed via chat</span>
+            </div>
+
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-1.5">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Conversion Rate</span>
+              <div className="text-xl font-black text-amber-300">
+                {chatbotAnalytics?.conversion_rate ?? 0}%
+              </div>
+              <span className="text-[10px] text-slate-400">Intent to booking</span>
+            </div>
+
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-1.5">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Abandoned Chats</span>
+              <div className="text-xl font-black text-rose-400">
+                {chatbotAnalytics?.abandoned_conversations ?? 0}
+              </div>
+              <span className="text-[10px] text-slate-400">Incomplete drafts</span>
+            </div>
+
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-4 rounded-2xl border border-white/10 space-y-1.5">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">Escalations</span>
+              <div className="text-xl font-black text-purple-400">
+                {chatbotAnalytics?.escalations_count ?? 0}
+              </div>
+              <span className="text-[10px] text-slate-400">Human handoffs</span>
+            </div>
+          </div>
+
+          {/* Intent Breakdown & Popular Packages */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Intent Distribution Card */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-cyan-400" />
+                  <span>Customer Query Intent Distribution</span>
+                </h3>
+                <span className="text-[10px] font-mono text-slate-400">Top Inquiries</span>
+              </div>
+
+              {chatbotAnalytics?.intents_distribution && chatbotAnalytics.intents_distribution.length > 0 ? (
+                <div className="space-y-2.5">
+                  {chatbotAnalytics.intents_distribution.map((item: any, idx: number) => {
+                    const intentLabel = item.intent || "GENERAL_CHAT";
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                        <span className="text-xs font-mono font-semibold text-slate-300">
+                          {intentLabel}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-800/60">
+                            {item.count} queries
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 py-6 text-center">No intent data logged yet.</p>
+              )}
+            </div>
+
+            {/* Popular Packages Card */}
+            <div className="bg-[#0B1220]/90 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Popular Service Packages In Demand</span>
+                </h3>
+                <span className="text-[10px] font-mono text-slate-400">Overall Orders</span>
+              </div>
+
+              {chatbotAnalytics?.popular_packages && chatbotAnalytics.popular_packages.length > 0 ? (
+                <div className="space-y-2.5">
+                  {chatbotAnalytics.popular_packages.map((pkg: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+                      <span className="text-xs font-semibold text-white">
+                        {pkg.name}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-800/60">
+                        {pkg.count} bookings
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 py-6 text-center">No package demand data available.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Conversations Review & Transcript Inspector */}
+          <div className="bg-[#0B1220]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl overflow-hidden space-y-4 p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-cyan-400" />
+                  <span>Customer Conversation Transcripts & Audit Trail</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Inspect real session dialogues, intent recognition, and customer journey.
+                </p>
+              </div>
+              <span className="text-xs font-mono text-cyan-300">
+                {chatbotConversations.length} sessions listed
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-white/10 text-slate-400 uppercase tracking-wider font-mono text-[10px]">
+                    <th className="py-2.5 px-3">Session</th>
+                    <th className="py-2.5 px-3">Customer</th>
+                    <th className="py-2.5 px-3">User Type</th>
+                    <th className="py-2.5 px-3">Messages</th>
+                    <th className="py-2.5 px-3">Booking Intent</th>
+                    <th className="py-2.5 px-3">Booking Ref</th>
+                    <th className="py-2.5 px-3">Last Message Snippet</th>
+                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {chatbotConversations.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-8 text-center text-slate-500 text-xs">
+                        {loadingChatbot ? "Loading sessions..." : "No conversation sessions recorded yet."}
+                      </td>
+                    </tr>
+                  ) : (
+                    chatbotConversations.map((c) => (
+                      <tr key={c.session_id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-3 font-mono text-slate-300 text-[11px]">
+                          {c.session_id.substring(0, 12)}...
+                        </td>
+                        <td className="py-3 px-3 font-semibold text-white">
+                          {c.customer_name || c.user_label || "Guest Visitor"}
+                        </td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              c.is_authenticated || c.user_id
+                                ? "bg-cyan-950/60 text-cyan-300 border border-cyan-800/60"
+                                : "bg-slate-800 text-slate-400"
+                            }`}
+                          >
+                            {c.is_authenticated || c.user_id ? "Logged In" : "Guest"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-mono text-slate-300">
+                          {c.message_count}
+                        </td>
+                        <td className="py-3 px-3">
+                          {c.has_completed_booking ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-800/60">
+                              Completed
+                            </span>
+                          ) : c.has_booking_intent ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950/60 text-blue-300 border border-blue-800/60">
+                              Intent Detected
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-500">Inquiry</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 font-mono text-cyan-400 font-bold">
+                          {c.booking_reference || "—"}
+                        </td>
+                        <td className="py-3 px-3 max-w-xs truncate text-slate-400">
+                          {c.last_message || "—"}
+                        </td>
+                        <td className="py-3 px-3 font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                          {c.updated_at ? new Date(c.updated_at).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleViewChatTranscript(c.session_id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-all cursor-pointer"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Transcript</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHATBOT SESSION TRANSCRIPT MODAL */}
+      {selectedChatSession && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-[#0B1220] border border-white/10 rounded-3xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 my-auto">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-white/10 bg-[#080D1A] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white">Conversation Transcript</h3>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/30">
+                      {selectedChatSession.session_id.substring(0, 14)}...
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Customer: <span className="text-white font-semibold">{selectedChatSession.customer_name || selectedChatSession.user_label}</span>
+                    {selectedChatSession.booking_reference && (
+                      <span className="ml-2 text-cyan-400 font-mono font-bold">• Booking #{selectedChatSession.booking_reference}</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedChatSession(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Transcript Messages Container */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 bg-[#060A14]">
+              {selectedChatSession.messages && selectedChatSession.messages.length > 0 ? (
+                selectedChatSession.messages.map((m: any, idx: number) => {
+                  const isUser = m.sender === "USER";
+                  return (
+                    <div key={idx} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
+                      {!isUser && (
+                        <div className="w-7 h-7 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center shrink-0 text-cyan-300">
+                          <Bot className="w-3.5 h-3.5" />
+                        </div>
+                      )}
+                      <div className={`max-w-[80%] rounded-2xl p-3.5 space-y-1.5 ${
+                        isUser
+                          ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white"
+                          : "bg-[#0B1220] border border-white/10 text-slate-200"
+                      }`}>
+                        <div className="flex items-center justify-between gap-4 text-[10px] opacity-75">
+                          <span className="font-bold">{isUser ? "Customer" : "CARSPA Assistant"}</span>
+                          <span className="font-mono">{m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</span>
+                        </div>
+                        <p className="text-xs whitespace-pre-wrap leading-relaxed">{m.message}</p>
+                        {m.intent && (
+                          <div className="pt-1">
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/30 border border-white/10 text-cyan-300">
+                              Intent: {m.intent}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-8">No messages recorded in this session.</p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3 border-t border-white/10 bg-[#080D1A] flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedChatSession(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              >
+                Close Transcript
+              </button>
             </div>
           </div>
         </div>

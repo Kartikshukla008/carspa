@@ -12,7 +12,11 @@ from apps.chatbot.serializers import (
     ChatFAQSerializer,
 )
 from apps.chatbot.engine import ChatbotEngine
-from apps.chatbot.tools import get_customer_profile, get_available_slots
+from apps.chatbot.tools import (
+    get_customer_profile,
+    get_available_slots,
+    get_admin_chatbot_analytics,
+)
 from apps.payments.service import PaymentService
 
 
@@ -228,3 +232,74 @@ class ChatSessionHistoryAPIView(views.APIView):
         messages = session.messages.all().order_by("created_at")
         serializer = ChatMessageSerializer(messages, many=True)
         return Response({"messages": serializer.data}, status=status.HTTP_200_OK)
+
+
+class AdminChatbotAnalyticsAPIView(views.APIView):
+    """
+    GET /api/chatbot/admin/analytics/
+    Returns live chatbot usage metrics, conversion funnels, and intent distribution for admin dashboard.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        analytics = get_admin_chatbot_analytics()
+        return Response(analytics, status=status.HTTP_200_OK)
+
+
+class AdminChatbotConversationsAPIView(views.APIView):
+    """
+    GET /api/chatbot/admin/conversations/
+    Lists recent customer conversation sessions with engagement metadata.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        sessions = ChatSession.objects.select_related("user").order_by("-updated_at")[:50]
+        results = []
+        for s in sessions:
+            last_msg = s.messages.order_by("-created_at").first()
+            user_label = s.user.get_full_name() or s.user.username if s.user else "Guest Visitor"
+            results.append({
+                "session_id": s.session_id,
+                "user_label": user_label,
+                "is_authenticated": bool(s.user),
+                "message_count": s.messages.count(),
+                "has_booking_intent": s.has_booking_intent,
+                "has_completed_booking": s.has_completed_booking,
+                "booking_reference": s.booking_reference,
+                "last_message": last_msg.message[:100] if last_msg else "",
+                "created_at": s.created_at.isoformat(),
+                "updated_at": s.updated_at.isoformat(),
+            })
+        return Response({"conversations": results}, status=status.HTTP_200_OK)
+
+
+class AdminChatbotSessionDetailAPIView(views.APIView):
+    """
+    GET /api/chatbot/admin/conversations/<session_id>/
+    Returns full transcript and audit trail for a single conversation session.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, session_id):
+        try:
+            session = ChatSession.objects.select_related("user").get(session_id=session_id)
+        except ChatSession.DoesNotExist:
+            return Response(
+                {"error": f"Session {session_id} not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        messages = session.messages.all().order_by("created_at")
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response({
+            "session_id": session.session_id,
+            "user_label": session.user.get_full_name() or session.user.username if session.user else "Guest Visitor",
+            "is_authenticated": bool(session.user),
+            "has_booking_intent": session.has_booking_intent,
+            "has_completed_booking": session.has_completed_booking,
+            "booking_reference": session.booking_reference,
+            "created_at": session.created_at.isoformat(),
+            "updated_at": session.updated_at.isoformat(),
+            "messages": serializer.data,
+        }, status=status.HTTP_200_OK)

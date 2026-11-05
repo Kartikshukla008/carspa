@@ -48,16 +48,17 @@ function GoogleIcon({ className = "w-4 h-4" }: { className?: string }) {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/";
+  const rawRedirect = searchParams.get("redirect") || "/";
+  const redirectPath = rawRedirect.startsWith("/") ? rawRedirect : `/${rawRedirect}`;
 
   const { login, setSession, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // If already authenticated, redirect to home page immediately
+  // If already authenticated, redirect to destination immediately
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      window.location.href = "/";
+      window.location.href = redirectPath;
     }
-  }, [authLoading, isAuthenticated]);
+  }, [authLoading, isAuthenticated, redirectPath]);
 
   // Auth Mode: "password" vs "otp"
   const [authMode, setAuthMode] = useState<"password" | "otp">("password");
@@ -105,13 +106,11 @@ function LoginForm() {
                 sub: userInfo.sub,
               });
               setSession(res.token, res.user);
-              window.location.href = "/";
+              window.location.href = redirectPath;
             }
           })
           .catch((err: any) => {
             setError(err.message || "Failed to process Google sign-in response.");
-          })
-          .finally(() => {
             setGoogleLoading(false);
           });
       }
@@ -139,7 +138,7 @@ function LoginForm() {
               try {
                 const res = await api.googleAuth({ credential: response.credential });
                 setSession(res.token, res.user);
-                window.location.href = "/";
+                window.location.href = redirectPath;
               } catch (err: any) {
                 setError(err.message || "Failed to authenticate with Google.");
               } finally {
@@ -176,7 +175,7 @@ function LoginForm() {
                   sub: userInfo.sub,
                 });
                 setSession(res.token, res.user);
-                window.location.href = "/";
+                window.location.href = redirectPath;
               } catch (err: any) {
                 setError(err.message || "Failed to complete Google authentication.");
               } finally {
@@ -345,7 +344,7 @@ function LoginForm() {
                   sub: userInfo.sub,
                 });
                 setSession(res.token, res.user);
-                window.location.href = "/";
+                window.location.href = redirectPath;
               } catch (err: any) {
                 setError(err.message || "Failed to complete Google authentication.");
               } finally {
@@ -376,6 +375,29 @@ function LoginForm() {
       window.location.href = oauthUrl;
     }
   };
+
+  if (isAuthenticated || googleLoading) {
+    return (
+      <div className="min-h-[85vh] flex items-center justify-center px-4 py-20 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-tr from-cyan-600/15 via-blue-600/10 to-transparent blur-3xl rounded-full pointer-events-none" />
+        <div className="relative w-full max-w-md z-10 text-center p-8 rounded-3xl bg-[#0B1220]/90 border border-white/10 shadow-2xl backdrop-blur-xl space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto text-cyan-400">
+            <Loader2 className="w-6 h-6 animate-spin" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-white">
+              {googleLoading ? "Connecting with Google..." : "Signed In Successfully"}
+            </h3>
+            <p className="text-xs text-slate-400">
+              {googleLoading
+                ? "Securing your session and loading your profile..."
+                : "Redirecting you to your destination..."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-20 relative overflow-hidden">

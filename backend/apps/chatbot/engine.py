@@ -17,6 +17,11 @@ from apps.chatbot.tools import (
     get_customer_profile,
     create_booking,
     get_booking_status,
+    get_personalized_recommendation,
+    validate_and_apply_coupon,
+    reschedule_booking,
+    cancel_booking,
+    request_human_support,
 )
 from apps.chatbot.state_machine import BookingStateMachine
 from apps.payments.service import PaymentService
@@ -252,9 +257,47 @@ class ChatbotEngine:
             return BookingStateMachine.handle_message(session, raw_text, user, action=action)
 
         # ---------------------------------------------------------
-        # Intent 1: Booking Reference Lookup / Track Booking
+        # Phase 3 Intent: Reschedule or Cancel Existing Booking
         # ---------------------------------------------------------
         ref_match = re.search(r"CW-[A-Z0-9-]+", raw_text, re.IGNORECASE)
+        found_ref = ref_match.group(0) if ref_match else ""
+
+        reschedule_triggers = ["reschedule", "change time", "change date", "postpone", "modify booking", "change slot"]
+        if any(k in text for k in reschedule_triggers) or (action and str(action).startswith("reschedule")):
+            return BookingStateMachine._init_reschedule_flow(session, found_ref, user=user)
+
+        cancel_triggers = ["cancel booking", "cancel my booking", "cancel appointment", "cancellation", "cancel my car wash"]
+        if (
+            (text in cancel_triggers or any(k in text for k in ["cancel booking", "cancel my booking", "cancel appointment"]))
+            or (action and str(action).startswith("cancel_booking"))
+        ):
+            return BookingStateMachine._init_cancel_flow(session, found_ref, user=user)
+
+        # ---------------------------------------------------------
+        # Phase 3 Intent: Personalized Service Recommendations
+        # ---------------------------------------------------------
+        recommend_triggers = [
+            "recommend", "recommendation", "suggest", "which service", "which package",
+            "what should i choose", "what package should i", "best for my car", "what do you suggest",
+            "help me choose"
+        ]
+        if any(k in text for k in recommend_triggers):
+            rec = get_personalized_recommendation(user)
+            return (
+                rec["message"],
+                "RECOMMENDATION",
+                [
+                    {"label": f"Book {rec.get('recommended_package', 'Service')}", "action": "book"},
+                    {"label": "Explore services", "action": "services"},
+                    {"label": "Check prices", "action": "pricing"},
+                ],
+                "RECOMMENDATION",
+                rec,
+            )
+
+        # ---------------------------------------------------------
+        # Intent 1: Booking Reference Lookup / Track Booking
+        # ---------------------------------------------------------
         track_triggers = ["track", "status of my booking", "where is my van", "my booking", "check my booking"]
 
         if ref_match or any(k in text for k in track_triggers):
@@ -457,9 +500,29 @@ class ChatbotEngine:
             )
 
         # ---------------------------------------------------------
-        # Intent 8: Customer Support
+        # Intent 8: Customer Support & Human Escalation
         # ---------------------------------------------------------
-        support_keywords = ["support", "call", "phone", "help", "contact", "human", "agent", "talk"]
+        human_keywords = ["human", "agent", "representative", "person", "escalate", "talk to human", "speak to human", "executive"]
+        support_keywords = ["support", "call", "phone", "help", "contact", "talk"]
+
+        if any(k in text for k in human_keywords):
+            cust_name = (user.get_full_name() or user.username) if user and user.is_authenticated else "Customer"
+            cust_phone = getattr(user, "phone", "") or "7087811881" if user and user.is_authenticated else "7087811881"
+            handoff_res = request_human_support(
+                session=session,
+                name=cust_name,
+                phone=cust_phone,
+                issue_summary=raw_text,
+                user=user,
+            )
+            return (
+                handoff_res["message"],
+                "HUMAN_HANDOFF",
+                [{"label": "💬 WhatsApp Support", "action": "whatsapp"}, {"label": "Book a car wash", "action": "book"}],
+                "OPEN_SUPPORT",
+                {"whatsapp_link": handoff_res["whatsapp_link"]},
+            )
+
         if any(k in text for k in support_keywords):
             reply = (
                 "Our customer care team is available 8:00 AM – 8:00 PM:\n\n"
@@ -471,7 +534,7 @@ class ChatbotEngine:
             return (
                 reply,
                 "SUPPORT",
-                [{"label": "Book a car wash", "action": "book"}, {"label": "Track my booking", "action": "track"}],
+                [{"label": "💬 WhatsApp Support", "action": "whatsapp"}, {"label": "Book a car wash", "action": "book"}],
                 "OPEN_SUPPORT",
                 {"phone": "+91 70878 11881"},
             )

@@ -3,6 +3,7 @@ import datetime
 from django.utils import timezone
 
 from apps.services.models import ServicePackage, VehicleType
+from apps.bookings.models import Booking
 from apps.chatbot.tools import (
     get_services,
     get_vehicle_prices,
@@ -11,6 +12,9 @@ from apps.chatbot.tools import (
     get_customer_profile,
     create_booking,
     get_booking_status,
+    validate_and_apply_coupon,
+    reschedule_booking,
+    cancel_booking,
 )
 
 
@@ -113,6 +117,14 @@ class BookingStateMachine:
             return cls._step_collect_contact(session, user_text, text, draft, user)
         elif step == "AWAIT_CONFIRMATION":
             return cls._step_await_confirmation(session, user_text, text, draft, user)
+        elif step == "RESCHEDULE_DATE":
+            return cls._step_reschedule_date(session, user_text, text, draft, user)
+        elif step == "RESCHEDULE_SLOT":
+            return cls._step_reschedule_slot(session, user_text, text, draft, user)
+        elif step == "RESCHEDULE_CONFIRM":
+            return cls._step_reschedule_confirm(session, user_text, text, draft, user)
+        elif step == "CANCEL_CONFIRM":
+            return cls._step_cancel_confirm(session, user_text, text, draft, user)
         else:
             cls.clear_state(session)
             return cls._init_booking_flow(session, user_text, user)
@@ -662,9 +674,14 @@ class BookingStateMachine:
     # -------------------------------------------------------------
     @classmethod
     def _render_booking_summary(cls, draft: dict):
-        price = draft.get("final_amount", 999.0)
-        formatted_price = f"₹{int(price)}" if isinstance(price, (int, float)) and price.is_integer() else f"₹{price:.2f}"
+        price = draft.get("final_amount", draft.get("price", 999.0))
+        formatted_price = f"₹{int(price)}" if isinstance(price, (int, float)) and (isinstance(price, int) or price.is_integer()) else f"₹{price:.2f}"
         
+        coupon_row = ""
+        if draft.get("coupon_code"):
+            discount = draft.get("discount_amount", 0)
+            coupon_row = f"| **Coupon Applied** | **-₹{int(discount)} ({draft['coupon_code']})** |\n"
+
         summary = (
             f"### 📋 Booking Summary\n\n"
             f"| Detail | Selection |\n"
@@ -675,6 +692,7 @@ class BookingStateMachine:
             f"| **Date** | {draft.get('service_date_display', draft.get('service_date'))} |\n"
             f"| **Time Slot** | {draft.get('slot_label', draft.get('slot_time'))} |\n"
             f"| **Customer** | {draft.get('customer_name')} ({draft.get('customer_phone')}) |\n"
+            f"{coupon_row}"
             f"| **Amount** | **{formatted_price}** |\n\n"
             f"**Awaiting confirmation.** How would you like to pay?"
         )
@@ -682,6 +700,7 @@ class BookingStateMachine:
         buttons = [
             {"label": "💳 Pay Online (Razorpay UPI/Cards)", "action": "confirm_razorpay"},
             {"label": "💵 Pay on Service (Cash/UPI)", "action": "confirm_pay_on_service"},
+            {"label": "🎟️ Apply Coupon", "action": "prompt_coupon"},
             {"label": "❌ Cancel Booking", "action": "cancel_booking"},
         ]
 
@@ -712,6 +731,22 @@ class BookingStateMachine:
                 None,
             )
 
+        # Coupon application during confirmation
+        if "prompt_coupon" in text:
+            return (
+                "Please type your coupon code (for example: **CARSPA100** or **WELCOME10**):",
+                "BOOKING_AWAIT_COUPON",
+                [{"label": "Back to Summary", "action": "summary"}],
+                None,
+                None,
+            )
+
+        has_coupon_intent = (
+            "coupon" in text
+            or "promo" in text
+            or "discount" in text
+            or (text.startswith("code ") or text.startswith("apply "))
+        )
         is_pay_on_service = (
             "confirm_pay_on_service" in text
             or "pay on service" in text
@@ -735,6 +770,36 @@ class BookingStateMachine:
                 or "upi" in text
             )
         )
+
+        if has_coupon_intent and not (is_online or is_pay_on_service):
+            raw_code = user_text
+            for prefix in ["apply coupon", "apply promo", "apply code", "coupon", "promo", "code"]:
+                raw_code = re.sub(f"(?i)^{prefix}", "", raw_code).strip(": ")
+            raw_code = raw_code.strip().upper()
+            subtotal = float(draft.get("price", draft.get("final_amount", 999.0)))
+            coupon_res = validate_and_apply_coupon(raw_code, subtotal)
+            if coupon_res["is_valid"]:
+                draft["coupon_code"] = coupon_res["code"]
+                draft["discount_amount"] = coupon_res["discount_amount"]
+                draft["final_amount"] = coupon_res["final_amount"]
+                cls.set_state(session, "AWAIT_CONFIRMATION", draft)
+                summary_tuple = cls._render_booking_summary(draft)
+                return (
+                    f"{coupon_res['message']}\n\n{summary_tuple[0]}",
+                    summary_tuple[1],
+                    summary_tuple[2],
+                    summary_tuple[3],
+                    summary_tuple[4],
+                )
+            else:
+                summary_tuple = cls._render_booking_summary(draft)
+                return (
+                    f"⚠️ {coupon_res['error']}\n\n{summary_tuple[0]}",
+                    summary_tuple[1],
+                    summary_tuple[2],
+                    summary_tuple[3],
+                    summary_tuple[4],
+                )
 
         # Explicit confirmation required
         if not is_online and not is_pay_on_service:
@@ -794,3 +859,338 @@ class BookingStateMachine:
                 "BOOKING_CONFIRMED",
                 {"booking_reference": booking_ref},
             )
+
+    # =============================================================
+    # Phase 3: Conversational Rescheduling Flow
+    # =============================================================
+    @classmethod
+    def _init_reschedule_flow(cls, session, booking_reference: str, user=None):
+        clean_ref = (booking_reference or "").strip()
+        booking = None
+        if clean_ref:
+            booking = Booking.objects.filter(booking_reference__iexact=clean_ref).first()
+        elif user and user.is_authenticated:
+            booking = Booking.objects.filter(user=user).exclude(status__in=["COMPLETED", "CANCELLED", "REJECTED"]).order_by("-created_at").first()
+
+        if not booking:
+            return (
+                "Please provide your booking reference (e.g. `CW-20261104-XXXX`) so I can help reschedule your appointment.",
+                "RESCHEDULE_NEED_REF",
+                [{"label": "Track my booking", "action": "track"}, {"label": "Talk to support", "action": "support"}],
+                None,
+                None,
+            )
+
+        if user and user.is_authenticated and booking.user and booking.user != user:
+            return (
+                "You are only authorized to reschedule bookings associated with your account.",
+                "AUTH_ERROR",
+                [{"label": "Talk to support", "action": "support"}],
+                None,
+                None,
+            )
+
+        if booking.status in ["COMPLETED", "CANCELLED", "REJECTED"]:
+            return (
+                f"Booking **{booking.booking_reference}** is already {booking.get_status_display().lower()} and cannot be rescheduled.",
+                "RESCHEDULE_INVALID_STATUS",
+                [{"label": "Book a car wash", "action": "book"}, {"label": "Talk to support", "action": "support"}],
+                None,
+                None,
+            )
+
+        draft = {
+            "booking_reference": booking.booking_reference,
+            "service_package_id": booking.service_package_id,
+            "service_package_name": booking.service_package.name if booking.service_package else "Wash",
+            "vehicle_type_id": booking.vehicle_type_id,
+            "service_area_id": booking.service_area_id,
+            "old_date": str(booking.service_date),
+            "old_slot": str(booking.slot_start_time)[:5],
+        }
+        cls.set_state(session, "RESCHEDULE_DATE", draft)
+
+        today = timezone.localdate()
+        date_buttons = []
+        for i in range(1, 4):
+            d = today + datetime.timedelta(days=i)
+            label = "Tomorrow" if i == 1 else d.strftime("%A, %d %b")
+            date_buttons.append({"label": f"📅 {label}", "action": f"reschedule_date_{d.isoformat()}"})
+
+        return (
+            f"Let's reschedule your appointment for **{booking.booking_reference}** ({draft['service_package_name']}).\n"
+            f"Current schedule: **{booking.service_date}** at **{str(booking.slot_start_time)[:5]}**.\n\n"
+            f"Which date would you prefer to move it to?",
+            "RESCHEDULE_STEP_DATE",
+            date_buttons,
+            None,
+            draft,
+        )
+
+    @classmethod
+    def _step_reschedule_date(cls, session, user_text: str, text: str, draft: dict, user=None):
+        if any(k in text for k in ["cancel", "nevermind", "stop", "abort"]):
+            cls.clear_state(session)
+            return ("Rescheduling cancelled. Your original appointment time is preserved.", "RESCHEDULE_ABORTED", None, None, None)
+
+        today = timezone.localdate()
+        target_date = None
+
+        if "tomorrow" in text:
+            target_date = today + datetime.timedelta(days=1)
+        elif "today" in text:
+            target_date = today
+
+        date_match = re.search(r"(\d{4}-\d{2}-\d{2})", text)
+        if date_match:
+            try:
+                target_date = datetime.date.fromisoformat(date_match.group(1))
+            except ValueError:
+                pass
+
+        if not target_date:
+            target_date = today + datetime.timedelta(days=1)
+
+        draft["new_date"] = target_date.isoformat()
+        draft["new_date_display"] = target_date.strftime("%A, %d %B %Y")
+
+        slots_data = get_available_slots(
+            target_date=target_date,
+            service_package_id=draft.get("service_package_id"),
+            vehicle_type_id=draft.get("vehicle_type_id"),
+            service_area_id=draft.get("service_area_id"),
+        )
+
+        avail_slots = [s for s in slots_data.get("slots", []) if s.get("available")]
+        if not avail_slots:
+            return (
+                f"All slots on **{draft['new_date_display']}** are fully reserved. Please pick another date.",
+                "RESCHEDULE_STEP_DATE",
+                [{"label": "Pick Another Date", "action": "reschedule"}],
+                None,
+                None,
+            )
+
+        cls.set_state(session, "RESCHEDULE_SLOT", draft)
+        slot_buttons = [
+            {"label": s.get("label", s.get("time")), "action": f"reschedule_slot_{s.get('time', s.get('start_time'))}"}
+            for s in avail_slots[:6]
+        ]
+        return (
+            f"Great! Available detailing time slots for **{draft['new_date_display']}**:\n\n"
+            f"Which time works best for you?",
+            "RESCHEDULE_STEP_SLOT",
+            slot_buttons,
+            None,
+            draft,
+        )
+
+    @classmethod
+    def _step_reschedule_slot(cls, session, user_text: str, text: str, draft: dict, user=None):
+        if any(k in text for k in ["cancel", "nevermind", "stop", "abort"]):
+            cls.clear_state(session)
+            return ("Rescheduling cancelled. Your original appointment time is preserved.", "RESCHEDULE_ABORTED", None, None, None)
+
+        slot_match = re.search(r"(\d{1,2}:\d{2})", text)
+        if not slot_match:
+            return (
+                "Please choose an available time slot (e.g. `10:30` or `14:00`).",
+                "RESCHEDULE_STEP_SLOT",
+                None,
+                None,
+                draft,
+            )
+
+        slot_time = slot_match.group(1)
+        if len(slot_time.split(":")[0]) == 1:
+            slot_time = f"0{slot_time}"
+
+        draft["new_slot"] = slot_time
+
+        # Move to explicit confirmation step
+        cls.set_state(session, "RESCHEDULE_CONFIRM", draft)
+
+        buttons = [
+            {"label": "✅ Confirm Reschedule", "action": "confirm_reschedule"},
+            {"label": "❌ Keep Existing Slot", "action": "cancel_reschedule"},
+        ]
+        return (
+            f"### 🗓️ Reschedule Confirmation\n\n"
+            f"• **Booking Reference**: `{draft['booking_reference']}`\n"
+            f"• **Previous Schedule**: {draft.get('old_date')} at {draft.get('old_slot')}\n"
+            f"• **New Schedule**: **{draft.get('new_date_display')} at {slot_time}**\n\n"
+            f"**Explicit confirmation required:** Would you like to confirm this new appointment time?",
+            "RESCHEDULE_STEP_CONFIRM",
+            buttons,
+            None,
+            draft,
+        )
+
+    @classmethod
+    def _step_reschedule_confirm(cls, session, user_text: str, text: str, draft: dict, user=None):
+        if any(k in text for k in ["cancel", "keep", "no", "abort"]):
+            cls.clear_state(session)
+            return (
+                f"Reschedule cancelled. Your booking **{draft['booking_reference']}** remains scheduled at your original time.",
+                "RESCHEDULE_CANCELLED",
+                [{"label": "Track my booking", "action": f"track_{draft['booking_reference']}"}],
+                None,
+                None,
+            )
+
+        is_confirmed = any(k in text for k in ["confirm", "yes", "reschedule", "confirm_reschedule", "proceed"])
+        if not is_confirmed:
+            buttons = [
+                {"label": "✅ Confirm Reschedule", "action": "confirm_reschedule"},
+                {"label": "❌ Keep Existing Slot", "action": "cancel_reschedule"},
+            ]
+            return (
+                f"Please confirm whether you want to reschedule **{draft['booking_reference']}** to **{draft.get('new_date_display')} at {draft.get('new_slot')}**:",
+                "RESCHEDULE_STEP_CONFIRM",
+                buttons,
+                None,
+                draft,
+            )
+
+        res = reschedule_booking(
+            booking_reference=draft["booking_reference"],
+            new_date=draft["new_date"],
+            new_slot_time_str=draft["new_slot"],
+            user=user,
+        )
+        cls.clear_state(session)
+
+        if not res.get("success"):
+            return (
+                f"⚠️ Could not reschedule: {res.get('error')}",
+                "RESCHEDULE_ERROR",
+                [{"label": "Talk to support", "action": "support"}],
+                None,
+                None,
+            )
+
+        return (
+            res["message"],
+            "BOOKING_RESCHEDULED",
+            [
+                {"label": "Open Live Tracker", "action": f"track_{draft['booking_reference']}"},
+                {"label": "Explore services", "action": "services"},
+            ],
+            "NAVIGATE_TRACK",
+            {"reference": draft["booking_reference"]},
+        )
+
+    # =============================================================
+    # Phase 3: Conversational Cancellation Flow
+    # =============================================================
+    @classmethod
+    def _init_cancel_flow(cls, session, booking_reference: str, user=None):
+        clean_ref = (booking_reference or "").strip()
+        booking = None
+        if clean_ref:
+            booking = Booking.objects.filter(booking_reference__iexact=clean_ref).first()
+        elif user and user.is_authenticated:
+            booking = Booking.objects.filter(user=user).exclude(status__in=["COMPLETED", "CANCELLED", "REJECTED"]).order_by("-created_at").first()
+
+        if not booking:
+            return (
+                "Please provide your booking reference (e.g. `CW-20261104-XXXX`) so I can assist with cancellation.",
+                "CANCEL_NEED_REF",
+                [{"label": "Track my booking", "action": "track"}, {"label": "Talk to support", "action": "support"}],
+                None,
+                None,
+            )
+
+        if user and user.is_authenticated and booking.user and booking.user != user:
+            return (
+                "You are only authorized to cancel bookings associated with your account.",
+                "AUTH_ERROR",
+                [{"label": "Talk to support", "action": "support"}],
+                None,
+                None,
+            )
+
+        if booking.status in ["COMPLETED", "CANCELLED", "REJECTED"]:
+            return (
+                f"Booking **{booking.booking_reference}** is already {booking.get_status_display().lower()} and cannot be cancelled.",
+                "CANCEL_INVALID_STATUS",
+                [{"label": "Book a car wash", "action": "book"}, {"label": "Talk to support", "action": "support"}],
+                None,
+                None,
+            )
+
+        draft = {
+            "booking_reference": booking.booking_reference,
+            "service_package_name": booking.service_package.name if booking.service_package else "Wash",
+            "service_date": str(booking.service_date),
+            "slot": str(booking.slot_start_time)[:5],
+            "payment_status": booking.payment_status,
+            "final_amount": float(booking.final_amount),
+        }
+        cls.set_state(session, "CANCEL_CONFIRM", draft)
+
+        refund_note = ""
+        if booking.payment_status == "PAID":
+            refund_note = f"\n• **Refund**: A 100% full refund of ₹{booking.final_amount:.0f} will be returned to your original payment method via Razorpay."
+
+        buttons = [
+            {"label": "⚠️ Yes, Cancel Booking", "action": "confirm_cancel_booking"},
+            {"label": "Keep My Booking", "action": "keep_booking"},
+        ]
+
+        return (
+            f"### ⚠️ Booking Cancellation Confirmation Required\n\n"
+            f"Are you sure you want to cancel booking **{booking.booking_reference}**?\n\n"
+            f"• **Package**: {draft['service_package_name']}\n"
+            f"• **Scheduled For**: {booking.service_date} at {str(booking.slot_start_time)[:5]}\n"
+            f"• **Cancellation Policy**: Free cancellation anytime prior to van arrival.{refund_note}\n\n"
+            f"**Explicit confirmation required:** Would you like to proceed?",
+            "CANCEL_STEP_CONFIRM",
+            buttons,
+            None,
+            draft,
+        )
+
+    @classmethod
+    def _step_cancel_confirm(cls, session, user_text: str, text: str, draft: dict, user=None):
+        if any(k in text for k in ["keep", "no", "keep_booking", "abort", "back"]):
+            cls.clear_state(session)
+            return (
+                f"Cancellation cancelled! Your booking **{draft['booking_reference']}** remains confirmed and scheduled.",
+                "CANCEL_ABORTED",
+                [{"label": "Track my booking", "action": f"track_{draft['booking_reference']}"}],
+                None,
+                None,
+            )
+
+        is_confirmed = any(k in text for k in ["yes", "confirm", "cancel", "confirm_cancel_booking"])
+        if not is_confirmed:
+            buttons = [
+                {"label": "⚠️ Yes, Cancel Booking", "action": "confirm_cancel_booking"},
+                {"label": "Keep My Booking", "action": "keep_booking"},
+            ]
+            return (
+                f"Please confirm whether you wish to permanently cancel **{draft['booking_reference']}**:",
+                "CANCEL_STEP_CONFIRM",
+                buttons,
+                None,
+                draft,
+            )
+
+        res = cancel_booking(
+            booking_reference=draft["booking_reference"],
+            reason="Customer requested cancellation via chat",
+            user=user,
+        )
+        cls.clear_state(session)
+
+        return (
+            res["message"],
+            "BOOKING_CANCELLED",
+            [
+                {"label": "Book a car wash", "action": "book"},
+                {"label": "Talk to support", "action": "support"},
+            ],
+            None,
+            None,
+        )
